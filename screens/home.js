@@ -1,22 +1,31 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Dimensions, Image, TouchableOpacity } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
 import firebase from 'firebase';
+import DocumentScanner from './scanner.js';
 
 
+// Used to make element sizes more consistent across screen sizes.
 const screenWidth = Math.round(Dimensions.get('window').width);
+const rem = Math.round(screenWidth/380);
 
 export default function login({ navigation }) {
-    firebase.auth().onAuthStateChanged(function (user) {
+
+    firebase.auth().onAuthStateChanged(function(user) {
         if (user) {
-            // firebase.auth().signOut();
+          // firebase.auth().signOut();
         }
         else {
-            navigation.navigate("Login");
+          navigation.navigate("Login");
         }
-    });
+      });
 
     let logoutHandler = () => {
         firebase.auth().signOut();
+        navigation.navigate("Login");
+    }
+
+    let openScannerHandler = () => {
+        navigation.navigate("Scanner");
     }
 
     return (
@@ -26,6 +35,11 @@ export default function login({ navigation }) {
                 onPress={logoutHandler}>
                 <Text style={styles.logoutText}>Log Out</Text>
             </TouchableOpacity>
+
+            <TouchableOpacity style={styles.BtnLogout}
+                onPress={openScannerHandler}>
+                <Text style={styles.logoutText}>Open Scanner</Text>
+            </TouchableOpacity>
         </View>
     )
 }
@@ -33,23 +47,22 @@ export default function login({ navigation }) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        paddingTop: 50,
+        paddingTop: 50*rem,
         justifyContent: 'center',
         alignItems: 'center',
-        // backgroundColor: '#233e5d',
         backgroundColor: 'white',
     },
     btnLogout: {
-        width: screenWidth - 55,
-        height: 45,
-        borderRadius: 25,
+        width: screenWidth - (55*rem),
+        height: 45*rem,
+        borderRadius: 25*rem,
         backgroundColor: 'white',
         justifyContent: 'center',
-        marginTop: 20,
+        marginTop: 20*rem,
       },
       logoutText: {
         color: '#0055a5',
-        fontSize: 20,
+        fontSize: 20*rem,
         textAlign: 'center'
       },
 });

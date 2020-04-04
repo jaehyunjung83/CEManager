@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, TextInput, Dimensions, Image, TouchableOpacity 
 import blueGradient from '../images/blueGradient.jpg';
 import Icon from 'react-native-vector-icons/Ionicons';
 import firebase from 'firebase';
-// import { firebaseConfig } from './config';
 
 const screenWidth = Math.round(Dimensions.get('window').width);
 
