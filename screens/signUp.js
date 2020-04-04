@@ -4,7 +4,9 @@ import blueGradient from '../images/blueGradient.jpg';
 import Icon from 'react-native-vector-icons/Ionicons';
 import firebase from 'firebase';
 
+// Used to make element sizes more consistent across screen sizes.
 const screenWidth = Math.round(Dimensions.get('window').width);
+const rem = (screenWidth/380);
 
 export default function signUp( { navigation }) {
 
@@ -46,7 +48,7 @@ export default function signUp( { navigation }) {
       <Text style={styles.header1}>Sign<Text style={styles.header2}>Up</Text></Text>
 
       <View>
-        <Icon name={'ios-person'} size={28} color={'rgba(255, 255, 255, 1)'} style={styles.inputIcon} />
+        <Icon name={'ios-person'} size={28*rem} color={'rgba(255, 255, 255, 1)'} style={styles.inputIcon} />
         <TextInput
           style={styles.input}
           placeholder={'Email'}
@@ -58,7 +60,7 @@ export default function signUp( { navigation }) {
       </View>
 
       <View>
-        <Icon name={'ios-lock'} size={28} color={'rgba(255, 255, 255, 1)'} style={styles.inputIcon} />
+        <Icon name={'ios-lock'} size={28*rem} color={'rgba(255, 255, 255, 1)'} style={styles.inputIcon} />
         <TextInput
           style={styles.input}
           placeholder={'Password'}
@@ -82,9 +84,9 @@ export default function signUp( { navigation }) {
         <Text style={styles.signUpText}>{buttonText}</Text>
       </TouchableOpacity>
       
-      <TouchableOpacity style={styles.btnTransparent}
+      <TouchableOpacity style={styles.btnBack}
         onPress={logInHandler}>
-        <Text style={styles.btnTransparentText}>Back</Text>
+        <Text style={styles.btnBackText}>Back</Text>
       </TouchableOpacity>
 
       <View style={styles.bgDesignTop}>
@@ -101,16 +103,16 @@ export default function signUp( { navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 50,
+    paddingTop: 50*rem,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#0055a5',
   },
   bgDesignTop: {
     backgroundColor: "rgba(255, 255, 255, 0.3)",
-    height: screenWidth + (screenWidth * 1.9),
-    width: screenWidth + (screenWidth * 1.9),
-    borderRadius: screenWidth + (screenWidth * 1.9),
+    width: screenWidth + (screenWidth * 1.7),
+    aspectRatio: 1,
+    borderRadius: screenWidth + (screenWidth * 1.7),
     position: 'absolute',
     left: -(screenWidth * 1.5),
     top: -(screenWidth * 2.3),
@@ -118,8 +120,8 @@ const styles = StyleSheet.create({
   },
   bgDesignBottom: {
     backgroundColor: "rgba(255, 255, 255, 0.3)",
-    height: (screenWidth * 0.5),
     width: (screenWidth * 0.5),
+    aspectRatio: 1,
     borderRadius: (screenWidth * 0.5),
     position: 'absolute',
     right: -(screenWidth * 0.25),
@@ -129,7 +131,7 @@ const styles = StyleSheet.create({
   bgGradient: {
     width: '100%',
     height: '100%',
-    top: 300,
+    top: 300*rem,
   },
   bgGradientBottom: {
     width: '100%',
@@ -141,8 +143,8 @@ const styles = StyleSheet.create({
     fontFamily: 'Helvetica Neue',
     fontWeight: '800',
     color: 'rgba(37,212,251,1)',
-    fontSize: 30,
-    marginBottom: 50
+    fontSize: 30*rem,
+    marginBottom: 50*rem,
   },
   header2: {
     fontFamily: 'Helvetica Neue',
@@ -150,57 +152,57 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   input: {
-    width: screenWidth - 55,
-    height: 45,
-    borderRadius: 25,
-    fontSize: 16,
-    paddingLeft: 45,
+    width: screenWidth - (55*rem),
+    aspectRatio: 7,
+    borderRadius: 25*rem,
+    fontSize: 16*rem,
+    paddingLeft: 45*rem,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     color: 'rgba(255, 255, 255, 0.7)',
-    marginHorizontal: 25,
-    marginTop: 10
+    marginHorizontal: 25*rem,
+    marginTop: 10*rem,
   },
   inputIcon: {
     position: 'absolute',
-    top: 18,
-    left: 40,
+    top: 18*rem,
+    left: 40*rem,
   },
   btnTogglePass: {
     position: 'absolute',
-    top: 18,
-    right: 40
+    top: 18*rem,
+    right: 40*rem,
   },
   btnSignUp: {
-    width: screenWidth - 55,
-    height: 45,
-    borderRadius: 25,
+    width: screenWidth - (55*rem),
+    height: 45*rem,
+    borderRadius: 25*rem,
     backgroundColor: 'white',
     justifyContent: 'center',
-    marginTop: 20,
+    marginTop: 20*rem,
   },
   signUpText: {
     color: '#0055a5',
-    fontSize: 20,
+    fontSize: 20*rem,
     textAlign: 'center'
   },
   errorText: {
-    marginTop: 6,
+    marginTop: 6*rem,
     color: 'maroon',
-    fontSize: 16,
-    width: screenWidth - 55,
-    paddingLeft: 26
+    fontSize: 16*rem,
+    width: screenWidth - (55*rem),
+    paddingLeft: 26*rem,
   },
-  btnTransparent: {
+  btnBack: {
     width: screenWidth - 55,
-    height: 45,
-    borderRadius: 25,
+    aspectRatio: 7,
+    borderRadius: 25*rem,
     backgroundColor: 'rgba(0,0,0, 0)',
     justifyContent: 'center',
-    marginTop: 20,
+    marginTop: 20*rem,
   },
-  btnTransparentText: {
+  btnBackText: {
     color: 'white',
-    fontSize: 20,
+    fontSize: 20*rem,
     textAlign: 'center'
   }
 });

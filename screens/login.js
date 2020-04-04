@@ -6,7 +6,7 @@ import firebase from 'firebase';
 
 // Used to make element sizes more consistent across screen sizes.
 const screenWidth = Math.round(Dimensions.get('window').width);
-const rem = Math.round(screenWidth/380);
+const rem = (screenWidth/380);
 
 export default function login({ navigation }) {
 
