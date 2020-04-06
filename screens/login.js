@@ -10,9 +10,13 @@ const rem = (screenWidth/380);
 
 export default function login({ navigation }) {
 
-  if (firebase.auth().currentUser) {
-    navigation.replace("Home");
-  }
+    firebase.auth().onAuthStateChanged(function (user) {
+      if (user) {
+        navigation.navigate('LoggedIn');
+      }
+      else {
+      }
+    });
 
   const [showPass, setShow] = useState(true);
   const [press, setPress] = useState(true);
@@ -35,7 +39,7 @@ export default function login({ navigation }) {
     setButtonText("...");
     firebase.auth().signInWithEmailAndPassword(email, password)
       .then(() => {
-        navigation.navigate("Home");
+        navigation.navigate("LoggedIn");
       })
       .catch(function (error) {
         setError(error.message);

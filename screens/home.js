@@ -1,66 +1,66 @@
 import React from 'react';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
-import firebase from 'firebase';
+import { StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
+import HomeTabs from './homeTabs.js';
+import { createStackNavigator } from '@react-navigation/stack';
+import Icon from 'react-native-vector-icons/Octicons';
+
+
 
 // Used to make element sizes more consistent across screen sizes.
 const screenWidth = Math.round(Dimensions.get('window').width);
-const rem = (screenWidth/380);
+const rem = (screenWidth / 380);
 
-export default function login({ navigation }) {
+const Stack = createStackNavigator();
 
-    firebase.auth().onAuthStateChanged(function(user) {
-        if (user) {
-          // firebase.auth().signOut();
-        }
-        else {
-          navigation.navigate("Login");
-        }
-      });
+export default function home({ navigation }) {
 
-    let logoutHandler = () => {
-        firebase.auth().signOut();
-        navigation.navigate("Login");
-    }
-
-    let openScannerHandler = () => {
-        navigation.navigate("Scanner");
-    }
-
-    return (
-        <View style={styles.container}>
-            <Text style={styles.header1}>Home<Text style={styles.header2}>Page</Text></Text>
-            <TouchableOpacity style={styles.BtnLogout}
-                onPress={logoutHandler}>
-                <Text style={styles.logoutText}>Log Out</Text>
+  hamburgerPressed = () => {
+    navigation.openDrawer();
+  }
+  return (
+    <Stack.Navigator>
+      <Stack.Screen
+        name="HomeTabs"
+        component={HomeTabs}
+        options={{
+          // headerShown: false,
+          title: 'CEManager',
+          headerStyle: {
+            backgroundColor: '#0055a5',
+            height: 76 * rem,
+            shadowColor: 'transparent',
+            shadowRadius: 0,
+            shadowOffset: {
+              height: 0,
+            }
+          },
+          headerTintColor: 'rgba(255,255,255,0)',
+          headerTitleStyle: {
+            flex: 1,
+            top: 0,
+            color: 'white',
+            fontSize: 25 * rem,
+            fontWeight: '400',
+            textAlign: 'left',
+          },
+          headerLeft: () => (
+            <TouchableOpacity onPress={this.hamburgerPressed}>
+              <Icon name={'three-bars'}
+                style={styles.hamburgerButton}
+              />
             </TouchableOpacity>
-
-            <TouchableOpacity style={styles.BtnLogout}
-                onPress={openScannerHandler}>
-                <Text style={styles.logoutText}>Open Scanner</Text>
-            </TouchableOpacity>
-        </View>
-    )
+          ),
+        }}
+      />
+    </Stack.Navigator>
+  );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        paddingTop: 50*rem,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'white',
-    },
-    btnLogout: {
-        width: screenWidth - (55*rem),
-        height: 45*rem,
-        borderRadius: 25*rem,
-        backgroundColor: 'white',
-        justifyContent: 'center',
-        marginTop: 20*rem,
-      },
-      logoutText: {
-        color: '#0055a5',
-        fontSize: 20*rem,
-        textAlign: 'center'
-      },
-});
+  hamburgerButton: {
+    flex: 1,
+    color: 'white',
+    left: 14 * rem,
+    fontSize: 28 * rem,
+  },
+})

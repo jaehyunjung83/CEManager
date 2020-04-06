@@ -35,7 +35,7 @@ class DocumentScanner extends PureComponent {
     onPictureProcessed: ({ croppedImage, initialImage }) => { },
     onFilterIdChange: () => { },
     hideSkip: true,
-    initialFilterId: Filters.PLATFORM_DEFAULT_FILTER_ID,
+    initialFilterId: Filters.GREYSCALE_FILTER.id,
   }
 
   constructor(props) {
@@ -172,7 +172,7 @@ class DocumentScanner extends PureComponent {
   onCancel = () => {
     this.turnOffCamera();
     this.props.onCancel();
-    this.props.navigation.navigate("Home");
+    this.props.navigation.goBack();
   }
 
   // Capture the current frame/rectangle. Triggers the flash animation and shows a
@@ -211,12 +211,12 @@ class DocumentScanner extends PureComponent {
 
   // Flashes the screen on capture
   triggerSnapAnimation() {
-    // Animated.sequence([
-    //   Animated.timing(this.state.overlayFlashOpacity, { toValue: 0.2, duration: 100 }),
-    //   Animated.timing(this.state.overlayFlashOpacity, { toValue: 0, duration: 50 }),
-    //   Animated.timing(this.state.overlayFlashOpacity, { toValue: 0.6, delay: 100, duration: 120 }),
-    //   Animated.timing(this.state.overlayFlashOpacity, { toValue: 0, duration: 90 }),
-    // ]).start();
+    Animated.sequence([
+      Animated.timing(this.state.overlayFlashOpacity, { toValue: 0.2, duration: 100 }),
+      Animated.timing(this.state.overlayFlashOpacity, { toValue: 0, duration: 50 }),
+      Animated.timing(this.state.overlayFlashOpacity, { toValue: 0.6, delay: 100, duration: 120 }),
+      Animated.timing(this.state.overlayFlashOpacity, { toValue: 0, duration: 90 }),
+    ]).start();
   }
 
   // Hides the camera view. If the camera view was shown and onDeviceSetup was called,
