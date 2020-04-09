@@ -1,7 +1,7 @@
 import firebase from 'firebase';
 
-export default function logout({ navigation }) {
+export default function logout({ navigation, route }) {
     firebase.auth().signOut();
-    navigation.navigate("Login");
-    return(null);
+    route.params.setParentState({ isLoggedIn: false });
+    return (null);
 }

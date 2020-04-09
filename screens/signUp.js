@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TextInput, Dimensions, Image, TouchableOpacity 
 import blueGradient from '../images/blueGradient.jpg';
 import Icon from 'react-native-vector-icons/Ionicons';
 import firebase from 'firebase';
+import { colors } from '../components/colors.js';
 
 // Used to make element sizes more consistent across screen sizes.
 const screenWidth = Math.round(Dimensions.get('window').width);
@@ -106,7 +107,7 @@ const styles = StyleSheet.create({
     paddingTop: 50*rem,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#0055a5',
+    backgroundColor: colors.mainBlue,
   },
   bgDesignTop: {
     backgroundColor: "rgba(255, 255, 255, 0.3)",
@@ -181,7 +182,7 @@ const styles = StyleSheet.create({
     marginTop: 20*rem,
   },
   signUpText: {
-    color: '#0055a5',
+    color: colors.mainBlue,
     fontSize: 20*rem,
     textAlign: 'center'
   },

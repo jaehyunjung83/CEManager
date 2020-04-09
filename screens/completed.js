@@ -19,7 +19,6 @@ export default function documents() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 50 * rem,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(243, 247, 249, 1)',

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Dimensions, Text, StyleSheet, View } from 'react-native';
-
+import { colors } from '../components/colors.js';
 
 // Used to make element sizes more consistent across screen sizes.
 const screenWidth = Math.round(Dimensions.get('window').width);
@@ -20,7 +20,7 @@ const styles = StyleSheet.create({
         paddingTop: 50*rem,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: '#0055a5',
+        backgroundColor: colors.mainBlue,
       },
       header: {
           fontSize: 30,

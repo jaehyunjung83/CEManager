@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
 import AddDocument from '../images/addDocument.svg';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { colors } from '../components/colors.js';
 
 // Used to make element sizes more consistent across screen sizes.
 const screenWidth = Math.round(Dimensions.get('window').width);
@@ -19,7 +20,7 @@ export default function documents({ navigation }) {
       <Text style={styles.emptyText}>You don't have any documents scanned yet.</Text>
 
       <View style={styles.addContainer}>
-        <TouchableOpacity style={styles.BtnLogout}
+        <TouchableOpacity
           onPress={openScannerHandler}>
           <MaterialCommunityIcons
             name='plus'
@@ -35,7 +36,6 @@ export default function documents({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 50 * rem,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(243, 247, 249, 1)',
@@ -47,12 +47,15 @@ const styles = StyleSheet.create({
     margin: 30 * rem,
   },
   addContainer: {
+    position: 'absolute',
+    right: 32*rem,
+    bottom: 32*rem,
     alignItems: 'center',
     justifyContent: 'center',
     width: 60 * rem,
     aspectRatio: 1,
     borderRadius: (60 * rem) / 2,
-    backgroundColor: '#0055a5',
+    backgroundColor: colors.mainBlue,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,

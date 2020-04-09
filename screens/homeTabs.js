@@ -7,12 +7,9 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import Entypo from 'react-native-vector-icons/Entypo';
 import SimpleLineIcons from 'react-native-vector-icons/SimpleLineIcons';
+import { colors } from '../components/colors.js';
 
 const Tab = createMaterialTopTabNavigator();
-
-// Used to make element sizes more consistent across screen sizes.
-const screenWidth = Math.round(Dimensions.get('window').width);
-const rem = (screenWidth / 380);
 
 export default function homeTabs() {
 
@@ -24,14 +21,14 @@ export default function homeTabs() {
             tabBarOptions={{
                 labelStyle: {
                     fontSize: 14 * rem,
-                    fontWeight: '500'
+                    fontWeight: '500',
                 },
                 indicatorStyle: {
-                    backgroundColor: 'white',
+                    backgroundColor: colors.mainBlue,
                 },
-                activeTintColor: 'white',
+                activeTintColor: colors.mainBlue,
                 style: {
-                    backgroundColor: '#0055a5',
+                    backgroundColor: 'white',
                 },
             }}
         >
@@ -39,12 +36,12 @@ export default function homeTabs() {
                 name="Homepage"
                 component={Homepage}
                 options={{
-                    tabBarLabel: 'Homepage',
+                    tabBarLabel: 'Home',
                     tabBarIcon: () => (
                         <SimpleLineIcons
                             name='home'
                             size={26 * rem}
-                            color={'white'}
+                            color={colors.mainBlue}
                         />
                     ),
                 }}
@@ -58,7 +55,7 @@ export default function homeTabs() {
                         <Entypo
                             name='documents'
                             size={26 * rem}
-                            color={'white'}
+                            color={colors.mainBlue}
                         />
                     ),
                 }}
@@ -72,7 +69,7 @@ export default function homeTabs() {
                         <MaterialCommunityIcons
                             name='progress-check'
                             size={26 * rem}
-                            color={'white'}
+                            color={colors.mainBlue}
                         />
                     ),
                 }}
@@ -80,3 +77,7 @@ export default function homeTabs() {
         </Tab.Navigator>
     )
 }
+
+// Used to make element sizes more consistent across screen sizes.
+const screenWidth = Math.round(Dimensions.get('window').width);
+const rem = (screenWidth / 380);

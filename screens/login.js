@@ -3,18 +3,22 @@ import { View, Text, StyleSheet, TextInput, Dimensions, Image, TouchableOpacity 
 import blueGradient from '../images/blueGradient.jpg';
 import Icon from 'react-native-vector-icons/Ionicons';
 import firebase from 'firebase';
+import { colors } from '../components/colors.js';
 
 // Used to make element sizes more consistent across screen sizes.
 const screenWidth = Math.round(Dimensions.get('window').width);
-const rem = (screenWidth/380);
+const rem = (screenWidth / 380);
 
-export default function login({ navigation }) {
+export default function login({ navigation, route }) {
 
-    firebase.auth().onAuthStateChanged(function (user) {
+      firebase.auth().onAuthStateChanged((user) => {
       if (user) {
-        navigation.navigate('LoggedIn');
+        route.params.setParentState({ isLoggedIn: true });
+        route.params.setParentState({ isLoading: false });
       }
       else {
+        route.params.setParentState({ isLoggedIn: false });
+        route.params.setParentState({ isLoading: false });
       }
     });
 
@@ -39,7 +43,8 @@ export default function login({ navigation }) {
     setButtonText("...");
     firebase.auth().signInWithEmailAndPassword(email, password)
       .then(() => {
-        navigation.navigate("LoggedIn");
+        setButtonText("Log In");
+        route.params.setParentState({isLoggedIn: true});
       })
       .catch(function (error) {
         setError(error.message);
@@ -111,10 +116,10 @@ export default function login({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 50*rem,
+    paddingTop: 50 * rem,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#0055a5',
+    backgroundColor: colors.mainBlue,
   },
   bgDesignTop: {
     backgroundColor: "rgba(255, 255, 255, 0.3)",
@@ -139,7 +144,7 @@ const styles = StyleSheet.create({
   bgGradient: {
     width: '100%',
     height: '100%',
-    top: 300*rem,
+    top: 300 * rem,
   },
   bgGradientBottom: {
     width: '100%',
@@ -151,8 +156,8 @@ const styles = StyleSheet.create({
     fontFamily: 'Helvetica Neue',
     fontWeight: '800',
     color: 'rgba(37,212,251,1)',
-    fontSize: 30*rem,
-    marginBottom: 50*rem,
+    fontSize: 30 * rem,
+    marginBottom: 50 * rem,
   },
   header2: {
     fontFamily: 'Helvetica Neue',
@@ -160,57 +165,57 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   input: {
-    width: screenWidth - (55*rem),
+    width: screenWidth - (55 * rem),
     aspectRatio: 7,
-    borderRadius: 25*rem,
-    fontSize: 16*rem,
-    paddingLeft: 45*rem,
+    borderRadius: 25 * rem,
+    fontSize: 16 * rem,
+    paddingLeft: 45 * rem,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     color: 'rgba(255, 255, 255, 0.7)',
-    marginHorizontal: 25*rem,
-    marginTop: 10*rem,
+    marginHorizontal: 25 * rem,
+    marginTop: 10 * rem,
   },
   inputIcon: {
     position: 'absolute',
-    top: 18*rem,
-    left: 40*rem,
+    top: 18 * rem,
+    left: 40 * rem,
   },
   btnTogglePass: {
     position: 'absolute',
-    top: 18*rem,
-    right: 40*rem,
+    top: 18 * rem,
+    right: 40 * rem,
   },
   errorText: {
-    marginTop: 6*rem,
+    marginTop: 6 * rem,
     color: 'maroon',
-    fontSize: 16*rem,
+    fontSize: 16 * rem,
     width: screenWidth - 55,
-    paddingLeft: 26*rem,
+    paddingLeft: 26 * rem,
   },
   btnLogin: {
     width: screenWidth - 55,
     aspectRatio: 7,
-    borderRadius: 25*rem,
+    borderRadius: 25 * rem,
     backgroundColor: 'white',
     justifyContent: 'center',
-    marginTop: 20*rem,
+    marginTop: 20 * rem,
   },
   loginText: {
-    color: '#0055a5',
-    fontSize: 20*rem,
+    color: colors.mainBlue,
+    fontSize: 20 * rem,
     textAlign: 'center'
   },
   btnGetStarted: {
     width: screenWidth - 55,
     aspectRatio: 7,
-    borderRadius: 25*rem,
+    borderRadius: 25 * rem,
     backgroundColor: 'rgba(0,0,0, 0)',
     justifyContent: 'center',
-    marginTop: 20*rem,
+    marginTop: 20 * rem,
   },
   btnGetStartedText: {
     color: 'white',
-    fontSize: 20*rem,
+    fontSize: 20 * rem,
     textAlign: 'center'
   }
 });

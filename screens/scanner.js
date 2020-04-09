@@ -4,12 +4,11 @@ import { ActivityIndicator, Animated, Dimensions, Platform, SafeAreaView, Status
 import Icon from 'react-native-vector-icons/Ionicons';
 import Scanner, { Filters, RectangleOverlay } from 'react-native-rectangle-scanner';
 import ScannerFilters from '../Filters.js';
-import { useNavigation } from '@react-navigation/native';
 
-
-export default function (props) {
-  const navigation = useNavigation();
-  return <DocumentScanner {...props} navigation={navigation} />;
+// TODO: Handle where request is from. It will change how the image is saved.
+// Current known locations include: homepage, addNew, documents, and whereever certs are.
+export default function ({ navigation }) {
+  return <DocumentScanner navigation={navigation} />;
 }
 
 class DocumentScanner extends PureComponent {
@@ -61,6 +60,7 @@ class DocumentScanner extends PureComponent {
       },
     };
 
+    this._isMounted = false;
     this.camera = React.createRef();
     this.imageProcessorTimeout = null;
   }
@@ -69,6 +69,7 @@ class DocumentScanner extends PureComponent {
     if (this.state.didLoadInitialLayout && !this.state.isMultiTasking) {
       this.turnOnCamera();
     }
+    this._isMounted = true;
   }
 
   componentDidUpdate() {
@@ -96,6 +97,7 @@ class DocumentScanner extends PureComponent {
 
   componentWillUnmount() {
     clearTimeout(this.imageProcessorTimeout);
+    this._isMounted = false;
   }
 
   // Called after the device gets setup. This lets you know some platform specifics

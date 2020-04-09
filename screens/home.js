@@ -3,20 +3,16 @@ import { StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
 import HomeTabs from './homeTabs.js';
 import { createStackNavigator } from '@react-navigation/stack';
 import Icon from 'react-native-vector-icons/Octicons';
-
-
-
-// Used to make element sizes more consistent across screen sizes.
-const screenWidth = Math.round(Dimensions.get('window').width);
-const rem = (screenWidth / 380);
+import { colors } from '../components/colors.js';
 
 const Stack = createStackNavigator();
 
 export default function home({ navigation }) {
 
-  hamburgerPressed = () => {
+  const hamburgerPressed = () => {
     navigation.openDrawer();
   }
+
   return (
     <Stack.Navigator>
       <Stack.Screen
@@ -26,25 +22,22 @@ export default function home({ navigation }) {
           // headerShown: false,
           title: 'CEManager',
           headerStyle: {
-            backgroundColor: '#0055a5',
-            height: 76 * rem,
+            backgroundColor: 'white',
+            height: 34 * hrem,
             shadowColor: 'transparent',
             shadowRadius: 0,
             shadowOffset: {
               height: 0,
             }
           },
-          headerTintColor: 'rgba(255,255,255,0)',
           headerTitleStyle: {
-            flex: 1,
-            top: 0,
-            color: 'white',
-            fontSize: 25 * rem,
+            color: colors.mainBlue,
+            fontSize: 23 * rem,
             fontWeight: '400',
             textAlign: 'left',
           },
           headerLeft: () => (
-            <TouchableOpacity onPress={this.hamburgerPressed}>
+            <TouchableOpacity onPress={hamburgerPressed}>
               <Icon name={'three-bars'}
                 style={styles.hamburgerButton}
               />
@@ -56,10 +49,16 @@ export default function home({ navigation }) {
   );
 }
 
+// Used to make element sizes more consistent across screen sizes.
+const screenWidth = Math.round(Dimensions.get('window').width);
+const screenHeight = Math.round(Dimensions.get('window').height);
+const rem = (screenWidth / 380);
+const hrem = (screenHeight / 380);
+
 const styles = StyleSheet.create({
   hamburgerButton: {
     flex: 1,
-    color: 'white',
+    color: colors.mainBlue,
     left: 14 * rem,
     fontSize: 28 * rem,
   },
