@@ -24,9 +24,9 @@ export default function homeTabs() {
                     fontWeight: '500',
                 },
                 indicatorStyle: {
-                    backgroundColor: colors.mainBlue,
+                    backgroundColor: colors.blue800,
                 },
-                activeTintColor: colors.mainBlue,
+                activeTintColor: colors.blue800,
                 style: {
                     backgroundColor: 'white',
                 },
@@ -41,7 +41,7 @@ export default function homeTabs() {
                         <SimpleLineIcons
                             name='home'
                             size={26 * rem}
-                            color={colors.mainBlue}
+                            color={colors.blue800}
                         />
                     ),
                 }}
@@ -55,7 +55,7 @@ export default function homeTabs() {
                         <Entypo
                             name='documents'
                             size={26 * rem}
-                            color={colors.mainBlue}
+                            color={colors.blue800}
                         />
                     ),
                 }}
@@ -69,7 +69,7 @@ export default function homeTabs() {
                         <MaterialCommunityIcons
                             name='progress-check'
                             size={26 * rem}
-                            color={colors.mainBlue}
+                            color={colors.blue800}
                         />
                     ),
                 }}

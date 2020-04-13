@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity, TouchableHighlight } from 'react-native';
 import AntDesign from 'react-native-vector-icons/AntDesign';
-import Entypo from 'react-native-vector-icons/Entypo';
 import { colors } from '../components/colors.js';
 
 export default function licenseCard({ navigation }) {
@@ -26,47 +25,51 @@ export default function licenseCard({ navigation }) {
         >
             <>
                 <View style={styles.topContainer}>
-                    <TouchableOpacity style={styles.thumbnailContainer}>
-                        <AntDesign name="camerao" size={40} style={styles.thumbnailIcon} />
-                    </TouchableOpacity>
                     <View style={styles.infoContainer}>
                         <View style={styles.titleContainer}>
-                            <AntDesign name="idcard" size={20} style={styles.icon} />
+                            <AntDesign name="idcard" size={20 * rem} style={styles.icon} />
                             <Text style={styles.titleText}>RN License (TX)</Text>
                         </View>
                         <View style={styles.idNumContainer}>
                             <Text style={styles.idNum}>#589304502</Text>
                         </View>
                         <View style={styles.expirationContainer}>
-                            <AntDesign name="calendar" size={20} style={styles.icon} />
+                            <AntDesign name="calendar" size={20 * rem} style={styles.icon} />
                             <Text style={styles.expirationText}>Exp: March 30, 2020</Text>
                         </View>
                         <View style={styles.status}>
-                            <Text style={styles.statusText}>Expired</Text>
+                            <Text style={styles.statusText}>Up to date</Text>
                         </View>
                     </View>
+                    <TouchableOpacity style={styles.thumbnailContainer}>
+                        <AntDesign name="camerao" size={32 * rem} style={styles.thumbnailIcon} />
+                    </TouchableOpacity>
                 </View>
-                <View style={styles.middleContainer}>
-                    <View style={styles.ceContainer}>
-                        <Entypo name="documents" size={24} style={styles.ceIcon} />
-                        <View style={styles.progressBar}>
-                            <View style={styles.progressBarFill}></View>
-                            <Text style={styles.ceText}>25/30 CE</Text>
-                        </View>
+                <View style={styles.ceContainer}>
+                    <AntDesign name="copy1" size={20 * rem} style={styles.ceIcon} />
+                    <View style={styles.progressBar}>
+                        <View style={styles.progressBarFill}></View>
+                        <Text style={styles.ceText}>25/30 CE</Text>
                     </View>
                 </View>
-                <View style={styles.bottomContainer}>
-                    <View style={styles.cardButtonsContainer}>
-                        <TouchableOpacity style={styles.addCEButton}
-                            onPress={addCE}>
-                            <Text style={styles.bottomButtonText}>Add CE</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity style={styles.submitButton}
+                <View style={styles.insetDivider}>
+                    <View style={styles.leftInset} />
+                    <View style={styles.rightInset} />
+                </View>
+                <View style={styles.cardButtonsContainer}>
+                    {/* <TouchableOpacity style={styles.submitButton}
                             onPress={submitToState}>
-                            <Text style={styles.bottomButtonText}>Submit to State</Text>
-                        </TouchableOpacity>
-                    </View>
+                            <Text style={styles.submitButtonText}>Submit to State</Text>
+                        </TouchableOpacity> */}
+                    <TouchableOpacity style={styles.addCEButton}
+                        onPress={addCE}>
+                        <AntDesign
+                            name='addfile'
+                            size={20 * rem}
+                            color={colors.blue800}
+                        />
+                        <Text style={styles.addCEText}> Add CE</Text>
+                    </TouchableOpacity>
                 </View>
             </>
         </TouchableHighlight>
@@ -80,28 +83,15 @@ const rem = (screenWidth / 380);
 const progressBarWidth = (screenWidth - (160 * rem)) / 12;
 
 const styles = StyleSheet.create({
-    emptyContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: colors.backgroundGrey,
-    },
-    emptyText: {
-        color: 'grey',
-        fontSize: 16 * rem,
-        textAlign: 'center',
-        margin: 30 * rem,
-    },
     container: {
-        flex: 1,
         alignItems: 'center',
-        backgroundColor: colors.backgroundGrey,
+        backgroundColor: colors.grey200,
     },
     cardContainer: {
+        flexShrink: 1,
         backgroundColor: 'white',
-        borderRadius: 30 * rem,
+        borderRadius: 10 * rem,
         width: screenWidth - (32 * rem),
-        aspectRatio: 1.5,
         shadowColor: "#000",
         shadowOffset: {
             width: 0,
@@ -110,116 +100,107 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.25,
         shadowRadius: 3.84,
         elevation: 5,
+        padding: 18 * rem,
     },
     topContainer: {
-        flex: 5,
+        flexShrink: 1,
         flexDirection: 'row',
+        borderRadius: 10 * rem,
     },
     thumbnailContainer: {
-        left: 12 * rem,
-        top: 12 * rem,
+        position: 'absolute',
+        right: 0,
+        top: 0,
         width: 75 * rem,
         aspectRatio: 1,
-        borderRadius: 20 * rem,
-        borderColor: colors.mainBlue,
-        borderWidth: 2 * rem,
-        backgroundColor: colors.backgroundGrey,
+        borderRadius: 10 * rem,
+        backgroundColor: colors.grey200,
         alignItems: 'center',
         justifyContent: 'center',
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.18,
+        shadowRadius: 1.00,
+
+        elevation: 1,
     },
     thumbnailIcon: {
-        height: 40,
-        width: 40,
-        color: colors.mainBlue,
+        height: 32 * rem,
+        width: 32 * rem,
+        color: colors.blue300,
     },
     infoContainer: {
-        flex: 1,
-        width: screenWidth - (160 * rem),
-        aspectRatio: 2,
-        left: (24) * rem,
-        top: 12 * rem,
+        flexShrink: 1,
     },
     titleContainer: {
         flexDirection: 'row',
-        top: 0,
-        left: 0,
-        width: screenWidth - (160 * rem),
-        aspectRatio: 8,
         alignItems: 'center',
     },
     icon: {
-        paddingRight: 6 * rem,
-        marginRight: 6 * rem,
-        height: 20,
-        width: 22,
-        color: colors.mainBlue,
+        marginRight: 18 * rem,
+        height: 20 * rem,
+        width: 20 * rem,
+        color: colors.blue800,
     },
     titleText: {
         position: 'relative',
-        fontSize: 20 * rem,
-        color: colors.darkGrey,
+        fontSize: 24 * rem,
+        color: colors.grey900,
         fontWeight: '500',
         height: '100%',
     },
     idNumContainer: {
-        left: 32 * rem,
-        width: screenWidth - (190 * rem),
-        aspectRatio: 9,
+        left: 38 * rem,
     },
     idNum: {
-        fontSize: 16 * rem,
+        fontSize: 14 * rem,
         fontWeight: '200',
+        letterSpacing: 0.6 * rem,
         color: 'rgba(108,111,114,1)',
     },
     expirationContainer: {
+        paddingTop: 8 * rem,
         flexDirection: 'row',
-        top: 0,
-        left: 0,
-        width: screenWidth - (160 * rem),
-        aspectRatio: 8,
         alignItems: 'center',
     },
     expirationText: {
         position: 'relative',
         fontSize: 16 * rem,
-        color: colors.darkGrey,
+        color: colors.grey900,
         fontWeight: '300',
     },
     status: {
-        left: 32 * rem,
-        paddingLeft: 20 * rem,
-        paddingRight: 20 * rem,
-        height: 24 * rem,
+        flexShrink: 1,
+        left: 38 * rem,
         borderRadius: (24 * rem) / 2,
-        backgroundColor: 'rgba(255,224,225,1)',
+        backgroundColor: colors.green200,
         justifyContent: 'center',
-        alignItems: 'center',
         alignSelf: 'flex-start',
     },
     statusText: {
+        paddingLeft: 12 * rem,
+        paddingRight: 12 * rem,
+        marginTop: 4 * rem,
+        marginBottom: 4 * rem,
         fontSize: 16 * rem,
-        color: 'rgba(123,53,54,1)',
+        color: colors.green900,
         fontWeight: '500',
     },
-    middleContainer: {
-        flex: 1,
-    },
     ceContainer: {
-        height: '100%',
+        paddingTop: 12 * rem,
+        paddingBottom: 12 * rem,
+        flexShrink: 1,
         flexDirection: 'row',
-        left: 12 * rem,
-        width: screenWidth - (160 * rem),
-        aspectRatio: 8,
-        alignItems: 'center',
-        paddingBottom: 16 * rem,
     },
     ceIcon: {
-        height: 26,
-        marginRight: 6 * rem,
-        color: colors.green,
+        height: 20 * rem,
+        width: 20 * rem,
+        color: colors.blue800,
     },
     ceText: {
-        position: 'relative',
         fontSize: 16 * rem,
         color: 'white',
         fontWeight: '500',
@@ -229,8 +210,9 @@ const styles = StyleSheet.create({
         lineHeight: 18 * rem,
     },
     progressBar: {
-        width: screenWidth - (100 * rem),
-        borderColor: colors.green,
+        marginLeft: 18 * rem, 
+        width: screenWidth - (112 * rem),
+        borderColor: colors.blue800,
         borderRadius: progressBarWidth,
         borderWidth: 2 * rem,
         height: 22 * rem,
@@ -245,67 +227,67 @@ const styles = StyleSheet.create({
         borderBottomLeftRadius: progressBarWidth,
         borderWidth: 2 * rem,
         height: 22 * rem,
-        backgroundColor: colors.green,
+        backgroundColor: colors.blue800,
     },
-    bottomContainer: {
-        flex: 3,
-        borderBottomRightRadius: 8,
-        borderBottomLeftRadius: 8,
+    insetDivider: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        height: 2 * rem,
+        width: '100%',
+        backgroundColor: colors.grey200,
+    },
+    leftInset: {
+        height: 2 * rem,
+        width: 18 * rem,
+        backgroundColor: 'white',
+    },
+    rightInset: {
+        height: 2 * rem,
+        width: 18 * rem,
+        backgroundColor: 'white',
     },
     cardButtonsContainer: {
-        top: 0,
-        position: 'absolute',
-        flex: 1,
+        flexGrow: 1,
         flexDirection: 'row',
-        height: 70 * rem,
         width: '100%',
         alignItems: 'center',
+        borderRadius: 10 * rem,
         justifyContent: 'center',
+        paddingTop: 12 * rem,
     },
     addCEButton: {
-        width: 116 * rem,
-        aspectRatio: 1,
-        maxHeight: 50 * rem,
-        backgroundColor: colors.mainBlue,
+        padding: 18 * rem,
+        paddingTop: 12 * rem,
+        paddingBottom: 12 * rem,
+        flexDirection: 'row',
         borderRadius: 10 * rem,
-        marginLeft: 10,
-        marginRight: 10,
+        borderWidth: 2 * rem,
+        borderColor: colors.blue800,
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 1,
-        },
-        shadowOpacity: 0.20,
-        shadowRadius: 1.41,
-        elevation: 2,
+        backgroundColor: 'white',
+    },
+    addCEText: {
+        color: colors.blue800,
+        fontSize: 20 * rem,
+        fontWeight: '500',
     },
     submitButton: {
+        flexDirection: 'row',
         width: 176 * rem,
         aspectRatio: 1,
         maxHeight: 50 * rem,
-        backgroundColor: colors.mainBlue,
+        backgroundColor: colors.blue800,
         borderRadius: 10 * rem,
-        marginLeft: 10,
-        marginRight: 10,
+        marginLeft: 12 * rem,
+        marginRight: 12 * rem,
+        top: 12 * rem,
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 1,
-        },
-        shadowOpacity: 0.20,
-        shadowRadius: 1.41,
-        elevation: 2,
     },
-    bottomButtonText: {
+    submitButtonText: {
         color: 'white',
-        fontSize: 18 * rem,
+        fontSize: 19 * rem,
         fontWeight: '500',
-        textShadowColor: 'rgba(20, 20, 50, 0.3)',
-        textShadowOffset: { width: -1, height: 1 },
-        textShadowRadius: 2 * rem,
     },
 });

@@ -20,7 +20,7 @@ const styles = StyleSheet.create({
         paddingTop: 50*rem,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: colors.mainBlue,
+        backgroundColor: colors.blue800,
       },
       header: {
           fontSize: 30,

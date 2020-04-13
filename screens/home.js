@@ -31,7 +31,7 @@ export default function home({ navigation }) {
             }
           },
           headerTitleStyle: {
-            color: colors.mainBlue,
+            color: colors.blue800,
             fontSize: 23 * rem,
             fontWeight: '400',
             textAlign: 'left',
@@ -58,7 +58,7 @@ const hrem = (screenHeight / 380);
 const styles = StyleSheet.create({
   hamburgerButton: {
     flex: 1,
-    color: colors.mainBlue,
+    color: colors.blue800,
     left: 14 * rem,
     fontSize: 28 * rem,
   },

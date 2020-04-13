@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
     paddingTop: 50*rem,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.mainBlue,
+    backgroundColor: colors.blue800,
   },
   bgDesignTop: {
     backgroundColor: "rgba(255, 255, 255, 0.3)",
@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
     marginTop: 20*rem,
   },
   signUpText: {
-    color: colors.mainBlue,
+    color: colors.blue800,
     fontSize: 20*rem,
     textAlign: 'center'
   },

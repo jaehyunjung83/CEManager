@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
-import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import AddNew from '../images/addNew.svg';
+import AntDesign from 'react-native-vector-icons/AntDesign';
 import LicenseCard from '../components/licenseCard.js';
 import { colors } from '../components/colors.js';
 
@@ -47,9 +47,9 @@ export default function homepage({ navigation }) {
                         <View style={styles.addNewButtonContainer}>
                             <TouchableOpacity
                                 onPress={addNew}>
-                                <MaterialCommunityIcons
+                                <AntDesign
                                     name='plus'
-                                    size={40 * rem}
+                                    size={32 * rem}
                                     color={'white'}
                                 />
                             </TouchableOpacity>
@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: colors.backgroundGrey,
+        backgroundColor: colors.grey200,
     },
     emptyText: {
         color: 'grey',
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingTop: 30 * rem,
         alignItems: 'center',
-        backgroundColor: colors.backgroundGrey,
+        backgroundColor: colors.grey200,
     },
     addNewButtonContainer: {
         position: 'absolute',
@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
         width: 60 * rem,
         aspectRatio: 1,
         borderRadius: (60 * rem) / 2,
-        backgroundColor: colors.mainBlue,
+        backgroundColor: colors.blue800,
         shadowColor: "#000",
         shadowOffset: {
             width: 0,

@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
     width: 60 * rem,
     aspectRatio: 1,
     borderRadius: (60 * rem) / 2,
-    backgroundColor: colors.mainBlue,
+    backgroundColor: colors.blue800,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,

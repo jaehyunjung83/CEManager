@@ -13,6 +13,15 @@ import Scanner from './screens/scanner.js';
 import ScannedView from './screens/scannedView.js';
 import addNew from './screens/addNew.js';
 import SplashScreen from './screens/splashScreen.js'; // TODO: Add loading splash screen on startup
+
+
+import { YellowBox } from 'react-native';
+
+YellowBox.ignoreWarnings([
+  'Non-serializable values were found in the navigation state',
+  'VirtualizedLists should never be nested inside plain ScrollViews',
+]);
+
 // TODO: Add Forgot Password button
 
 // Initialize Firebase
@@ -90,11 +99,11 @@ export default class App extends React.Component {
                   title: "Add New",
                   headerBackTitle: "Home",
                   headerBackTitleStyle: {
-                    color: colors.mainBlue,
+                    color: colors.blue800,
                   },
-                  headerTintColor: colors.mainBlue,
+                  headerTintColor: colors.blue800,
                   headerTitleStyle: {
-                    color: colors.mainBlue,
+                    color: colors.blue800,
                     fontSize: 23 * rem,
                     fontWeight: '400',
                     textAlign: 'left',
@@ -133,9 +142,7 @@ export default class App extends React.Component {
 
 // Used to make element sizes more consistent across screen sizes.
 const screenWidth = Math.round(Dimensions.get('window').width);
-const screenHeight = Math.round(Dimensions.get('window').height);
 const rem = (screenWidth / 380);
-const hrem = (screenHeight / 380);
 
 // SHELVED UNTIL BUG IS FIXED. https://github.com/react-navigation/react-navigation/issues/6820
 // TODO: Check if this is working in release mode.
