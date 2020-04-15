@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Dimensions, TextInput, FlatList, Text } from 'react-native';
+import { View, StyleSheet, Dimensions, TextInput, FlatList, Text, Modal } from 'react-native';
 import { colors } from './colors.js';
 import { TouchableHighlight } from 'react-native-gesture-handler';
 
@@ -8,9 +8,11 @@ import { TouchableHighlight } from 'react-native-gesture-handler';
 // placeholder (string): Renders input string as placeholder of TextInput.
 // maxSuggestions (number): Maximum number of suggestions rendered. Recommended 4-10.
 // height (number): Should be the height given to parent container of this component. Used as height of each suggestion list item. Also affects autocomplete suggestion container.
+// scrollToCallBack (function): Workaround to scroll this field up to avoid keyboard. KeyboardAvoidingView was causing problems.
+// setParentState (function): If you need to keep track of input state in parent state.
 export default function autoCompleteInput(props) {
 
-    const [textInputVal, setTextInputVal] = useState("");
+    const [textInputVal, setTextInputVal] = useState(props.inputVal);
     const [suggestions, setSuggestions] = useState([]);
 
 
@@ -19,15 +21,23 @@ export default function autoCompleteInput(props) {
         input = input.toLowerCase();
         if (input.length) {
             let suggestionsArr = [];
-            for(index in props.data) {
-                if(props.data[index].toLowerCase().includes(input)) {
+            for (index in props.data) {
+                if (props.data[index].toLowerCase().includes(input)) {
                     suggestionsArr.push(props.data[index]);
                 }
-                if(suggestionsArr.length === props.maxSuggestions) {
+                if (suggestionsArr.length === props.maxSuggestions) {
                     break;
                 }
             }
-            setSuggestions(suggestionsArr.sort());
+            setSuggestions(suggestionsArr.map((val, index) =>
+                <TouchableHighlight
+                    key={index}
+                    style={styles.listItemContainer}
+                    onPress={() => suggestionSelected(val)}
+                    underlayColor={colors.underlayColor}
+                >
+                    <Text style={styles.itemText}>{val}</Text>
+                </TouchableHighlight>));
         }
         else {
             setSuggestions([]);
@@ -37,6 +47,7 @@ export default function autoCompleteInput(props) {
     suggestionSelected = (item) => {
         setTextInputVal(item);
         setSuggestions([]);
+        props.setParentState(item);
     }
 
     // Styles are inside of function component in order to access props.
@@ -50,24 +61,35 @@ export default function autoCompleteInput(props) {
             padding: 18 * rem,
             color: colors.grey900,
         },
-        flatListContainer: {
+        listContainer: {
             position: 'absolute',
-            marginTop: props.height,
+            marginTop: props.height + (28 * rem),
             width: '100%',
             maxHeight: props.height * props.maxSuggestions,
-            backgroundColor: 'white',
             borderRadius: 10 * rem,
+            borderWidth: 2 * rem,
+            borderColor: colors.grey300,
+            backgroundColor: 'white',
         },
         listItemContainer: {
             backgroundColor: 'white',
             width: '100%',
+            marginTop: -2 * rem,
             height: props.height,
             padding: 12 * rem,
             paddingBottom: 0,
+            borderRadius: 10 * rem,
+            borderWidth: 2 * rem,
+            borderColor: 'rgba(0,0,0,0)',
         },
         itemText: {
             fontSize: 16 * rem,
             color: colors.grey900,
+        },
+        autoCompleteOptions: {
+            fontSize: 16 * rem,
+            color: colors.grey900,
+            backgroundColor: 'pink',
         },
     });
 
@@ -79,25 +101,13 @@ export default function autoCompleteInput(props) {
                 placeholderTextColor={colors.grey400}
                 value={textInputVal}
                 onChangeText={onTextChanged}
+                onFocus={() => props.scrollToCallBack()}
             />
             {suggestions.length ? (
-                <View style={styles.flatListContainer}>
-                    <FlatList
-                        data={suggestions}
-                        keyExtractor={item => item}
-                        renderItem={({ item }) => (
-                            <TouchableHighlight
-                                style={styles.listItemContainer}
-                                onPress={() => suggestionSelected(item)}
-                                underlayColor={colors.underlayColor}
-                            >
-                                <Text style={styles.itemText}>{item}</Text>
-                            </TouchableHighlight>
-                        )}
-                    />
+                <View style={styles.listContainer}>
+                    <>{suggestions}</>
                 </View>
             ) : (null)}
-
         </>
     )
 }

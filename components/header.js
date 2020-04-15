@@ -26,6 +26,5 @@ const styles = StyleSheet.create({
         fontSize: 20 * rem,
         color: colors.grey900,
         fontWeight: '500',
-
     },
 });
