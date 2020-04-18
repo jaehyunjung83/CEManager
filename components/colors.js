@@ -18,8 +18,9 @@ export const colors = {
     blue400: 'rgba(94, 151, 217, 1)',
     blue800: 'rgba(32,80,135,1)',
 
-    red200: 'rgba(123,53,54,1)',
-    red900: 'rgba(255,224,225,1)',
+    red900: 'rgba(123,53,54,1)',
+    red500: 'rgba(171, 54, 56, 1)',
+    red200: 'rgba(255,224,225,1)',
 
     underlayColor: 'rgba(77,77,77,0.1)',
 }

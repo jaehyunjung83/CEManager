@@ -13,7 +13,8 @@ import Scanner from './screens/scanner.js';
 import ScannedView from './screens/scannedView.js';
 import addNew from './screens/addNew.js';
 import SplashScreen from './screens/splashScreen.js'; // TODO: Add loading splash screen on startup
-
+import { enableScreens } from 'react-native-screens';
+enableScreens();
 
 import { YellowBox } from 'react-native';
 
@@ -91,9 +92,10 @@ export default class App extends React.Component {
                 component={ScannedView}
                 options={{
                   headerShown: false,
+                  gestureEnabled: false,
                 }} />
               <Stack.Screen
-                name="addNew"
+                name="AddNew"
                 component={addNew}
                 options={{
                   title: "Add New",

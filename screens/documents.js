@@ -11,7 +11,10 @@ const rem = (screenWidth / 380);
 export default function documents({ navigation }) {
 
   let openScannerHandler = () => {
-    navigation.navigate("Scanner");
+    navigation.navigate("Scanner", {
+      fromThisScreen: 'Documents',
+      initialFilterId: 2, // Black & white
+    });
   }
 
   return (

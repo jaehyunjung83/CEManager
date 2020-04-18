@@ -18,6 +18,7 @@ export default function autoCompleteInput(props) {
 
     onTextChanged = (input) => {
         setTextInputVal(input);
+        props.setParentState(input);
         input = input.toLowerCase();
         if (input.length) {
             let suggestionsArr = [];
@@ -102,6 +103,7 @@ export default function autoCompleteInput(props) {
                 value={textInputVal}
                 onChangeText={onTextChanged}
                 onFocus={() => props.scrollToCallBack()}
+                onBlur={() => setSuggestions([])}
             />
             {suggestions.length ? (
                 <View style={styles.listContainer}>

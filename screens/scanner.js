@@ -4,11 +4,24 @@ import { ActivityIndicator, Animated, Dimensions, Platform, SafeAreaView, Status
 import Icon from 'react-native-vector-icons/Ionicons';
 import Scanner, { Filters, RectangleOverlay } from 'react-native-rectangle-scanner';
 import ScannerFilters from '../Filters.js';
+import { colors } from '../components/colors.js';
 
 // TODO: Handle where request is from. It will change how the image is saved.
 // Current known locations include: homepage, addNew, documents, and whereever certs are.
-export default function ({ navigation }) {
-  return <DocumentScanner navigation={navigation} />;
+export default function (props) {
+  if (props.route.params.initialFilterId == undefined) {
+    return <DocumentScanner
+      navigation={props.navigation}
+      fromThisScreen={props.route.params.fromThisScreen}
+    />;
+  }
+  else {
+    return <DocumentScanner
+      navigation={props.navigation}
+      initialFilterId={props.route.params.initialFilterId}
+      fromThisScreen={props.route.params.fromThisScreen}
+    />;
+  }
 }
 
 class DocumentScanner extends PureComponent {
@@ -34,7 +47,7 @@ class DocumentScanner extends PureComponent {
     onPictureProcessed: ({ croppedImage, initialImage }) => { },
     onFilterIdChange: () => { },
     hideSkip: true,
-    initialFilterId: Filters.GREYSCALE_FILTER.id,
+    initialFilterId: Filters.BLACK_AND_WHITE_FILTER.id,
   }
 
   constructor(props) {
@@ -68,6 +81,10 @@ class DocumentScanner extends PureComponent {
   componentDidMount() {
     if (this.state.didLoadInitialLayout && !this.state.isMultiTasking) {
       this.turnOnCamera();
+      // What I added.
+      this.setState({
+        loadingCamera: false,
+      })
     }
     this._isMounted = true;
   }
@@ -172,7 +189,6 @@ class DocumentScanner extends PureComponent {
 
   // Closes camera and returns to homepage.
   onCancel = () => {
-    this.turnOffCamera();
     this.props.onCancel();
     this.props.navigation.goBack();
   }
@@ -208,7 +224,10 @@ class DocumentScanner extends PureComponent {
       processingImage: false,
       showScannerView: this.props.cameraIsOn || false,
     });
-    this.props.navigation.navigate("ScannedView", { image: event.croppedImage });
+    this.props.navigation.navigate("ScannedView", {
+      image: event.croppedImage,
+      fromThisScreen: this.props.fromThisScreen,
+    });
   }
 
   // Flashes the screen on capture
@@ -240,7 +259,7 @@ class DocumentScanner extends PureComponent {
     if (!this.state.showScannerView) {
       this.setState({
         showScannerView: true,
-        loadingCamera: true,
+        loadingCamera: false, // This used to be true, but caused an incorrect loading message when it couldn't detect the flashlight.
       });
     }
   }
@@ -449,9 +468,10 @@ class DocumentScanner extends PureComponent {
           <RectangleOverlay
             detectedRectangle={this.state.detectedRectangle}
             previewRatio={previewSize}
-            backgroundColor="rgba(255,181,6, 0.2)"
-            borderColor="rgb(255,181,6)"
+            backgroundColor='rgba(32,80,135,0.2)'
+            borderColor={colors.blue800}
             borderWidth={4}
+            detectedBorderColor={colors.blue200}
           // == These let you auto capture and change the overlay style on detection ==
           // detectedBackgroundColor="rgba(255,181,6, 0.3)"
           // detectedBorderWidth={6}
@@ -471,7 +491,7 @@ class DocumentScanner extends PureComponent {
             enableTorch={this.state.flashEnabled}
             filterId={this.state.filterId}
             ref={this.camera}
-            capturedQuality={0.6}
+            capturedQuality={0.8}
             onRectangleDetected={({ detectedRectangle }) => this.setState({ detectedRectangle })}
             onDeviceSetup={this.onDeviceSetup}
             onTorchChanged={({ enabled }) => this.setState({ flashEnabled: enabled })}
@@ -683,78 +703,3 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 });
-// import React, { Component, useRef } from "react"
-// import { View, Image, StyleSheet, Animated } from "react-native"
-
-// import Scanner, {Filters} from "react-native-rectangle-scanner"
-
-// export default class DocumentScanner extends Component {
-//   constructor(props) {
-//     super(props);
-//     this.state = {
-//       flashEnabled: false,
-//       showScannerView: false,
-//       didLoadInitialLayout: false,
-//       filterId: props.initialFilterId || Filters.PLATFORM_DEFAULT_FILTER_ID,
-//       detectedRectangle: false,
-//       isMultiTasking: false,
-//       loadingCamera: true,
-//       processingImage: false,
-//       takingPicture: false,
-//       overlayFlashOpacity: new Animated.Value(0),
-//       device: {
-//         initialized: false,
-//         hasCamera: false,
-//         permissionToUseCamera: false,
-//         flashIsAvailable: false,
-//         previewHeightPercent: 1,
-//         previewWidthPercent: 1,
-//       },
-//       image: 'false',
-//     };
-
-//     this.camera = React.createRef();
-//     this.imageProcessorTimeout = null;
-//   }
-
-//   handleOnPictureProcessed = ({ croppedImage, initialImage }) => {
-//     // console.log(croppedImage);
-//     this.setState({
-//       image: croppedImage,
-//     })
-//     console.log(this.state.image)
-//     // this.props.doSomethingWithCroppedImagePath(croppedImage);
-//     // this.props.doSomethingWithOriginalImagePath(initialImage);
-//   }
-
-//   onCapture = () => {
-//     this.camera.current.capture();
-//   }
-
-//   render() {
-//     return (
-//       <View style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0)', position: 'relative' }}>
-//         <Scanner
-//           onPictureProcessed={this.handleOnPictureProcessed}
-//           ref={this.camera}
-//           style={{ flex: 1 }}
-//           onTouchEnd={this.onCapture}
-//         />
-//         <Image style={{width: 500, height: 200, resizeMode: 'contain' }} 
-//         source={{ uri: this.state.image }}/>
-//       </View>
-//     );
-//   }
-// }
-
-// const styles = StyleSheet.create({
-//   takePicBtn: {
-//     // flex: 1,
-//     width: 200,
-//     height: 45,
-//     borderRadius: 25,
-//     backgroundColor: 'white',
-//     justifyContent: 'center',
-//     marginTop: 20,
-//   },
-// });

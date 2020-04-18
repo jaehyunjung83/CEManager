@@ -10,7 +10,7 @@ export default function homepage({ navigation }) {
     const [isEmpty, setIsEmpty] = useState(false);
 
     let addNew = () => {
-        navigation.navigate("addNew");
+        navigation.navigate("AddNew");
     }
 
     let addCE = () => {
