@@ -1,7 +1,7 @@
-import firebase from 'firebase';
+import auth from '@react-native-firebase/auth';
 
 export default function logout({ navigation, route }) {
-    firebase.auth().signOut();
-    route.params.setParentState({ isLoggedIn: false });
+    auth().signOut();
+    // route.params.setParentState({ isLoggedIn: false });
     return (null);
 }

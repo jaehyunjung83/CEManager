@@ -1,26 +1,29 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import { Text, View, Image, StyleSheet, TouchableOpacity, Dimensions, Modal, TouchableWithoutFeedback } from 'react-native';
 import { colors } from '../components/colors.js';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
-import * as firebase from 'firebase';
-
+import auth from '@react-native-firebase/auth';
+import storage from '@react-native-firebase/storage';
+import firestore from '@react-native-firebase/firestore';
 
 export default function scannedView(props) {
 
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [errorUploading, setErrorUploading] = useState(false);
 
     let reScan = () => {
         props.navigation.navigate("Scanner");
     }
 
-    let uploadToFirebase = async () => {
+    let uploadToFirebaseAndCreateThumbnail = async () => {
         setIsModalVisible(true);
+        setIsLoading(true);
         const key = uuidv4();
-        const userID = firebase.auth().currentUser.uid;
+        const userID = auth().currentUser.uid;
         let fileName = `${key}.jpeg`;
         let imageURI = props.route.params.image;
         const blob = await new Promise((resolve, reject) => {
@@ -33,19 +36,21 @@ export default function scannedView(props) {
             xhr.send(null);
         });
 
-        const uploadRef = firebase.storage().ref().child(`userImages/${userID}/${fileName}`).put(blob);
+        const uploadRef = storage().ref().child(`userImages/${userID}/${fileName}`);
+        const uploading = storage().ref().child(`userImages/${userID}/${fileName}`).put(blob);
 
-        if (firebase.auth().currentUser) {
-            uploadRef.on(
-                firebase.storage.TaskEvent.STATE_CHANGED,
+        if (auth().currentUser) {
+            uploading.on(
+                storage.TaskEvent.STATE_CHANGED,
                 snapshot => {
                     setIsLoading(true);
-                    if (snapshot.state === firebase.storage.TaskState.SUCCESS) {
-                        // console.log("Successfully uploaded image");
+                    if (snapshot.state === storage.TaskState.SUCCESS) {
+                        console.log("Successfully uploaded image");
                     }
                 },
                 error => {
                     setIsLoading(false);
+                    setIsProcessing(false);
                     console.log("Error occured.");
                     switch (error.code) {
                         case 'storage/unauthorized':
@@ -64,7 +69,7 @@ export default function scannedView(props) {
                     }
                 },
                 () => {
-                    uploadRef.snapshot.ref.getDownloadURL().then(async (downloadURL) => {
+                    uploading.snapshot.ref.getDownloadURL().then(async (downloadURL) => {
                         setIsLoading(false);
                         setIsProcessing(true);
                         // console.log('File available at', downloadURL);
@@ -97,17 +102,62 @@ export default function scannedView(props) {
                         })
                         let data = await response.text();
                         let Obj = JSON.parse(data);
-                        setIsProcessing(false);
-                        props.navigation.navigate(props.route.params.fromThisScreen, {
-                            thumbnailURL: Obj.thumbnailURL,
-                            photoURL: downloadURL,
-                        });
+                        // TODO: Modify this to handle CEs as well. Currently only updates database for licenses.
+                        // TODO: Delete old photos.
+                        if (typeof props.route?.params?.licenseId !== 'undefined') {
+                            console.log("Updating license");
+                            // License Id was passed; license already exists, update database with thumbnail and photo URLs.
+                            let uid = auth().currentUser.uid;
+                            let db = firestore();
+
+                            db.collection('users').doc(uid).collection('licenses').doc('licenseData').get()
+                            .then((response) => {
+
+                                let data = response.data();
+                                if (data) {
+                                    data[props.route?.params?.licenseId].licensePhoto = downloadURL;
+                                    data[props.route?.params?.licenseId].licenseThumbnail = Obj.thumbnailURL;
+                                    db.collection('users').doc(uid).collection('licenses').doc('licenseData').set(data, {merge: true})
+                                    .then(() => {
+                                        props.navigation.navigate(props.route.params.fromThisScreen);
+                                    })
+                                    .catch((error) => {
+                                        console.log("Updating license failed. " + error);
+                                        setIsModalVisible(true);
+                                        setIsProcessing(false);
+                                        setIsLoading(false);
+                                        setErrorUploading(true);
+                                    })
+                                }
+                            })
+                            .catch((error) => {
+                                console.error("Error getting document: ", error);
+                                setIsModalVisible(true);
+                                setIsProcessing(false);
+                                setIsLoading(false);
+                                setErrorUploading(true);
+                            });
+
+                        }
+                        else {
+                            // Uploading new license/CE/whatever, returning to previous screen.
+                            setIsProcessing(false);
+                            setIsModalVisible(false);
+
+                            props.navigation.navigate(props.route.params.fromThisScreen, {
+                                thumbnailURL: Obj.thumbnailURL,
+                                photoURL: downloadURL,
+                            });
+                        }
                     })
                         .catch((error) => {
                             setIsLoading(false);
                             setIsProcessing(false);
+                            setIsModalVisible(true);
+                            setErrorUploading(true);
+                            uploadRef.delete();
                             // Failed to get downloadURL despite upload succeeding?
-                            console.log("Couldn't get downloadURL. Error: " + error.message)
+                            console.log("Couldn't get downloadURL. Error: " + error.message);
                         });
 
                 }
@@ -116,6 +166,8 @@ export default function scannedView(props) {
         else {
             setIsLoading(false);
             setIsProcessing(false);
+            setIsModalVisible(true);
+            setErrorUploading(true);
             console.log("?? Shouldn't be possible.")
         }
     }
@@ -127,20 +179,29 @@ export default function scannedView(props) {
             <View style={styles.bottomContainer}>
                 <TouchableOpacity
                     onPress={() => {
+                        props.navigation.navigate(props.route.params.fromThisScreen);
+                    }}
+                    style={styles.whiteButtonContainer}
+                >
+                    {/* <AntDesign name="check" size={18 * rem} color={'white'} style={styles.icon} /> */}
+                    <Text style={styles.reScanText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    onPress={() => {
                         reScan();
                     }}
                     style={styles.whiteButtonContainer}
                 >
-                    <AntDesign name="camerao" size={20 * rem} color={colors.blue800} style={styles.icon} />
+                    <AntDesign name="camerao" size={18 * rem} color={colors.blue800} style={styles.icon} />
                     <Text style={styles.reScanText}>Re-Scan</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     onPress={() => {
-                        uploadToFirebase();
+                        uploadToFirebaseAndCreateThumbnail();
                     }}
                     style={styles.blueButtonContainer}
                 >
-                    <AntDesign name="check" size={20 * rem} color={'white'} style={styles.icon} />
+                    <AntDesign name="check" size={18 * rem} color={'white'} style={styles.icon} />
                     <Text style={styles.doneText}>Done</Text>
                 </TouchableOpacity>
             </View>
@@ -150,13 +211,24 @@ export default function scannedView(props) {
                     animationType='fade'
                     transparent={true}
                 >
-                    <TouchableWithoutFeedback onPress={() => setIsModalVisible(false)}>
+                    <TouchableWithoutFeedback>
                         <View style={styles.modalTransparency} />
                     </TouchableWithoutFeedback>
                     <View style={styles.modalPopupContainer}>
-                        
+
                         {isLoading ? (<Text style={styles.statusText}>Uploading. . .</Text>) : (null)}
                         {isProcessing ? (<Text style={styles.statusText}>Processing. . .</Text>) : (null)}
+                        {errorUploading ? (
+                            <>
+                                <Text style={styles.statusText}>Something went wrong. {"\n"}Please try again later</Text>
+                                <TouchableOpacity
+                                    style={styles.okErrorButton}
+                                    onPress={() => {
+                                        setIsModalVisible(false);
+                                        props.navigation.navigate(props.route.params.fromThisScreen);
+                                    }}><Text style={styles.statusText}>OK</Text></TouchableOpacity>
+                            </>
+                        ) : (null)}
                     </View>
                 </Modal>
             ) : (null)}
@@ -171,21 +243,25 @@ const rem = (screenWidth / 380);
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: 'black',
+        backgroundColor: colors.grey200,
     },
     image: {
         flex: 9,
         resizeMode: 'contain',
         width: '100%',
+        margin: 18 * rem,
+        backgroundColor: colors.grey200,
+        alignSelf: 'center',
     },
     bottomContainer: {
-        flex: 1.2,
         width: '100%',
         aspectRatio: 5,
         backgroundColor: 'white',
         flexDirection: 'row',
         alignContent: 'center',
         justifyContent: 'space-between',
+        paddingLeft: 12 * rem,
+        paddingRight: 12 * rem,
     },
     whiteButtonContainer: {
         flexDirection: 'row',
@@ -200,7 +276,6 @@ const styles = StyleSheet.create({
         padding: 12 * rem,
         paddingLeft: 16 * rem,
         paddingRight: 16 * rem,
-        marginLeft: 18 * rem,
     },
     blueButtonContainer: {
         flexDirection: 'row',
@@ -213,21 +288,20 @@ const styles = StyleSheet.create({
         padding: 12 * rem,
         paddingLeft: 16 * rem,
         paddingRight: 16 * rem,
-        marginRight: (18 + 16) * rem,
     },
     icon: {
-        height: 20 * rem,
-        width: 20 * rem,
+        height: 18 * rem,
+        width: 18 * rem,
         marginRight: 6 * rem,
         alignSelf: 'center',
     },
     reScanText: {
-        fontSize: 20 * rem,
+        fontSize: 16 * rem,
         textAlign: 'center',
         color: colors.blue800,
     },
     doneText: {
-        fontSize: 18 * rem,
+        fontSize: 16 * rem,
         textAlign: 'center',
         alignSelf: 'center',
         color: 'white',
@@ -256,5 +330,12 @@ const styles = StyleSheet.create({
         color: colors.blue800,
         textAlign: 'center',
         alignSelf: 'center',
-    }
+    },
+    okErrorButton: {
+        marginTop: 18 * rem,
+        borderWidth: 2 * rem,
+        borderRadius: 10 * rem,
+        borderColor: colors.blue800,
+        padding: 12 * rem,
+    },
 });

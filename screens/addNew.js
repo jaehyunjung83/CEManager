@@ -10,6 +10,10 @@ import { useHeaderHeight } from '@react-navigation/stack';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 import FastImage from 'react-native-fast-image'
+import firestore from '@react-native-firebase/firestore';
+import auth from '@react-native-firebase/auth';
+
+
 
 const FadeInView = (props) => {
     const openAnim = useRef(new Animated.Value(0)).current  // Initial value for opacity: 0
@@ -49,6 +53,7 @@ const FadeInView = (props) => {
 
 
 // TODO: Remember auto generate CE's needed and requirements for specific states.
+// TODO: Refresh license list after adding new one.
 export default function addLicense(props) {
 
     const headerHeight = useHeaderHeight();
@@ -80,12 +85,13 @@ export default function addLicense(props) {
     const [licenseNum, setLicenseNum] = useState("");
     const [licenseExpiration, setLicenseExpiration] = useState("");
     const [expirationErrorMsg, setExpirationErrorMsg] = useState("");
-    const [ceHoursRequired, setCEHoursRequired] = useState("");
+    const [ceHoursRequired, setCEHoursRequired] = useState('');
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [requirements, setRequirements] = useState([]);
     const [textPositionY, setTextPositionY] = useState(0);
     const [licenseThumbnail, setlicenseThumbnail] = useState("");
     const [licensePhoto, setLicensePhoto] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
 
     let selectLicense = () => {
         if (!isLicenseSelected) {
@@ -132,9 +138,9 @@ export default function addLicense(props) {
     }
 
     let addLicense = () => {
+        setIsLoading(true);
         if (isFormComplete()) {
-            // TODO: Add new license to homepage, return to homepage
-
+            const licenseId = uuidv4();
             licenseData = {
                 licenseType: licenseType,
                 otherLicenseType: otherLicenseType,
@@ -144,9 +150,27 @@ export default function addLicense(props) {
                 licensePhoto: licensePhoto,
                 licenseThumbnail: licenseThumbnail,
                 totalCEHours: ceHoursRequired,
+                completedCEHours: 0,
                 requirements: requirements,
+                id: licenseId,
             }
-            console.log(licenseData);
+            let licenseObj = {
+                [licenseId]: licenseData,
+            }
+
+            let uid = auth().currentUser.uid;
+            let db = firestore();
+            db.collection('users').doc(uid).collection('licenses').doc('licenseData').set(licenseObj, {merge: true})
+                .then(() => {
+                    console.log("Document successfully written!");
+                    props.navigation.navigate("Homepage");
+                    // setIsLoading(false);
+                })
+                .catch((error) => {
+                    console.error("Error adding document: ", error);
+                    props.navigation.navigate("Homepage");
+                    // setIsLoading(false);
+                });
         }
     }
 
@@ -203,19 +227,15 @@ export default function addLicense(props) {
     React.useEffect(() => {
         if (typeof props.route.params?.thumbnailURL !== 'undefined') {
             console.log("Setting thumbnail to: " + props.route.params.thumbnailURL);
-            if(typeof props.route.params?.photoURL !== 'undefined') {
+            if (typeof props.route.params?.photoURL !== 'undefined') {
                 setLicensePhoto(props.route.params.photoURL);
             }
             setlicenseThumbnail(props.route.params.thumbnailURL);
         }
-        else {
-            console.log("route updated, no thumbnail");
-            console.log(props.route.params);
-        }
     }, [props.route.params?.thumbnailURL]);
 
     // TODO: Grab these from firebase instead of hardcoding.
-    const licenseTypes = ["Registed Nurse (RN)", "Licensed Vocational Nurse (LVN)", "Other"];
+    const licenseTypes = ["Registered Nurse (RN)", "Licensed Vocational Nurse (LVN)", "Other"];
     const states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'];
 
     return (
@@ -265,9 +285,8 @@ export default function addLicense(props) {
                                             placeholder={'e.g. Physician'}
                                             placeholderTextColor={colors.grey400}
                                             style={styles.licenseNumInput}
-                                            value={otherLicenseType}
                                             onChangeText={setOtherLicenseType}
-                                            maxLength={70}
+                                            maxLength={36}
                                         />
                                     </View>
                                 </View>
@@ -324,10 +343,9 @@ export default function addLicense(props) {
                                         placeholder={'e.g. 589304502'}
                                         placeholderTextColor={colors.grey400}
                                         style={styles.licenseNumInput}
-                                        value={licenseNum}
                                         onChangeText={setLicenseNum}
                                         keyboardType={'numeric'}
-                                        maxLength={40}
+                                        maxLength={15}
                                     />
                                 </View>
                             </View>
@@ -341,10 +359,10 @@ export default function addLicense(props) {
                                         placeholder={'MM/DD/YYYY'}
                                         placeholderTextColor={colors.grey400}
                                         type={'datetime'}
+                                        value={licenseExpiration}
                                         options={{
                                             format: 'MM/DD/YYYY'
                                         }}
-                                        value={licenseExpiration}
                                         onChangeText={text => {
                                             setLicenseExpiration(text);
                                         }}
@@ -458,9 +476,10 @@ export default function addLicense(props) {
                             onPress={() => {
                                 addLicense();
                             }}
+                            disabled={isLoading}
                             style={styles.addNewLicenseButton}
                         >
-                            <Text style={styles.choiceTextSelected}>Add New License</Text>
+                            <Text style={styles.choiceTextSelected}>{isLoading ? ('...') : ('Add New License')}</Text>
                         </TouchableOpacity>
                     </FadeInView>
                 ) : (null)
@@ -609,7 +628,7 @@ const styles = StyleSheet.create({
         width: '100%',
         height: 50 * rem,
         backgroundColor: colors.grey200,
-        alignContent: 'center',
+        alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 18 * rem,
         borderRadius: 10 * rem,
@@ -617,7 +636,7 @@ const styles = StyleSheet.create({
     selectLicenseTypeText: {
         fontSize: 16 * rem,
         color: colors.grey900,
-        paddingLeft: 18 * rem,
+        textAlign: 'left',
     },
     modalTransparency: {
         backgroundColor: 'rgba(0,0,0, 0.30)',
@@ -642,7 +661,6 @@ const styles = StyleSheet.create({
     listItemContainer: {
         paddingLeft: 6 * rem,
         height: 50 * rem,
-        alignContent: 'center',
         justifyContent: 'center',
     },
     otherLicenseType: {
@@ -759,7 +777,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         width: '100%',
         justifyContent: 'space-between',
-        alignContent: 'center',
+        alignItems: 'center',
         marginBottom: 6 * rem,
     },
     deleteButton: {
@@ -796,7 +814,7 @@ const styles = StyleSheet.create({
         height: 50 * rem,
         borderRadius: 10 * rem,
         backgroundColor: colors.blue800,
-        alignContent: 'center',
+        alignItems: 'center',
         justifyContent: 'center',
         marginTop: 24 * rem,
     },

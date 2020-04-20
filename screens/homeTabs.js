@@ -16,7 +16,6 @@ export default function homeTabs() {
     return (
         <Tab.Navigator
             swipeEnabled={false}
-            lazy={true}
             initialLayout={{ width: Dimensions.get('window').width }}
             tabBarOptions={{
                 labelStyle: {
@@ -37,13 +36,13 @@ export default function homeTabs() {
                 component={Homepage}
                 options={{
                     tabBarLabel: 'Home',
-                    tabBarIcon: () => (
-                        <SimpleLineIcons
-                            name='home'
-                            size={26 * rem}
-                            color={colors.blue800}
-                        />
-                    ),
+                    // tabBarIcon: () => (
+                    //     <SimpleLineIcons
+                    //         name='home'
+                    //         size={26 * rem}
+                    //         color={colors.blue800}
+                    //     />
+                    // ),
                 }}
             />
             <Tab.Screen
@@ -51,13 +50,13 @@ export default function homeTabs() {
                 component={Documents}
                 options={{
                     tabBarLabel: 'Documents',
-                    tabBarIcon: () => (
-                        <Entypo
-                            name='documents'
-                            size={26 * rem}
-                            color={colors.blue800}
-                        />
-                    ),
+                    // tabBarIcon: () => (
+                    //     <Entypo
+                    //         name='documents'
+                    //         size={26 * rem}
+                    //         color={colors.blue800}
+                    //     />
+                    // ),
                 }}
             />
             <Tab.Screen
@@ -65,13 +64,13 @@ export default function homeTabs() {
                 component={Completed}
                 options={{
                     tabBarLabel: 'Completed',
-                    tabBarIcon: () => (
-                        <MaterialCommunityIcons
-                            name='progress-check'
-                            size={26 * rem}
-                            color={colors.blue800}
-                        />
-                    ),
+                    // tabBarIcon: () => (
+                    //     <MaterialCommunityIcons
+                    //         name='progress-check'
+                    //         size={26 * rem}
+                    //         color={colors.blue800}
+                    //     />
+                    // ),
                 }}
             />
         </Tab.Navigator>

@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, Dimensions, Image, TouchableOpacity } from 'react-native';
 import blueGradient from '../images/blueGradient.jpg';
 import Icon from 'react-native-vector-icons/Ionicons';
-import firebase from 'firebase';
 import { colors } from '../components/colors.js';
+import auth from '@react-native-firebase/auth';
+
 
 // Used to make element sizes more consistent across screen sizes.
 const screenWidth = Math.round(Dimensions.get('window').width);
@@ -11,16 +12,16 @@ const rem = (screenWidth / 380);
 
 export default function login({ navigation, route }) {
 
-      firebase.auth().onAuthStateChanged((user) => {
-      if (user) {
-        route.params.setParentState({ isLoggedIn: true });
-        route.params.setParentState({ isLoading: false });
-      }
-      else {
-        route.params.setParentState({ isLoggedIn: false });
-        route.params.setParentState({ isLoading: false });
-      }
-    });
+    //   auth().onAuthStateChanged((user) => {
+    //   if (user) {
+    //     route.params.setParentState({ isLoggedIn: true });
+    //     route.params.setParentState({ isLoading: false });
+    //   }
+    //   else {
+    //     route.params.setParentState({ isLoggedIn: false });
+    //     route.params.setParentState({ isLoading: false });
+    //   }
+    // });
 
   const [showPass, setShow] = useState(true);
   const [press, setPress] = useState(true);
@@ -41,10 +42,10 @@ export default function login({ navigation, route }) {
 
   const loginHandler = () => {
     setButtonText("...");
-    firebase.auth().signInWithEmailAndPassword(email, password)
+    auth().signInWithEmailAndPassword(email, password)
       .then(() => {
         setButtonText("Log In");
-        route.params.setParentState({isLoggedIn: true});
+        // route.params.setParentState({isLoggedIn: true});
       })
       .catch(function (error) {
         setError(error.message);

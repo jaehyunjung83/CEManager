@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "567629683156",
+    "firebase_url": "https://cetracker-2de23.firebaseio.com",
+    "project_id": "cetracker-2de23",
+    "storage_bucket": "cetracker-2de23.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:567629683156:android:9d9d23e34225f4f70bde41",
+        "android_client_info": {
+          "package_name": "com.cetracker"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "567629683156-dkusopevubqhjfeea8lm5egnicq9kk42.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB8l430W4ANAo0YLANq7spUDheQFrx6Rgc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "567629683156-dkusopevubqhjfeea8lm5egnicq9kk42.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

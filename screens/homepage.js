@@ -1,20 +1,25 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity, FlatList } from 'react-native';
 import AddNew from '../images/addNew.svg';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import LicenseCard from '../components/licenseCard.js';
 import { colors } from '../components/colors.js';
+import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
 
-export default function homepage({ navigation }) {
+export default function homepage(props) {
 
-    const [isEmpty, setIsEmpty] = useState(false);
+    const [isEmpty, setIsEmpty] = useState(true);
+    const [licenseDataObj, setLicenseDataObj] = useState({})
+    const [licenseDataArray, setLicenseDataArray] = useState('');
+    const [hasGrabbedData, setHasGrabbedData] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     let addNew = () => {
-        navigation.navigate("AddNew");
+        props.navigation.navigate("AddNew");
     }
 
     let addCE = () => {
-        // TODO:
     }
 
     let submitToState = () => {
@@ -25,6 +30,39 @@ export default function homepage({ navigation }) {
         // TODO:
     }
 
+    if (!hasGrabbedData) {
+        let uid = auth().currentUser.uid;
+        let db = firestore();
+        db.collection('users').doc(uid).collection('licenses').doc('licenseData').get()
+            .then((response) => {
+                setHasGrabbedData(true);
+
+                let data = response.data();
+                // Checking if data is empty
+                if (Object.keys(data).length === 0 && data.constructor === Object) {
+                    setIsLoading(false);
+                }
+                else {
+                    let licenseArr = [];
+                    for (const license in data) {
+                        licenseArr.push(data[license]);
+                    }
+                    setLicenseDataArray(licenseArr);
+                    setLicenseDataObj(data);
+                    setIsEmpty(false);
+                    setIsLoading(false);
+                }
+            })
+            .catch((error) => {
+                console.error("Error getting document: ", error);
+                setIsLoading(false);
+            });
+    }
+
+    if(isLoading) {
+        return (<View style={styles.emptyContainer}></View>)
+    }
+
     return (
         <>
             {isEmpty ? (
@@ -32,7 +70,7 @@ export default function homepage({ navigation }) {
                     <View style={styles.addNewButtonContainer}>
                         <TouchableOpacity
                             onPress={addNew}>
-                            <MaterialCommunityIcons
+                            <AntDesign
                                 name='plus'
                                 size={40 * rem}
                                 color={'white'}
@@ -44,6 +82,15 @@ export default function homepage({ navigation }) {
                 </View>
             ) : (
                     <View style={styles.container}>
+                        <FlatList
+                            data={licenseDataArray}
+                            keyExtractor={(item) => item.id}
+                            renderItem={({ item }) => (
+                                <LicenseCard
+                                    data={item}
+                                />
+                            )}
+                        />
                         <View style={styles.addNewButtonContainer}>
                             <TouchableOpacity
                                 onPress={addNew}>
@@ -54,7 +101,6 @@ export default function homepage({ navigation }) {
                                 />
                             </TouchableOpacity>
                         </View>
-                        <LicenseCard/>
                     </View >
                 )
             }
@@ -81,7 +127,6 @@ const styles = StyleSheet.create({
     },
     container: {
         flex: 1,
-        paddingTop: 30 * rem,
         alignItems: 'center',
         backgroundColor: colors.grey200,
     },

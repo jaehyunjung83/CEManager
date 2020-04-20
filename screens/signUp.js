@@ -2,14 +2,15 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, Dimensions, Image, TouchableOpacity } from 'react-native';
 import blueGradient from '../images/blueGradient.jpg';
 import Icon from 'react-native-vector-icons/Ionicons';
-import firebase from 'firebase';
 import { colors } from '../components/colors.js';
+import auth from '@react-native-firebase/auth';
+
 
 // Used to make element sizes more consistent across screen sizes.
 const screenWidth = Math.round(Dimensions.get('window').width);
-const rem = (screenWidth/380);
+const rem = (screenWidth / 380);
 
-export default function signUp( { navigation }) {
+export default function signUp({ navigation }) {
 
   const [showPass, setShow] = useState(true);
   const [press, setPress] = useState(false);
@@ -30,14 +31,26 @@ export default function signUp( { navigation }) {
 
   const signUpHandler = () => {
     setButtonText("...");
-    firebase.auth().createUserWithEmailAndPassword(email, password)
-    .then(() => {
-      navigation.navigate('Home');
-    }).catch(function(error) {
-      // Handle Errors here.
-      setError(error.message);
-      setButtonText("Create Account");
-    })
+    auth()
+      .createUserWithEmailAndPassword(email, password)
+      .then(() => {
+        console.log('User account created & signed in!');
+        navigation.navigate('Home');
+      })
+      .catch(error => {
+        if (error.code === 'auth/email-already-in-use') {
+          console.log('That email address is already in use!');
+          setError('That email address is already in use!');
+          setButtonText("Create Account");
+        }
+        if (error.code === 'auth/invalid-email') {
+          console.log('That email address is invalid!');
+          setError('That email address is invalid!');
+          setButtonText("Create Account");
+        }
+
+        console.error(error);
+      });
   }
 
   const logInHandler = () => {
@@ -49,7 +62,7 @@ export default function signUp( { navigation }) {
       <Text style={styles.header1}>Sign<Text style={styles.header2}>Up</Text></Text>
 
       <View>
-        <Icon name={'ios-person'} size={28*rem} color={'rgba(255, 255, 255, 1)'} style={styles.inputIcon} />
+        <Icon name={'ios-person'} size={28 * rem} color={'rgba(255, 255, 255, 1)'} style={styles.inputIcon} />
         <TextInput
           style={styles.input}
           placeholder={'Email'}
@@ -61,7 +74,7 @@ export default function signUp( { navigation }) {
       </View>
 
       <View>
-        <Icon name={'ios-lock'} size={28*rem} color={'rgba(255, 255, 255, 1)'} style={styles.inputIcon} />
+        <Icon name={'ios-lock'} size={28 * rem} color={'rgba(255, 255, 255, 1)'} style={styles.inputIcon} />
         <TextInput
           style={styles.input}
           placeholder={'Password'}
@@ -84,7 +97,7 @@ export default function signUp( { navigation }) {
         onPress={signUpHandler}>
         <Text style={styles.signUpText}>{buttonText}</Text>
       </TouchableOpacity>
-      
+
       <TouchableOpacity style={styles.btnBack}
         onPress={logInHandler}>
         <Text style={styles.btnBackText}>Back</Text>
@@ -104,7 +117,7 @@ export default function signUp( { navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 50*rem,
+    paddingTop: 50 * rem,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: colors.blue800,
@@ -132,7 +145,7 @@ const styles = StyleSheet.create({
   bgGradient: {
     width: '100%',
     height: '100%',
-    top: 300*rem,
+    top: 300 * rem,
   },
   bgGradientBottom: {
     width: '100%',
@@ -144,8 +157,8 @@ const styles = StyleSheet.create({
     fontFamily: 'Helvetica Neue',
     fontWeight: '800',
     color: 'rgba(37,212,251,1)',
-    fontSize: 30*rem,
-    marginBottom: 50*rem,
+    fontSize: 30 * rem,
+    marginBottom: 50 * rem,
   },
   header2: {
     fontFamily: 'Helvetica Neue',
@@ -153,57 +166,57 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   input: {
-    width: screenWidth - (55*rem),
+    width: screenWidth - (55 * rem),
     aspectRatio: 7,
-    borderRadius: 25*rem,
-    fontSize: 16*rem,
-    paddingLeft: 45*rem,
+    borderRadius: 25 * rem,
+    fontSize: 16 * rem,
+    paddingLeft: 45 * rem,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     color: 'rgba(255, 255, 255, 0.7)',
-    marginHorizontal: 25*rem,
-    marginTop: 10*rem,
+    marginHorizontal: 25 * rem,
+    marginTop: 10 * rem,
   },
   inputIcon: {
     position: 'absolute',
-    top: 18*rem,
-    left: 40*rem,
+    top: 18 * rem,
+    left: 40 * rem,
   },
   btnTogglePass: {
     position: 'absolute',
-    top: 18*rem,
-    right: 40*rem,
+    top: 18 * rem,
+    right: 40 * rem,
   },
   btnSignUp: {
-    width: screenWidth - (55*rem),
-    height: 45*rem,
-    borderRadius: 25*rem,
+    width: screenWidth - (55 * rem),
+    height: 45 * rem,
+    borderRadius: 25 * rem,
     backgroundColor: 'white',
     justifyContent: 'center',
-    marginTop: 20*rem,
+    marginTop: 20 * rem,
   },
   signUpText: {
     color: colors.blue800,
-    fontSize: 20*rem,
+    fontSize: 20 * rem,
     textAlign: 'center'
   },
   errorText: {
-    marginTop: 6*rem,
+    marginTop: 6 * rem,
     color: 'maroon',
-    fontSize: 16*rem,
-    width: screenWidth - (55*rem),
-    paddingLeft: 26*rem,
+    fontSize: 16 * rem,
+    width: screenWidth - (55 * rem),
+    paddingLeft: 26 * rem,
   },
   btnBack: {
     width: screenWidth - 55,
     aspectRatio: 7,
-    borderRadius: 25*rem,
+    borderRadius: 25 * rem,
     backgroundColor: 'rgba(0,0,0, 0)',
     justifyContent: 'center',
-    marginTop: 20*rem,
+    marginTop: 20 * rem,
   },
   btnBackText: {
     color: 'white',
-    fontSize: 20*rem,
+    fontSize: 20 * rem,
     textAlign: 'center'
   }
 });

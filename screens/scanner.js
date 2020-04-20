@@ -9,19 +9,28 @@ import { colors } from '../components/colors.js';
 // TODO: Handle where request is from. It will change how the image is saved.
 // Current known locations include: homepage, addNew, documents, and whereever certs are.
 export default function (props) {
-  if (props.route.params.initialFilterId == undefined) {
+  additionalProps = {
+    navigation: props.navigation
+  }
+  if (props.route?.params?.initialFilterId !== undefined) {
+    additionalProps.initialFilterId = props.route.params.initialFilterId;
+  }
+  if(props.route?.params?.licenseId !== undefined) {
+    additionalProps.licenseId = props.route.params.licenseId
+  }
+
     return <DocumentScanner
       navigation={props.navigation}
       fromThisScreen={props.route.params.fromThisScreen}
+      additionalProps={additionalProps}
     />;
-  }
-  else {
-    return <DocumentScanner
-      navigation={props.navigation}
-      initialFilterId={props.route.params.initialFilterId}
-      fromThisScreen={props.route.params.fromThisScreen}
-    />;
-  }
+  // else {
+  //   return <DocumentScanner
+  //     navigation={props.navigation}
+  //     initialFilterId={props.route.params.initialFilterId}
+  //     fromThisScreen={props.route.params.fromThisScreen}
+  //   />;
+  // }
 }
 
 class DocumentScanner extends PureComponent {
@@ -56,7 +65,7 @@ class DocumentScanner extends PureComponent {
       flashEnabled: false,
       showScannerView: false,
       didLoadInitialLayout: false,
-      filterId: props.initialFilterId || Filters.PLATFORM_DEFAULT_FILTER_ID,
+      filterId: props.additionalProps.initialFilterId || Filters.PLATFORM_DEFAULT_FILTER_ID,
       detectedRectangle: false,
       isMultiTasking: false,
       loadingCamera: true,
@@ -224,10 +233,20 @@ class DocumentScanner extends PureComponent {
       processingImage: false,
       showScannerView: this.props.cameraIsOn || false,
     });
-    this.props.navigation.navigate("ScannedView", {
-      image: event.croppedImage,
-      fromThisScreen: this.props.fromThisScreen,
-    });
+    if (typeof this.props.additionalProps.licenseId !== 'undefined') {
+      // Updating image instead of creating new one.
+      this.props.additionalProps.navigation.navigate("ScannedView", {
+        image: event.croppedImage,
+        fromThisScreen: this.props.fromThisScreen,
+        licenseId: this.props.additionalProps.licenseId,
+      });
+    }
+    else {
+      this.props.additionalProps.navigation.navigate("ScannedView", {
+        image: event.croppedImage,
+        fromThisScreen: this.props.fromThisScreen,
+      });
+    }
   }
 
   // Flashes the screen on capture
