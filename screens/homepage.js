@@ -11,8 +11,7 @@ export default function homepage(props) {
 
     const [isEmpty, setIsEmpty] = useState(true);
     const [licenseDataObj, setLicenseDataObj] = useState({})
-    const [licenseDataArray, setLicenseDataArray] = useState('');
-    const [hasGrabbedData, setHasGrabbedData] = useState(false);
+    const [licenseDataArray, setLicenseDataArray] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
     let addNew = () => {
@@ -30,12 +29,45 @@ export default function homepage(props) {
         // TODO:
     }
 
-    if (!hasGrabbedData) {
+    // Allows us to refresh homepage from other screens.
+    if (typeof props.route?.params?.refreshData !== 'undefined') {
+        if (props.route?.params?.refreshData) {
+            console.log("refreshing");
+            props.navigation.setParams({
+                refreshData: false
+            })
+            let uid = auth().currentUser.uid;
+            let db = firestore();
+            db.collection('users').doc(uid).collection('licenses').doc('licenseData').get()
+                .then((response) => {
+                    let data = response.data();
+                    // Checking if data is empty
+                    if (Object.keys(data).length === 0 && data.constructor === Object) {
+                        setIsLoading(false);
+                    }
+                    else {
+                        let licenseArr = [];
+                        for (const license in data) {
+                            licenseArr.push(data[license]);
+                        }
+                        setLicenseDataArray(licenseArr);
+                        setLicenseDataObj(data);
+                        setIsEmpty(false);
+                    }
+                })
+                .catch((error) => {
+                    console.log("Error getting document: ", error);
+                    setIsLoading(false);
+                });
+        }
+    }
+
+    React.useEffect(() => {
+        console.log("Getting license data");
         let uid = auth().currentUser.uid;
         let db = firestore();
         db.collection('users').doc(uid).collection('licenses').doc('licenseData').get()
             .then((response) => {
-                setHasGrabbedData(true);
 
                 let data = response.data();
                 // Checking if data is empty
@@ -54,12 +86,13 @@ export default function homepage(props) {
                 }
             })
             .catch((error) => {
-                console.error("Error getting document: ", error);
+                console.log("Error getting document: ", error);
                 setIsLoading(false);
             });
-    }
+    }, [])
 
-    if(isLoading) {
+
+    if (isLoading) {
         return (<View style={styles.emptyContainer}></View>)
     }
 

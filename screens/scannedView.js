@@ -51,10 +51,12 @@ export default function scannedView(props) {
                 error => {
                     setIsLoading(false);
                     setIsProcessing(false);
+                    setErrorUploading(true);
                     console.log("Error occured.");
                     switch (error.code) {
                         case 'storage/unauthorized':
                             console.log(error.code)
+                            const uid = auth().currentUser.uid;
                             break;
 
                         case 'storage/canceled':
@@ -115,6 +117,31 @@ export default function scannedView(props) {
 
                                 let data = response.data();
                                 if (data) {
+                                    // Checking for and deleting old photos from storage.
+                                    // if (data[props.route?.params?.licenseId].licensePhoto) {
+                                    //     console.log(storage().refFromURL(data[props.route?.params?.licenseId].licensePhoto));
+                                    //     const oldPhotoRef = storage().refFromURL(data[props.route?.params?.licenseId].licensePhoto);
+                                    //     oldPhotoRef.delete()
+                                    //     .then(() => {
+                                    //         console.log("Deleted file successfully.");
+                                    //     })
+                                    //     .catch(error => {
+                                    //         console.log("Failed to delete old photo. Error: " + error.toString());
+                                    //     })
+                                    // }
+                                    // if (data[props.route?.params?.licenseId].licenseThumbnail) {
+                                    //     console.log(storage().refFromURL(data[props.route?.params?.licenseId].licensePhoto));
+                                    //     const oldThumbnailRef = storage().refFromURL(data[props.route?.params?.licenseId].licenseThumbnail);
+                                    //     oldThumbnailRef.delete()
+                                    //     .then(() => {
+                                    //         console.log("Deleted file successfully.");
+                                    //     })
+                                    //     .catch(error => {
+                                    //         console.log("Failed to delete old thumbnail. Error: " + error.toString());
+                                    //     })
+                                    // }
+
+                                    // Updating database with links to new photo and thumbnail URLs.
                                     data[props.route?.params?.licenseId].licensePhoto = downloadURL;
                                     data[props.route?.params?.licenseId].licenseThumbnail = Obj.thumbnailURL;
                                     db.collection('users').doc(uid).collection('licenses').doc('licenseData').set(data, {merge: true})
@@ -147,6 +174,7 @@ export default function scannedView(props) {
                             props.navigation.navigate(props.route.params.fromThisScreen, {
                                 thumbnailURL: Obj.thumbnailURL,
                                 photoURL: downloadURL,
+                                bucket: Obj.bucket,
                             });
                         }
                     })

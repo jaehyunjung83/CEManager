@@ -12,7 +12,7 @@ import { v4 as uuidv4 } from 'uuid';
 import FastImage from 'react-native-fast-image'
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
-
+import storage from '@react-native-firebase/storage';
 
 
 const FadeInView = (props) => {
@@ -57,6 +57,38 @@ const FadeInView = (props) => {
 export default function addLicense(props) {
 
     const headerHeight = useHeaderHeight();
+    const states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'];
+
+    React.useEffect(() => {
+        let db = firestore();
+        db.collection('licenseConfig').doc('licenseTypes').get()
+            .then(response => {
+                setLicenseTypes(response.data().licenseTypes);
+            })
+            .catch((error) => {
+                console.error("Error adding document: ", error);
+            });
+    }, [licenseTypes])
+
+    const [licenseTypes, setLicenseTypes] = useState([]);
+    const [isLicenseSelected, setIsLicenseSelected] = useState(false);
+    const [isCertSelected, setIsCertSelected] = useState(false);
+    const [licenseType, setLicenseType] = useState("");
+    const [typeErrorMsg, setTypeErrorMsg] = useState("");
+    const [otherLicenseType, setOtherLicenseType] = useState("");
+    const [otherTypeErrorMsg, setOtherTypeErrorMsg] = useState("");
+    const [licenseState, setLicenseState] = useState("");
+    const [stateErrorMsg, setStateErrorMsg] = useState("");
+    const [licenseNum, setLicenseNum] = useState("");
+    const [licenseExpiration, setLicenseExpiration] = useState("");
+    const [expirationErrorMsg, setExpirationErrorMsg] = useState("");
+    const [ceHoursRequired, setCEHoursRequired] = useState('');
+    const [isModalVisible, setIsModalVisible] = useState(false);
+    const [requirements, setRequirements] = useState([]);
+    const [textPositionY, setTextPositionY] = useState(0);
+    const [licenseThumbnail, setLicenseThumbnail] = useState("");
+    const [licensePhoto, setLicensePhoto] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
 
     // Used for getting position of text label of state input. This is a workaround to get the effect of KeyboardAvoidingView.
     measure = () => {
@@ -73,25 +105,6 @@ export default function addLicense(props) {
             this.scrollView.scrollTo({ y: textPositionY - (330 * rem) });
         }
     }
-
-    const [isLicenseSelected, setIsLicenseSelected] = useState(false);
-    const [isCertSelected, setIsCertSelected] = useState(false);
-    const [licenseType, setLicenseType] = useState("");
-    const [typeErrorMsg, setTypeErrorMsg] = useState("");
-    const [otherLicenseType, setOtherLicenseType] = useState("");
-    const [otherTypeErrorMsg, setOtherTypeErrorMsg] = useState("");
-    const [licenseState, setLicenseState] = useState("");
-    const [stateErrorMsg, setStateErrorMsg] = useState("");
-    const [licenseNum, setLicenseNum] = useState("");
-    const [licenseExpiration, setLicenseExpiration] = useState("");
-    const [expirationErrorMsg, setExpirationErrorMsg] = useState("");
-    const [ceHoursRequired, setCEHoursRequired] = useState('');
-    const [isModalVisible, setIsModalVisible] = useState(false);
-    const [requirements, setRequirements] = useState([]);
-    const [textPositionY, setTextPositionY] = useState(0);
-    const [licenseThumbnail, setlicenseThumbnail] = useState("");
-    const [licensePhoto, setLicensePhoto] = useState("");
-    const [isLoading, setIsLoading] = useState(false);
 
     let selectLicense = () => {
         if (!isLicenseSelected) {
@@ -160,16 +173,14 @@ export default function addLicense(props) {
 
             let uid = auth().currentUser.uid;
             let db = firestore();
-            db.collection('users').doc(uid).collection('licenses').doc('licenseData').set(licenseObj, {merge: true})
+            db.collection('users').doc(uid).collection('licenses').doc('licenseData').set(licenseObj, { merge: true })
                 .then(() => {
                     console.log("Document successfully written!");
-                    props.navigation.navigate("Homepage");
-                    // setIsLoading(false);
+                    props.navigation.navigate("Homepage", { refreshData: true });
                 })
                 .catch((error) => {
                     console.error("Error adding document: ", error);
-                    props.navigation.navigate("Homepage");
-                    // setIsLoading(false);
+                    props.navigation.navigate("Homepage", { refreshData: true });
                 });
         }
     }
@@ -225,18 +236,47 @@ export default function addLicense(props) {
     }
 
     React.useEffect(() => {
-        if (typeof props.route.params?.thumbnailURL !== 'undefined') {
-            console.log("Setting thumbnail to: " + props.route.params.thumbnailURL);
-            if (typeof props.route.params?.photoURL !== 'undefined') {
-                setLicensePhoto(props.route.params.photoURL);
+        if (typeof props.route?.params?.thumbnailURL !== 'undefined') {
+            if (licenseThumbnail) {
+                // User is replacing old thumbnail. Delete old one.
+                // Firebase couldn't parse the URL for some reason.
+                // const oldThumbnailRef = storage().refFromURL(licenseThumbnail);
+                const oldThumbnailPath = licenseThumbnail.replace('https://storage.googleapis.com/cetracker-2de23.appspot.com/', '');
+                const oldThumbnailRef = storage().ref().child(`${oldThumbnailPath}`);
+
+                oldThumbnailRef.delete()
+                    .then(() => {
+                        console.log("Deleted thumbnail successfully.");
+                        setLicenseThumbnail(props.route?.params?.thumbnailURL);
+                    })
+                    .catch(error => {
+                        console.log("Failed to delete old thumbnail. Error: " + error.toString());
+                    })
             }
-            setlicenseThumbnail(props.route.params.thumbnailURL);
+            else {
+                setLicenseThumbnail(props.route?.params?.thumbnailURL);
+            }
+        }
+        if (typeof props.route.params?.photoURL !== 'undefined') {
+            if (licensePhoto) {
+                // User is replacing old photo. Delete old one.
+                const firstPhotoRef = storage().refFromURL(licensePhoto).toString();
+                const oldPhotoPath = firstPhotoRef.replace('gs://cetracker-2de23', '');
+                const oldPhotoRef = storage().ref().child(`${oldPhotoPath}`);
+                oldPhotoRef.delete()
+                    .then(() => {
+                        console.log("Deleted photo successfully.");
+                        setLicensePhoto(props.route?.params?.photoURL);
+                    })
+                    .catch(error => {
+                        console.log("Failed to delete old photo. Error: " + error.toString());
+                    })
+            }
+            else {
+                setLicensePhoto(props.route?.params?.photoURL);
+            }
         }
     }, [props.route.params?.thumbnailURL]);
-
-    // TODO: Grab these from firebase instead of hardcoding.
-    const licenseTypes = ["Registered Nurse (RN)", "Licensed Vocational Nurse (LVN)", "Other"];
-    const states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'];
 
     return (
         <KeyboardAvoidingView
