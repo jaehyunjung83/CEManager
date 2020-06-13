@@ -29,40 +29,7 @@ export default function homepage(props) {
         // TODO:
     }
 
-    // Allows us to refresh homepage from other screens.
-    if (typeof props.route?.params?.refreshData !== 'undefined') {
-        if (props.route?.params?.refreshData) {
-            console.log("refreshing");
-            props.navigation.setParams({
-                refreshData: false
-            })
-            let uid = auth().currentUser.uid;
-            let db = firestore();
-            db.collection('users').doc(uid).collection('licenses').doc('licenseData').get()
-                .then((response) => {
-                    let data = response.data();
-                    // Checking if data is empty
-                    if (Object.keys(data).length === 0 && data.constructor === Object) {
-                        setIsLoading(false);
-                    }
-                    else {
-                        let licenseArr = [];
-                        for (const license in data) {
-                            licenseArr.push(data[license]);
-                        }
-                        setLicenseDataArray(licenseArr);
-                        setLicenseDataObj(data);
-                        setIsEmpty(false);
-                    }
-                })
-                .catch((error) => {
-                    console.log("Error getting document: ", error);
-                    setIsLoading(false);
-                });
-        }
-    }
-
-    React.useEffect(() => {
+    let getLicenseData = () => {
         console.log("Getting license data");
         let uid = auth().currentUser.uid;
         let db = firestore();
@@ -71,24 +38,53 @@ export default function homepage(props) {
 
                 let data = response.data();
                 // Checking if data is empty
-                if (Object.keys(data).length === 0 && data.constructor === Object) {
+                if (typeof data == 'undefined' || Object.keys(data).length === 0 && data.constructor === Object) {
                     setIsLoading(false);
                 }
                 else {
                     let licenseArr = [];
                     for (const license in data) {
-                        licenseArr.push(data[license]);
+                        db.collection('requirements').doc(data[license].licenseType).get()
+                            .then(res => {
+                                const requirements = res.data();
+                                const state = data[license].licenseState;
+                                for (const req in requirements[state].requirements) {
+                                    // console.log(req);
+                                    // data[license].requirements = requirements[state][req];
+                                    // data[license].totalCEHours = requirements[state].totalCEHours;
+                                    licenseArr.push(data[license]);
+                                    setLicenseDataArray(licenseArr);
+                                    setLicenseDataObj(data);
+                                    setIsEmpty(false);
+                                    setIsLoading(false);
+                                }
+                            })
+                            .catch(e => {
+                                licenseArr.push(data[license]);
+                            })
                     }
-                    setLicenseDataArray(licenseArr);
-                    setLicenseDataObj(data);
-                    setIsEmpty(false);
-                    setIsLoading(false);
+
                 }
             })
             .catch((error) => {
                 console.log("Error getting document: ", error);
                 setIsLoading(false);
             });
+    }
+
+    // Allows us to refresh page from other screens.
+    // Note, seems to cause problems with animations. Other pages navigating to here are no longer animated if this page is refreshed.
+    if (typeof props.route?.params?.refreshPage !== 'undefined') {
+        if (props.route?.params?.refreshPage) {
+            props.navigation.setParams({
+                refreshPage: false
+            })
+            getLicenseData();
+        }
+    }
+
+    React.useEffect(() => {
+        getLicenseData();
     }, [])
 
 

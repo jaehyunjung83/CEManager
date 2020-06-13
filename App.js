@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Dimensions } from 'react-native';
+import { Dimensions, TouchableOpacity, Text } from 'react-native';
 import 'react-native-gesture-handler';
 // import firebase from 'firebase';
 // import { firebaseConfig } from './config';
@@ -14,7 +14,11 @@ import Scanner from './screens/scanner.js';
 import ScannedView from './screens/scannedView.js';
 import AddNew from './screens/addNew.js';
 import SplashScreen from './screens/splashScreen.js';
+import LicenseDetails from './screens/licenseDetails.js';
 import { YellowBox } from 'react-native';
+import AntDesign from 'react-native-vector-icons/AntDesign';
+
+
 
 YellowBox.ignoreWarnings([
   'Non-serializable values were found in the navigation state',
@@ -89,9 +93,6 @@ export default function App() {
                 gestureEnabled: false,
                 headerShown: false,
               }}
-              // initialParams={{
-              //   setParentState: newState => this.setState(newState)
-              // }}
             />
             <Stack.Screen
               name="Scanner"
@@ -113,6 +114,27 @@ export default function App() {
               component={AddNew}
               options={{
                 title: "Add New",
+                headerBackTitle: "Home",
+                headerBackTitleStyle: {
+                  color: colors.blue800,
+                },
+                headerTintColor: colors.blue800,
+                headerTitleStyle: {
+                  color: colors.blue800,
+                  fontSize: 23 * rem,
+                  fontWeight: '400',
+                  textAlign: 'left',
+                },
+                headerStyle: {
+                  backgroundColor: 'white',
+                },
+                gestureEnabled: false,
+              }} />
+            <Stack.Screen
+              name="LicenseDetails"
+              component={LicenseDetails}
+              options={{
+                title: "License Details",
                 headerBackTitle: "Home",
                 headerBackTitleStyle: {
                   color: colors.blue800,

@@ -53,7 +53,7 @@ const FadeInView = (props) => {
 
 
 // TODO: Remember auto generate CE's needed and requirements for specific states.
-// TODO: Refresh license list after adding new one.
+// TODO: Delete pic and thumbnail if adding license is cancelled.
 export default function addLicense(props) {
 
     const headerHeight = useHeaderHeight();
@@ -176,11 +176,11 @@ export default function addLicense(props) {
             db.collection('users').doc(uid).collection('licenses').doc('licenseData').set(licenseObj, { merge: true })
                 .then(() => {
                     console.log("Document successfully written!");
-                    props.navigation.navigate("Homepage", { refreshData: true });
+                    props.navigation.navigate("Homepage", { refreshPage: true });
                 })
                 .catch((error) => {
                     console.error("Error adding document: ", error);
-                    props.navigation.navigate("Homepage", { refreshData: true });
+                    props.navigation.navigate("Homepage", { refreshPage: true });
                 });
         }
     }
@@ -231,6 +231,9 @@ export default function addLicense(props) {
         }
         else {
             setExpirationErrorMsg("");
+        }
+        if (!isComplete) {
+            setIsLoading(false);
         }
         return isComplete;
     }
@@ -466,48 +469,50 @@ export default function addLicense(props) {
 
                             <Text style={styles.inputLabel}>Additional Requirements</Text>
 
-                            {requirements.length ? (<View style={styles.requirementsContainer}>
-                                <FlatList
-                                    keyExtractor={item => item.key}
-                                    data={requirements}
-                                    extraData={requirements}
-                                    renderItem={({ item, index }) => (
-                                        <View style={styles.requirementContainer}>
-                                            <TouchableOpacity
-                                                style={styles.deleteButton}
-                                                onPress={() => {
-                                                    let temp = [...requirements];
-                                                    temp.splice(index, 1);
-                                                    setRequirements(temp)
-                                                }}
-                                            >
-                                                <AntDesign
-                                                    name='closecircle'
-                                                    size={36 * rem}
-                                                    color={colors.blue800}
+                            {requirements.length ? (
+                                <View style={styles.requirementsContainer}>
+                                    <Text style={styles.hoursOptionalText}>Inputting hours is optional.</Text>
+                                    <FlatList
+                                        keyExtractor={item => item.key}
+                                        data={requirements}
+                                        extraData={requirements}
+                                        renderItem={({ item, index }) => (
+                                            <View style={styles.requirementContainer}>
+                                                <TouchableOpacity
+                                                    style={styles.deleteButton}
+                                                    onPress={() => {
+                                                        let temp = [...requirements];
+                                                        temp.splice(index, 1);
+                                                        setRequirements(temp)
+                                                    }}
+                                                >
+                                                    <AntDesign
+                                                        name='closecircle'
+                                                        size={36 * rem}
+                                                        color={colors.blue800}
+                                                    />
+                                                </TouchableOpacity>
+                                                <TextInput
+                                                    placeholder={'Hrs'}
+                                                    placeholderTextColor={colors.grey400}
+                                                    style={styles.requirementHoursInput}
+                                                    value={item.hours}
+                                                    onChangeText={text => { handleHours(text, index) }}
+                                                    keyboardType={'numeric'}
+                                                    maxLength={5}
                                                 />
-                                            </TouchableOpacity>
-                                            <TextInput
-                                                placeholder={'Hrs'}
-                                                placeholderTextColor={colors.grey400}
-                                                style={styles.requirementHoursInput}
-                                                value={item.hours}
-                                                onChangeText={text => { handleHours(text, index) }}
-                                                keyboardType={'numeric'}
-                                                maxLength={5}
-                                            />
-                                            <TextInput
-                                                placeholder={'e.g. Bioterrorism'}
-                                                placeholderTextColor={colors.grey400}
-                                                style={styles.requirementInput}
-                                                value={item.name}
-                                                onChangeText={text => { handleName(text, index) }}
-                                                maxLength={70}
-                                            />
-                                        </View>
-                                    )}
-                                />
-                            </View>
+                                                <TextInput
+                                                    placeholder={'e.g. Bioterrorism'}
+                                                    placeholderTextColor={colors.grey400}
+                                                    style={styles.requirementInput}
+                                                    value={item.name}
+                                                    onChangeText={text => { handleName(text, index) }}
+                                                    maxLength={70}
+                                                />
+                                            </View>
+                                        )}
+                                    />
+                                </View>
                             ) : (
                                     <Text style={styles.noRequirementsText}>Some states have special requirements for license renewal. Click Add Requirement to add some!</Text>
                                 )}
@@ -822,9 +827,8 @@ const styles = StyleSheet.create({
     },
     deleteButton: {
         alignSelf: 'center',
-        margin: 12 * rem,
-        marginTop: 6 * rem,
-        marginBottom: 6 * rem,
+        margin: 6 * rem,
+        marginLeft: 0,
     },
     requirementHoursInput: {
         width: 65 * rem,
@@ -848,6 +852,11 @@ const styles = StyleSheet.create({
     noRequirementsText: {
         fontSize: 16 * rem,
         color: colors.grey500,
+    },
+    hoursOptionalText: {
+        fontSize: 16 * rem,
+        color: colors.grey500,
+        marginBottom: 12 * rem,
     },
     addNewLicenseButton: {
         width: '100%',

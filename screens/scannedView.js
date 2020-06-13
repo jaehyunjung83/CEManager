@@ -113,57 +113,63 @@ export default function scannedView(props) {
                             let db = firestore();
 
                             db.collection('users').doc(uid).collection('licenses').doc('licenseData').get()
-                            .then((response) => {
+                                .then((response) => {
 
-                                let data = response.data();
-                                if (data) {
-                                    // Checking for and deleting old photos from storage.
-                                    // if (data[props.route?.params?.licenseId].licensePhoto) {
-                                    //     console.log(storage().refFromURL(data[props.route?.params?.licenseId].licensePhoto));
-                                    //     const oldPhotoRef = storage().refFromURL(data[props.route?.params?.licenseId].licensePhoto);
-                                    //     oldPhotoRef.delete()
-                                    //     .then(() => {
-                                    //         console.log("Deleted file successfully.");
-                                    //     })
-                                    //     .catch(error => {
-                                    //         console.log("Failed to delete old photo. Error: " + error.toString());
-                                    //     })
-                                    // }
-                                    // if (data[props.route?.params?.licenseId].licenseThumbnail) {
-                                    //     console.log(storage().refFromURL(data[props.route?.params?.licenseId].licensePhoto));
-                                    //     const oldThumbnailRef = storage().refFromURL(data[props.route?.params?.licenseId].licenseThumbnail);
-                                    //     oldThumbnailRef.delete()
-                                    //     .then(() => {
-                                    //         console.log("Deleted file successfully.");
-                                    //     })
-                                    //     .catch(error => {
-                                    //         console.log("Failed to delete old thumbnail. Error: " + error.toString());
-                                    //     })
-                                    // }
+                                    let data = response.data();
+                                    if (data) {
+                                        // Checking for and deleting old photos from storage.
+                                        if (data[props.route?.params?.licenseId].licensePhoto) {
+                                            // User is replacing old photo. Delete old one.
+                                            const firstPhotoRef = storage().refFromURL(licensePhoto).toString();
+                                            const oldPhotoPath = firstPhotoRef.replace('gs://cetracker-2de23', '');
+                                            const oldPhotoRef = storage().ref().child(`${oldPhotoPath}`);
+                                            oldPhotoRef.delete()
+                                                .then(() => {
+                                                    console.log("Deleted photo successfully.");
+                                                })
+                                                .catch(error => {
+                                                    console.log("Failed to delete old photo. Error: " + error.toString());
+                                                })
+                                        }
+                                        if (data[props.route?.params?.licenseId].licenseThumbnail) {
+                                            // User is replacing old thumbnail. Delete old one.
+                                            // Firebase couldn't parse the URL for some reason.
+                                            // const oldThumbnailRef = storage().refFromURL(licenseThumbnail);
+                                            const oldThumbnailPath = licenseThumbnail.replace('https://storage.googleapis.com/cetracker-2de23.appspot.com/', '');
+                                            const oldThumbnailRef = storage().ref().child(`${oldThumbnailPath}`);
 
-                                    // Updating database with links to new photo and thumbnail URLs.
-                                    data[props.route?.params?.licenseId].licensePhoto = downloadURL;
-                                    data[props.route?.params?.licenseId].licenseThumbnail = Obj.thumbnailURL;
-                                    db.collection('users').doc(uid).collection('licenses').doc('licenseData').set(data, {merge: true})
-                                    .then(() => {
-                                        props.navigation.navigate(props.route.params.fromThisScreen);
-                                    })
-                                    .catch((error) => {
-                                        console.log("Updating license failed. " + error);
-                                        setIsModalVisible(true);
-                                        setIsProcessing(false);
-                                        setIsLoading(false);
-                                        setErrorUploading(true);
-                                    })
-                                }
-                            })
-                            .catch((error) => {
-                                console.error("Error getting document: ", error);
-                                setIsModalVisible(true);
-                                setIsProcessing(false);
-                                setIsLoading(false);
-                                setErrorUploading(true);
-                            });
+                                            oldThumbnailRef.delete()
+                                                .then(() => {
+                                                    console.log("Deleted thumbnail successfully.");
+                                                })
+                                                .catch(error => {
+                                                    console.log("Failed to delete old thumbnail. Error: " + error.toString());
+                                                })
+                                        }
+
+                                        // Updating database with links to new photo and thumbnail URLs.
+                                        data[props.route?.params?.licenseId].licensePhoto = downloadURL;
+                                        data[props.route?.params?.licenseId].licenseThumbnail = Obj.thumbnailURL;
+                                        db.collection('users').doc(uid).collection('licenses').doc('licenseData').set(data, { merge: true })
+                                            .then(() => {
+                                                props.navigation.navigate(props.route.params.fromThisScreen, { refreshPage: true });
+                                            })
+                                            .catch((error) => {
+                                                console.log("Updating license failed. " + error);
+                                                setIsModalVisible(true);
+                                                setIsProcessing(false);
+                                                setIsLoading(false);
+                                                setErrorUploading(true);
+                                            })
+                                    }
+                                })
+                                .catch((error) => {
+                                    console.error("Error getting document: ", error);
+                                    setIsModalVisible(true);
+                                    setIsProcessing(false);
+                                    setIsLoading(false);
+                                    setErrorUploading(true);
+                                });
 
                         }
                         else {
@@ -175,6 +181,7 @@ export default function scannedView(props) {
                                 thumbnailURL: Obj.thumbnailURL,
                                 photoURL: downloadURL,
                                 bucket: Obj.bucket,
+                                refreshPage: true,
                             });
                         }
                     })
