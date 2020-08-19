@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { updateLicenses } from '../actions';
+
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity, FlatList } from 'react-native';
 import AddNew from '../images/addNew.svg';
 import AntDesign from 'react-native-vector-icons/AntDesign';
@@ -8,9 +11,10 @@ import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 
 export default function homepage(props) {
+    const licenses = useSelector(state => state.licenses);
+    const dispatch = useDispatch();
 
     const [isEmpty, setIsEmpty] = useState(true);
-    const [licenseDataObj, setLicenseDataObj] = useState({})
     const [licenseDataArray, setLicenseDataArray] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -42,46 +46,50 @@ export default function homepage(props) {
                     setIsLoading(false);
                 }
                 else {
+                    setIsEmpty(false);
+                    dispatch(updateLicenses(data));
+                    console.log(data);
                     let licenseArr = [];
-                    for (const license in data) {
-                        db.collection('requirements').doc(data[license].licenseType).get()
-                            .then(res => {
-                                const requirements = res.data();
-                                const state = data[license].licenseState;
-                                for (const req in requirements[state].requirements) {
-                                    // console.log(req);
-                                    // data[license].requirements = requirements[state][req];
-                                    // data[license].totalCEHours = requirements[state].totalCEHours;
-                                    licenseArr.push(data[license]);
-                                    setLicenseDataArray(licenseArr);
-                                    setLicenseDataObj(data);
-                                    setIsEmpty(false);
-                                    setIsLoading(false);
-                                }
-                            })
-                            .catch(e => {
-                                licenseArr.push(data[license]);
-                            })
+                    for (const license in licenses) {
+                        licenseArr.push(licenses[license]);
+                        setLicenseDataArray(licenseArr);
+                        // db.collection('requirements').doc(licenses[license].licenseType).get()
+                        //     .then(res => {
+                        //         const requirements = res.data();
+                        //         console.log(`Got requirements: ${JSON.stringify(requirements)}`);
+                        //         const state = licenses[license].licenseState;
+                        //         for (const req in requirements[state].requirements) {
+                        //             // console.log(req);
+                        //             // data[license].requirements = requirements[state][req];
+                        //             // data[license].totalCEHours = requirements[state].totalCEHours;
+                                        // licenseArr.push(licenses[license]);
+                                        // setLicenseDataArray(licenseArr);
+                        //         }
+                        //     })
+                        //     .catch(e => {
+                        //         console.log("Error getting state requirements: ", e);
+                        //         licenseArr.push(licenses[license]);
+                        //     })
                     }
-
                 }
             })
             .catch((error) => {
                 console.log("Error getting document: ", error);
                 setIsLoading(false);
             });
+        setIsLoading(false);
     }
 
     // Allows us to refresh page from other screens.
     // Note, seems to cause problems with animations. Other pages navigating to here are no longer animated if this page is refreshed.
-    if (typeof props.route?.params?.refreshPage !== 'undefined') {
-        if (props.route?.params?.refreshPage) {
-            props.navigation.setParams({
-                refreshPage: false
-            })
-            getLicenseData();
-        }
-    }
+    // if (typeof props.route?.params?.refreshPage !== 'undefined') {
+    //     if (props.route?.params?.refreshPage) {
+    //         props.navigation.setParams({
+    //             refreshPage: false
+    //         })
+    //         getLicenseData();
+    //     }
+    // }
 
     React.useEffect(() => {
         getLicenseData();
@@ -112,6 +120,15 @@ export default function homepage(props) {
             ) : (
                     <View style={styles.container}>
                         <FlatList
+                            data={Object.keys(licenses)}
+                            keyExtractor={(item) => item}
+                            renderItem={({ item }) => (
+                                <LicenseCard
+                                    data={licenses[item]}
+                                />
+                            )}
+                        />
+                        {/* <FlatList
                             data={licenseDataArray}
                             keyExtractor={(item) => item.id}
                             renderItem={({ item }) => (
@@ -119,7 +136,7 @@ export default function homepage(props) {
                                     data={item}
                                 />
                             )}
-                        />
+                        /> */}
                         <View style={styles.addNewButtonContainer}>
                             <TouchableOpacity
                                 onPress={addNew}>

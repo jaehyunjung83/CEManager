@@ -15,6 +15,7 @@ import ScannedView from './screens/scannedView.js';
 import AddNew from './screens/addNew.js';
 import SplashScreen from './screens/splashScreen.js';
 import LicenseDetails from './screens/licenseDetails.js';
+import AddCE from './screens/addCE.js';
 import { YellowBox } from 'react-native';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 
@@ -26,24 +27,6 @@ YellowBox.ignoreWarnings([
 ]);
 
 // TODO: Add Forgot Password button
-
-
-// // Initialize Firebase
-// if (!firebase.apps.length) {
-//   firebase.initializeApp(firebaseConfig);
-//   firebase.firestore().enablePersistence()
-//   .catch(function(err) {
-//       if (err.code == 'failed-precondition') {
-//           // Multiple tabs open, persistence can only be enabled
-//           // in one tab at a a time.
-//           // ...
-//       } else if (err.code == 'unimplemented') {
-//           // The current browser does not support all of the
-//           // features required to enable persistence
-//           // ...
-//       }
-//   });
-// }
 
 
 const Stack = createStackNavigator();
@@ -115,6 +98,27 @@ export default function App() {
               options={{
                 title: "Add New",
                 headerBackTitle: "Home",
+                headerBackTitleStyle: {
+                  color: colors.blue800,
+                },
+                headerTintColor: colors.blue800,
+                headerTitleStyle: {
+                  color: colors.blue800,
+                  fontSize: 23 * rem,
+                  fontWeight: '400',
+                  textAlign: 'left',
+                },
+                headerStyle: {
+                  backgroundColor: 'white',
+                },
+                gestureEnabled: false,
+              }} />
+            <Stack.Screen
+              name="AddCE"
+              component={AddCE}
+              options={{
+                title: "Add CE",
+                headerBackTitle: "Back",
                 headerBackTitleStyle: {
                   color: colors.blue800,
                 },
