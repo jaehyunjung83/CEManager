@@ -5,12 +5,12 @@ import { colors } from '../components/colors.js';
 import FastImage from 'react-native-fast-image'
 import Header from '../components/header.js';
 import { ScrollView } from 'react-native-gesture-handler';
-import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
-
+import { useNavigation } from '@react-navigation/native';
 
 
 export default function licenseCard(props) {
+    const navigation = useNavigation();
 
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
@@ -20,49 +20,19 @@ export default function licenseCard(props) {
     // Initializing stuff
     React.useEffect(() => {
         // Allows us to refresh page from other screens.
-        if (typeof props.route?.params?.refreshPage !== 'undefined') {
-            if (props.route?.params?.refreshPage) {
-                props.navigation.setParams({
-                    refreshPage: false
-                })
-                let uid = auth().currentUser.uid;
-                let db = firestore();
-                db.collection('users').doc(uid).collection('licenses').doc('licenseData').get()
-                    .then((response) => {
-                        let data = response.data();
-                        // Checking if data is empty
-                        if (Object.keys(data).length === 0 && data.constructor === Object) {
-                            setIsLoading(false);
-                        }
-                        else {
-                            for (const licenseId in data) {
-                                if (licenseId === props.route.params.data.id) {
-                                    setLicenseData(data[licenseId]);
-                                    setRequirements(data[licenseId].requirements);
-                                }
-                            }
-                        }
-                    })
-                    .catch((error) => {
-                        console.log("Error getting document: ", error);
-                        setIsLoading(false);
-                    });
-            }
-        }
-
-        // Setting back button to refresh homepage
-        props.navigation.setOptions({
-            headerLeft: () => (
-                <TouchableOpacity
-                    onPress={() => props.navigation.navigate("Homepage", { refreshPage: true })}
-                    style={{
-                        width: 60 * rem,
-                        paddingLeft: 6 * rem,
-                    }}>
-                    <AntDesign name="left" size={28 * rem} color={colors.blue800} />
-                </TouchableOpacity>
-            ),
-        })
+        let db = firestore();
+        db.collection('requirements').doc(props.route.params.data.licenseType).get()
+            .then(res => {
+                const requirements = res.data();
+                console.log(`Got requirements: ${JSON.stringify(requirements[props.route.params.data.licenseState].requirements)}
+                \nCompared to: ${JSON.stringify(props.route.params.data.requirements)}`);
+                if (requirements[props.route.params.data.licenseState]) {
+                    setRequirements(requirements[props.route.params.data.licenseState].requirements);
+                }
+            })
+            .catch(e => {
+                console.log("Error getting state requirements: ", e);
+            })
 
         // Calculating requirements
         // TODO: Finish calculating.
@@ -127,15 +97,11 @@ export default function licenseCard(props) {
 
 
     let addCE = () => {
-        // TODO:
+        navigation.navigate("AddCE");
     }
 
     let submitToState = () => {
         // TODO:
-    }
-
-    let cardPressed = () => {
-        props.navigation.navigate("LicenseDetails", { license: licenseData })
     }
 
     let openScanner = () => {
@@ -424,6 +390,7 @@ export default function licenseCard(props) {
         requirementsContainer: {
             marginLeft: 24 * rem,
             marginBottom: 24 * rem,
+            marginRight: 24 * rem,
         },
         noRequirementsText: {
             fontSize: 16 * rem,
@@ -434,15 +401,18 @@ export default function licenseCard(props) {
             width: screenWidth - (36 * rem),
             lineHeight: 18 * rem,
             marginBottom: 18 * rem,
+            // alignItems: 'center',
         },
         requirementName: {
             fontSize: 18 * rem,
             color: colors.grey800,
-            marginRight: 6 * rem,
+            marginLeft: 18 * rem,
+            flex: 1,
         },
         requirementHoursDone: {
             fontSize: 18 * rem,
             color: colors.blue800,
+            marginLeft: 18 * rem,
         },
         requirementHoursTotal: {
             fontSize: 18 * rem,
@@ -451,7 +421,6 @@ export default function licenseCard(props) {
         },
         completeIcon: {
             color: colors.green600,
-            marginLeft: 18 * rem,
         },
         cardContainer: {
             height: 97 * rem,
@@ -540,6 +509,7 @@ export default function licenseCard(props) {
             fontSize: 18 * rem,
             color: colors.grey800,
             lineHeight: 26 * rem,
+            marginLeft: 18 * rem,
         },
         ceDateText: {
             fontSize: 16 * rem,
@@ -687,16 +657,16 @@ export default function licenseCard(props) {
                         keyExtractor={item => item.key}
                         renderItem={({ item }) => (
                             <View style={styles.requirementContainer}>
-                                <>
-                                    <Text style={styles.requirementName}>{item.name}</Text>
-                                </>
+                                <AntDesign name="checkcircleo" size={20 * rem} style={styles.completeIcon} />
                                 {item.hours ? (
                                     <>
-                                        <Text style={styles.requirementHoursDone}>{item.hours}</Text>
+                                        <Text style={styles.requirementHoursDone}>{licenseData.completedCEHours}</Text>
                                         <Text style={styles.requirementHoursTotal}>/{item.hours}hrs</Text>
                                     </>
                                 ) : (null)}
-                                <AntDesign name="checkcircleo" size={20 * rem} style={styles.completeIcon} />
+                                <>
+                                    <Text style={styles.requirementName}>{item.name}</Text>
+                                </>
                             </View>
                         )}>
                     </FlatList>

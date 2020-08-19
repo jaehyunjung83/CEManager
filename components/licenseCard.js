@@ -65,7 +65,7 @@ export default function licenseCard(props) {
     }
 
     let addCE = () => {
-        // TODO:
+        navigation.navigate("AddCE");
     }
 
     let submitToState = () => {
@@ -73,7 +73,7 @@ export default function licenseCard(props) {
     }
 
     let cardPressed = () => {
-        navigation.navigate("LicenseDetails", {data: props.data})
+        navigation.navigate("LicenseDetails", {data: props.data});
     }
 
     let openScanner = () => {
