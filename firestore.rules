@@ -1,0 +1,29 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+  	match /licenseConfig/licenseTypes {
+  		allow read: if true;
+  	}
+    
+    match /users/{userId}/{restOfPath=**} {
+    	allow read: if true;
+    
+    	allow write: if userIsSignedIn()
+      && userIdMatches(userId);
+    }
+    
+  	match /requirements/{restOfPath=**} {
+  		allow read: if true;
+  	}
+    
+    
+    // Helper Functions
+    function userIdMatches(userId) {
+    	return request.auth.uid == userId;
+    }
+    
+    function userIsSignedIn() {
+    	return request.auth != null;
+    }
+  }
+}

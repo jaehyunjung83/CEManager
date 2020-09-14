@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { updateLicenses } from '../actions';
 import { Text, View, Image, StyleSheet, TouchableOpacity, Dimensions, Modal, TouchableWithoutFeedback } from 'react-native';
 import { colors } from '../components/colors.js';
 import AntDesign from 'react-native-vector-icons/AntDesign';
@@ -9,6 +11,8 @@ import storage from '@react-native-firebase/storage';
 import firestore from '@react-native-firebase/firestore';
 
 export default function scannedView(props) {
+    const licenses = useSelector(state => state.licenses);
+    const dispatch = useDispatch();
 
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
@@ -153,6 +157,7 @@ export default function scannedView(props) {
                                         data[props.route?.params?.licenseId].licenseThumbnail = Obj.thumbnailURL;
                                         db.collection('users').doc(uid).collection('licenses').doc('licenseData').set(data, { merge: true })
                                             .then(() => {
+                                                dispatch(updateLicenses(data));
                                                 props.navigation.navigate(props.route.params.fromThisScreen);
                                             })
                                             .catch((error) => {
@@ -218,6 +223,7 @@ export default function scannedView(props) {
                                         data[props.route?.params?.ceID].ceThumbnail = Obj.thumbnailURL;
                                         db.collection('users').doc(uid).collection('CEs').doc('CEData').set(data, { merge: true })
                                             .then(() => {
+                                                // TODO: May need to dispatch CE data from here later.
                                                 props.navigation.navigate(props.route.params.fromThisScreen);
                                             })
                                             .catch((error) => {

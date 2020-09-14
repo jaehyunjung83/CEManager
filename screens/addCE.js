@@ -35,6 +35,7 @@ export default function addCE(props) {
 
     const [isLoading, setIsLoading] = useState(false);
 
+    const [cePhoto, setCEPhoto] = useState("");
     const [ceThumbnail, setCEThumbnail] = useState("");
 
     const [linkedLicenses, setLinkedLicenses] = useState([]);
@@ -62,22 +63,22 @@ export default function addCE(props) {
             }
         }
         if (typeof props.route.params?.photoURL !== 'undefined') {
-            if (licensePhoto) {
+            if (cePhoto) {
                 // User is replacing old photo. Delete old one.
-                const firstPhotoRef = storage().refFromURL(licensePhoto).toString();
+                const firstPhotoRef = storage().refFromURL(cePhoto).toString();
                 const oldPhotoPath = firstPhotoRef.replace('gs://cetracker-2de23', '');
                 const oldPhotoRef = storage().ref().child(`${oldPhotoPath}`);
                 oldPhotoRef.delete()
                     .then(() => {
                         console.log("Deleted photo successfully.");
-                        setLicensePhoto(props.route?.params?.photoURL);
+                        setCEPhoto(props.route?.params?.photoURL);
                     })
                     .catch(error => {
                         console.log("Failed to delete old photo. Error: " + error.toString());
                     })
             }
             else {
-                setLicensePhoto(props.route?.params?.photoURL);
+                setCEPhoto(props.route?.params?.photoURL);
             }
         }
         // For tracking license ID user came from
