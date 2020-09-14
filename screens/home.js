@@ -20,7 +20,7 @@ export default function home({ navigation }) {
         component={HomeTabs}
         options={{
           // headerShown: false,
-          title: 'CEManager',
+          title: 'CEsimply',
           headerStyle: {
             backgroundColor: 'white',
             height: 34 * hrem,

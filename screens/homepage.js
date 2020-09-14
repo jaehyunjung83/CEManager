@@ -25,7 +25,7 @@ export default function homepage(props) {
     let addCE = () => {
     }
 
-    let submitToState = () => {
+    let linkExistingCE = () => {
         // TODO:
     }
 
@@ -46,6 +46,7 @@ export default function homepage(props) {
                     setIsLoading(false);
                 }
                 else {
+                    setIsLoading(false);
                     setIsEmpty(false);
                     dispatch(updateLicenses(data));
                     console.log(data);
@@ -77,7 +78,6 @@ export default function homepage(props) {
                 console.log("Error getting document: ", error);
                 setIsLoading(false);
             });
-        setIsLoading(false);
     }
 
     // Allows us to refresh page from other screens.
@@ -128,15 +128,6 @@ export default function homepage(props) {
                                 />
                             )}
                         />
-                        {/* <FlatList
-                            data={licenseDataArray}
-                            keyExtractor={(item) => item.id}
-                            renderItem={({ item }) => (
-                                <LicenseCard
-                                    data={item}
-                                />
-                            )}
-                        /> */}
                         <View style={styles.addNewButtonContainer}>
                             <TouchableOpacity
                                 onPress={addNew}>

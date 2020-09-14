@@ -102,13 +102,14 @@ export default function scannedView(props) {
                                 userID: userID,
                             })
                         })
+
                         let data = await response.text();
+                        console.log(data);
                         let Obj = JSON.parse(data);
-                        // TODO: Modify this to handle CEs as well. Currently only updates database for licenses.
-                        // TODO: Delete old photos.
+
                         if (typeof props.route?.params?.licenseId !== 'undefined') {
-                            console.log("Updating license");
                             // License Id was passed; license already exists, update database with thumbnail and photo URLs.
+                            console.log("Updating license");
                             let uid = auth().currentUser.uid;
                             let db = firestore();
 
@@ -120,7 +121,7 @@ export default function scannedView(props) {
                                         // Checking for and deleting old photos from storage.
                                         if (data[props.route?.params?.licenseId].licensePhoto) {
                                             // User is replacing old photo. Delete old one.
-                                            const firstPhotoRef = storage().refFromURL(licensePhoto).toString();
+                                            const firstPhotoRef = storage().refFromURL(data[props.route?.params?.licenseId].licensePhoto).toString();
                                             const oldPhotoPath = firstPhotoRef.replace('gs://cetracker-2de23', '');
                                             const oldPhotoRef = storage().ref().child(`${oldPhotoPath}`);
                                             oldPhotoRef.delete()
@@ -152,7 +153,7 @@ export default function scannedView(props) {
                                         data[props.route?.params?.licenseId].licenseThumbnail = Obj.thumbnailURL;
                                         db.collection('users').doc(uid).collection('licenses').doc('licenseData').set(data, { merge: true })
                                             .then(() => {
-                                                props.navigation.navigate(props.route.params.fromThisScreen, { refreshPage: true });
+                                                props.navigation.navigate(props.route.params.fromThisScreen);
                                             })
                                             .catch((error) => {
                                                 console.log("Updating license failed. " + error);
@@ -172,16 +173,78 @@ export default function scannedView(props) {
                                 });
 
                         }
+                        else if (typeof props.route?.params?.ceID !== 'undefined') {
+                            // ceID was passed, updating scan of CE.
+                            let uid = auth().currentUser.uid;
+                            let db = firestore();
+
+                            db.collection('users').doc(uid).collection('CEs').doc('CEData').get()
+                                .then((response) => {
+
+                                    let data = response.data();
+                                    if (data) {
+                                        // Checking for and deleting old photos from storage.
+                                        if (data[props.route?.params?.ceID].cePhoto) {
+                                            // User is replacing old photo. Delete old one.
+                                            const firstPhotoRef = storage().refFromURL(cePhoto).toString();
+                                            const oldPhotoPath = firstPhotoRef.replace('gs://cetracker-2de23', '');
+                                            const oldPhotoRef = storage().ref().child(`${oldPhotoPath}`);
+                                            oldPhotoRef.delete()
+                                                .then(() => {
+                                                    console.log("Deleted photo successfully.");
+                                                })
+                                                .catch(error => {
+                                                    console.log("Failed to delete old photo. Error: " + error.toString());
+                                                })
+                                        }
+                                        if (data[props.route?.params?.licenseId].ceThumbnail) {
+                                            // User is replacing old thumbnail. Delete old one.
+                                            // Firebase couldn't parse the URL for some reason.
+                                            // const oldThumbnailRef = storage().refFromURL(licenseThumbnail);
+                                            const oldThumbnailPath = ceThumbnail.replace('https://storage.googleapis.com/cetracker-2de23.appspot.com/', '');
+                                            const oldThumbnailRef = storage().ref().child(`${oldThumbnailPath}`);
+
+                                            oldThumbnailRef.delete()
+                                                .then(() => {
+                                                    console.log("Deleted thumbnail successfully.");
+                                                })
+                                                .catch(error => {
+                                                    console.log("Failed to delete old thumbnail. Error: " + error.toString());
+                                                })
+                                        }
+
+                                        // Updating database with links to new photo and thumbnail URLs.
+                                        data[props.route?.params?.ceID].cePhoto = downloadURL;
+                                        data[props.route?.params?.ceID].ceThumbnail = Obj.thumbnailURL;
+                                        db.collection('users').doc(uid).collection('CEs').doc('CEData').set(data, { merge: true })
+                                            .then(() => {
+                                                props.navigation.navigate(props.route.params.fromThisScreen);
+                                            })
+                                            .catch((error) => {
+                                                console.log("Updating license failed. " + error);
+                                                setIsModalVisible(true);
+                                                setIsProcessing(false);
+                                                setIsLoading(false);
+                                                setErrorUploading(true);
+                                            })
+                                    }
+                                })
+                                .catch((error) => {
+                                    console.error("Error getting document: ", error);
+                                    setIsModalVisible(true);
+                                    setIsProcessing(false);
+                                    setIsLoading(false);
+                                    setErrorUploading(true);
+                                });
+                        }
                         else {
                             // Uploading new license/CE/whatever, returning to previous screen.
                             setIsProcessing(false);
                             setIsModalVisible(false);
-
                             props.navigation.navigate(props.route.params.fromThisScreen, {
                                 thumbnailURL: Obj.thumbnailURL,
                                 photoURL: downloadURL,
                                 bucket: Obj.bucket,
-                                refreshPage: true,
                             });
                         }
                     })
