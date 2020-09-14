@@ -6,6 +6,7 @@ import Scanner, { Filters, RectangleOverlay } from 'react-native-rectangle-scann
 import ScannerFilters from '../Filters.js';
 import { colors } from '../components/colors.js';
 
+// Filter IDs: 1. Color, 2. Black & White, 3. Greyscale, 4. No filter
 // TODO: Handle where request is from. It will change how the image is saved.
 // Current known locations include: homepage, addNew, documents, and whereever certs are.
 export default function (props) {

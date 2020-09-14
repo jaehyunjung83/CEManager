@@ -11,10 +11,7 @@ const rem = (screenWidth / 380);
 export default function documents({ navigation }) {
 
   let openScannerHandler = () => {
-    navigation.navigate("Scanner", {
-      fromThisScreen: 'Documents',
-      initialFilterId: 2, // Black & white
-    });
+    navigation.navigate("AddCE");
   }
 
   return (
@@ -51,8 +48,8 @@ const styles = StyleSheet.create({
   },
   addContainer: {
     position: 'absolute',
-    right: 32*rem,
-    bottom: 32*rem,
+    right: 32 * rem,
+    bottom: 32 * rem,
     alignItems: 'center',
     justifyContent: 'center',
     width: 60 * rem,

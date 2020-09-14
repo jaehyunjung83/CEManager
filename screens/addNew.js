@@ -163,7 +163,6 @@ export default function addLicense(props) {
                 licensePhoto: licensePhoto,
                 licenseThumbnail: licenseThumbnail,
                 totalCEHours: ceHoursRequired,
-                completedCEHours: 0,
                 requirements: requirements,
                 id: licenseId,
             }

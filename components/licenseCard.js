@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity, TouchableHighlight, Modal, TouchableWithoutFeedback } from 'react-native';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import { colors } from '../components/colors.js';
@@ -7,18 +8,29 @@ import { useNavigation } from '@react-navigation/native';
 
 
 export default function licenseCard(props) {
+    const licenses = useSelector(state => state.licenses);
 
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
+    const [completedCEHours, setCompletedCEHours] = useState(0);
+
+
     const navigation = useNavigation();
 
+    React.useEffect(() => {
+        let tempCompletedHours = 0;
+        for (linkedCE in licenses?.[props.data.id]["linkedCEs"]) {
+            tempCompletedHours += licenses?.[props.data.id]["linkedCEs"][linkedCE];
+        }
+        setCompletedCEHours(tempCompletedHours);
+    }, [licenses]);
 
     // Some logic to determine how to fill up progress bar.
     let progressFill = 0;
     if (props.data.totalCEHours) {
-        if (props.data.completedCEHours) {
-            progressFill = parseInt(props.data.completedCEHours) / parseInt(props.data.totalCEHours);
+        if (completedCEHours) {
+            progressFill = parseInt(completedCEHours) / parseInt(props.data.totalCEHours);
             if (progressFill > 0.88) { progressFill = 0.88 }
             else if (progressFill < 0.1) { progressFill = 0.1 }
         }
@@ -65,15 +77,15 @@ export default function licenseCard(props) {
     }
 
     let addCE = () => {
-        navigation.navigate("AddCE");
+        navigation.navigate("AddCE", { id: props.data.id });
     }
 
-    let submitToState = () => {
+    let linkExistingCE = () => {
         // TODO:
     }
 
     let cardPressed = () => {
-        navigation.navigate("LicenseDetails", {data: props.data});
+        navigation.navigate("LicenseDetails", { data: licenses[props.data.id] });
     }
 
     let openScanner = () => {
@@ -109,7 +121,7 @@ export default function licenseCard(props) {
             },
             shadowOpacity: 0.27,
             shadowRadius: 4.65,
-            
+
             elevation: 6,
             padding: 18 * rem,
             marginTop: 36 * rem,
@@ -338,7 +350,7 @@ export default function licenseCard(props) {
             fontSize: 16 * rem,
             fontWeight: '500',
         },
-        submitButton: {
+        linkButton: {
             flexDirection: 'row',
             padding: 18 * rem,
             paddingTop: 12 * rem,
@@ -350,7 +362,7 @@ export default function licenseCard(props) {
             alignItems: 'center',
             justifyContent: 'center',
         },
-        submitButtonText: {
+        linkButtonText: {
             color: 'white',
             fontSize: 16 * rem,
             fontWeight: '500',
@@ -395,7 +407,7 @@ export default function licenseCard(props) {
                                 <>
                                     <Text style={styles.loadingText}>Loading. . .</Text>
                                     <FastImage
-                                        style={{height: 0, width: 0}}
+                                        style={{ height: 0, width: 0 }}
                                         source={{
                                             uri: props.data.licensePhoto,
                                             priority: FastImage.priority.normal,
@@ -476,8 +488,8 @@ export default function licenseCard(props) {
                             <AntDesign name="copy1" size={20 * rem} style={styles.ceIcon} />
                             <View style={styles.progressBar}>
                                 <View style={styles.progressBarFill}></View>
-                                {props.data.completedCEHours ? (
-                                    <Text style={styles.ceText}>{`${props.data.completedCEHours}/${props.data.totalCEHours} CE`}</Text>
+                                {completedCEHours ? (
+                                    <Text style={styles.ceText}>{`${completedCEHours}/${props.data.totalCEHours} CE`}</Text>
                                 ) : (
                                         <Text style={styles.ceText}>{`0/${props.data.totalCEHours} CE`}</Text>
                                     )}
@@ -490,9 +502,9 @@ export default function licenseCard(props) {
                         <View style={styles.rightInset} />
                     </View>
                     <View style={styles.cardButtonsContainer}>
-                        <TouchableOpacity style={styles.submitButton}
-                            onPress={submitToState}>
-                            <Text style={styles.submitButtonText}>Submit to State</Text>
+                        <TouchableOpacity style={styles.linkButton}
+                            onPress={linkExistingCE}>
+                            <Text style={styles.linkButtonText}>Link Existing CE</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.addCEButton}
                             onPress={addCE}>

@@ -14,8 +14,10 @@ export default function licenseCard(props) {
 
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
-    const [requirements, setRequirements] = useState(props.route.params.data.requirements);
     const [licenseData, setLicenseData] = useState(props.route.params.data);
+    const [requirements, setRequirements] = useState(licenseData.requirements);
+
+    const [completedCEHours, setCompleteCEHours] = useState(0);
 
     // Initializing stuff
     React.useEffect(() => {
@@ -34,6 +36,11 @@ export default function licenseCard(props) {
                 console.log("Error getting state requirements: ", e);
             })
 
+        let tempCompletedHours = 0;
+        for (linkedCE in licenseData["linkedCEs"]) {
+            tempCompletedHours += licenseData["linkedCEs"][linkedCE];
+        }
+        setCompleteCEHours(tempCompletedHours);
         // Calculating requirements
         // TODO: Finish calculating.
         if (typeof licenseData['attachedCEs'] !== 'undefined') {
@@ -59,8 +66,8 @@ export default function licenseCard(props) {
     // Some logic to determine how to fill up progress bar.
     let progressFill = 0;
     if (licenseData.totalCEHours) {
-        if (licenseData.completedCEHours) {
-            progressFill = parseInt(licenseData.completedCEHours) / parseInt(licenseData.totalCEHours);
+        if (completedCEHours) {
+            progressFill = parseInt(completedCEHours) / parseInt(licenseData.totalCEHours);
             if (progressFill > 0.88) { progressFill = 0.88 }
             else if (progressFill < 0.1) { progressFill = 0.1 }
         }
@@ -97,10 +104,10 @@ export default function licenseCard(props) {
 
 
     let addCE = () => {
-        navigation.navigate("AddCE");
+        navigation.navigate("AddCE", { id: props.route.params.data.id });
     }
 
-    let submitToState = () => {
+    let linkExistingCE = () => {
         // TODO:
     }
 
@@ -342,7 +349,7 @@ export default function licenseCard(props) {
             fontSize: 16 * rem,
             fontWeight: '500',
         },
-        submitButton: {
+        linkButton: {
             flexDirection: 'row',
             padding: 18 * rem,
             paddingTop: 12 * rem,
@@ -353,7 +360,7 @@ export default function licenseCard(props) {
             alignItems: 'center',
             justifyContent: 'center',
         },
-        submitButtonText: {
+        linkButtonText: {
             color: 'white',
             fontSize: 16 * rem,
             fontWeight: '500',
@@ -612,8 +619,8 @@ export default function licenseCard(props) {
                             <AntDesign name="copy1" size={20 * rem} style={styles.ceIcon} />
                             <View style={styles.progressBar}>
                                 <View style={styles.progressBarFill}></View>
-                                {licenseData.completedCEHours ? (
-                                    <Text style={styles.ceText}>{`${licenseData.completedCEHours}/${licenseData.totalCEHours} CE`}</Text>
+                                {completedCEHours ? (
+                                    <Text style={styles.ceText}>{`${completedCEHours}/${licenseData.totalCEHours} CE`}</Text>
                                 ) : (
                                         <Text style={styles.ceText}>{`0/${licenseData.totalCEHours} CE`}</Text>
                                     )}
@@ -623,9 +630,9 @@ export default function licenseCard(props) {
                 </>
             </View>
             <View style={styles.cardButtonsContainer}>
-                <TouchableOpacity style={styles.submitButton}
-                    onPress={submitToState}>
-                    <Text style={styles.submitButtonText}>Submit to State</Text>
+                <TouchableOpacity style={styles.linkButton}
+                    onPress={linkExistingCE}>
+                    <Text style={styles.linkButtonText}>Link Existing CE</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.addCEButton}
                     onPress={addCE}>
@@ -660,7 +667,7 @@ export default function licenseCard(props) {
                                 <AntDesign name="checkcircleo" size={20 * rem} style={styles.completeIcon} />
                                 {item.hours ? (
                                     <>
-                                        <Text style={styles.requirementHoursDone}>{licenseData.completedCEHours}</Text>
+                                        <Text style={styles.requirementHoursDone}>{completedCEHours}</Text>
                                         <Text style={styles.requirementHoursTotal}>/{item.hours}hrs</Text>
                                     </>
                                 ) : (null)}
@@ -676,7 +683,7 @@ export default function licenseCard(props) {
             </View>
 
             <View style={styles.headerContainer}>
-                <Header text="Paired CEs" />
+                <Header text="Linked CEs" />
             </View>
 
             <View style={styles.pairedCeContainer}>

@@ -16,7 +16,7 @@ const rem = (screenWidth / 380);
 
 const styles = StyleSheet.create({
     container: {
-        width: '100%',
+        // width: '100%',
         borderBottomColor: colors.grey300,
         borderBottomWidth: 2 * rem,
         paddingBottom: 12 * rem,
@@ -26,5 +26,8 @@ const styles = StyleSheet.create({
         fontSize: 20 * rem,
         color: colors.grey900,
         fontWeight: '500',
+        lineHeight: 20 * rem,
+        // flex: 1,
+        // flexWrap: 'wrap',
     },
 });

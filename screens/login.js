@@ -5,23 +5,22 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { colors } from '../components/colors.js';
 import auth from '@react-native-firebase/auth';
 
-
 // Used to make element sizes more consistent across screen sizes.
 const screenWidth = Math.round(Dimensions.get('window').width);
 const rem = (screenWidth / 380);
 
 export default function login({ navigation, route }) {
 
-    //   auth().onAuthStateChanged((user) => {
-    //   if (user) {
-    //     route.params.setParentState({ isLoggedIn: true });
-    //     route.params.setParentState({ isLoading: false });
-    //   }
-    //   else {
-    //     route.params.setParentState({ isLoggedIn: false });
-    //     route.params.setParentState({ isLoading: false });
-    //   }
-    // });
+  //   auth().onAuthStateChanged((user) => {
+  //   if (user) {
+  //     route.params.setParentState({ isLoggedIn: true });
+  //     route.params.setParentState({ isLoading: false });
+  //   }
+  //   else {
+  //     route.params.setParentState({ isLoggedIn: false });
+  //     route.params.setParentState({ isLoading: false });
+  //   }
+  // });
 
   const [showPass, setShow] = useState(true);
   const [press, setPress] = useState(true);
@@ -44,13 +43,14 @@ export default function login({ navigation, route }) {
     setButtonText("...");
     auth().signInWithEmailAndPassword(email, password)
       .then(() => {
+
         setButtonText("Log In");
-        // route.params.setParentState({isLoggedIn: true});
       })
       .catch(function (error) {
         setError(error.message);
         setButtonText("Log In");
       });
+
   }
 
   const signUpHandler = () => {
@@ -59,7 +59,7 @@ export default function login({ navigation, route }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header1}>CE<Text style={styles.header2}>Manager</Text></Text>
+      <Text style={styles.header1}>CE<Text style={styles.header2}>simply</Text></Text>
 
       <View>
         <Icon name={'ios-person'} size={28} color={'rgba(255, 255, 255, 1)'} style={styles.inputIcon} />

@@ -6,7 +6,7 @@ export default function login({ navigation }) {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.header1}>CEManager</Text>
+            <Text style={styles.header1}>CEsimply</Text>
         </View>
     )
 }
