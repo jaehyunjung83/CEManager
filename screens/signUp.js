@@ -5,7 +5,6 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { colors } from '../components/colors.js';
 import auth from '@react-native-firebase/auth';
 
-
 // Used to make element sizes more consistent across screen sizes.
 const screenWidth = Math.round(Dimensions.get('window').width);
 const rem = (screenWidth / 380);

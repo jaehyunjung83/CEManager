@@ -17,7 +17,10 @@ export default function (props) {
     additionalProps.initialFilterId = props.route.params.initialFilterId;
   }
   if(props.route?.params?.licenseId !== undefined) {
-    additionalProps.licenseId = props.route.params.licenseId
+    additionalProps.licenseId = props.route.params.licenseId;
+  }
+  if(props.route?.params?.ceID !== undefined) {
+    additionalProps.ceID = props.route.params.ceID;
   }
 
     return <DocumentScanner
@@ -240,6 +243,14 @@ class DocumentScanner extends PureComponent {
         image: event.croppedImage,
         fromThisScreen: this.props.fromThisScreen,
         licenseId: this.props.additionalProps.licenseId,
+      });
+    }
+    else if (typeof this.props.additionalProps.ceID !== 'undefined') {
+      // Updating image instead of creating new one.
+      this.props.additionalProps.navigation.navigate("ScannedView", {
+        image: event.croppedImage,
+        fromThisScreen: this.props.fromThisScreen,
+        ceID: this.props.additionalProps.ceID,
       });
     }
     else {

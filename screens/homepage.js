@@ -15,7 +15,6 @@ export default function homepage(props) {
     const dispatch = useDispatch();
 
     const [isEmpty, setIsEmpty] = useState(true);
-    const [licenseDataArray, setLicenseDataArray] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
     let addNew = () => {
@@ -33,45 +32,41 @@ export default function homepage(props) {
         // TODO:
     }
 
-    let getLicenseData = () => {
+    let getLicenseData = async () => {
         console.log("Getting license data");
+        // Try converting to async function.
         let uid = auth().currentUser.uid;
         let db = firestore();
-        db.collection('users').doc(uid).collection('licenses').doc('licenseData').get()
-            .then((response) => {
+        await db.collection('users').doc(uid).collection('licenses').doc('licenseData').get()
+            .then(async (response) => {
 
                 let data = response.data();
                 // Checking if data is empty
                 if (typeof data == 'undefined' || Object.keys(data).length === 0 && data.constructor === Object) {
                     setIsLoading(false);
+                    setIsEmpty(true);
                 }
                 else {
-                    setIsLoading(false);
                     setIsEmpty(false);
-                    dispatch(updateLicenses(data));
-                    console.log(data);
-                    let licenseArr = [];
-                    for (const license in licenses) {
-                        licenseArr.push(licenses[license]);
-                        setLicenseDataArray(licenseArr);
-                        // db.collection('requirements').doc(licenses[license].licenseType).get()
-                        //     .then(res => {
-                        //         const requirements = res.data();
-                        //         console.log(`Got requirements: ${JSON.stringify(requirements)}`);
-                        //         const state = licenses[license].licenseState;
-                        //         for (const req in requirements[state].requirements) {
-                        //             // console.log(req);
-                        //             // data[license].requirements = requirements[state][req];
-                        //             // data[license].totalCEHours = requirements[state].totalCEHours;
-                                        // licenseArr.push(licenses[license]);
-                                        // setLicenseDataArray(licenseArr);
-                        //         }
-                        //     })
-                        //     .catch(e => {
-                        //         console.log("Error getting state requirements: ", e);
-                        //         licenseArr.push(licenses[license]);
-                        //     })
+                    for (const license in data) {
+                        // Overriding requirements with supported state requirements.
+                        // Overrides previous requirement state due to setState being async.
+                        await db.collection('requirements').doc(data[license].licenseType).get()
+                            .then(res => {
+                                const reqData = res.data();
+                                if (reqData?.[data[license].licenseState]) {
+                                    // Setting totalCEHours needed
+                                    if (reqData[data[license].licenseState].totalCEHours) {
+                                        data[license].totalCEHours = reqData[data[license].licenseState].totalCEHours;
+                                    }
+                                }
+                            })
+                            .catch(e => {
+                                console.log("Error getting requirements for this type of license: ", e);
+                            })
                     }
+                    setIsLoading(false);
+                    dispatch(updateLicenses(data));
                 }
             })
             .catch((error) => {
@@ -95,7 +90,6 @@ export default function homepage(props) {
         getLicenseData();
     }, [])
 
-
     if (isLoading) {
         return (<View style={styles.emptyContainer}></View>)
     }
@@ -109,7 +103,7 @@ export default function homepage(props) {
                             onPress={addNew}>
                             <AntDesign
                                 name='plus'
-                                size={40 * rem}
+                                size={32 * rem}
                                 color={'white'}
                             />
                         </TouchableOpacity>
