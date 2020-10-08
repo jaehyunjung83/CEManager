@@ -4,3 +4,9 @@ export const updateLicenses = (data) => {
         payload: data,
     }
 }
+export const updateCEs = (data) => {
+    return {
+        type: 'UPDATE_CES',
+        payload: data,
+    }
+}

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { updateLicenses } from '../actions';
+import { updateLicenses, updateCEs } from '../actions';
 import { Text, View, Image, StyleSheet, TouchableOpacity, Dimensions, Modal, TouchableWithoutFeedback } from 'react-native';
 import { colors } from '../components/colors.js';
 import AntDesign from 'react-native-vector-icons/AntDesign';
@@ -202,10 +202,9 @@ export default function scannedView(props) {
                                                     console.log("Failed to delete old photo. Error: " + error.toString());
                                                 })
                                         }
-                                        if (data[props.route?.params?.licenseId].ceThumbnail) {
+                                        if (data[props.route?.params?.licenseId]?.ceThumbnail) {
                                             // User is replacing old thumbnail. Delete old one.
                                             // Firebase couldn't parse the URL for some reason.
-                                            // const oldThumbnailRef = storage().refFromURL(licenseThumbnail);
                                             const oldThumbnailPath = ceThumbnail.replace('https://storage.googleapis.com/cetracker-2de23.appspot.com/', '');
                                             const oldThumbnailRef = storage().ref().child(`${oldThumbnailPath}`);
 
@@ -223,7 +222,7 @@ export default function scannedView(props) {
                                         data[props.route?.params?.ceID].ceThumbnail = Obj.thumbnailURL;
                                         db.collection('users').doc(uid).collection('CEs').doc('CEData').set(data, { merge: true })
                                             .then(() => {
-                                                // TODO: May need to dispatch CE data from here later.
+                                                dispatch(updateCEs(data));
                                                 props.navigation.navigate(props.route.params.fromThisScreen);
                                             })
                                             .catch((error) => {

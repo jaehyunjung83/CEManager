@@ -235,6 +235,8 @@ export default function addCE(props) {
                 completionDate: completionDate,
                 providerNum: providerNum,
                 id: ceID,
+                ceThumbnail: ceThumbnail,
+                cePhoto: cePhoto,
             }
             let ceObj = {
                 [ceID]: ceData,

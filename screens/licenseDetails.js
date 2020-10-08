@@ -1,39 +1,118 @@
 import React, { useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { updateCEs } from '../actions';
+import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
+import FastImage from 'react-native-fast-image'
+
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity, FlatList, Modal, TouchableWithoutFeedback } from 'react-native';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import { colors } from '../components/colors.js';
-import FastImage from 'react-native-fast-image'
 import Header from '../components/header.js';
 import { ScrollView } from 'react-native-gesture-handler';
-import firestore from '@react-native-firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
 
 
 export default function licenseCard(props) {
     const navigation = useNavigation();
+    const ceData = useSelector(state => state.ces);
+    const dispatch = useDispatch();
 
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [licenseData, setLicenseData] = useState(props.route.params.data);
     const [requirements, setRequirements] = useState(licenseData.requirements);
+    const [linkedCEs, setLinkedCEs] = useState({});
+    const [selectedImage, setSelectedImage] = useState("");
 
     const [completedCEHours, setCompleteCEHours] = useState(0);
 
     // Initializing stuff
     React.useEffect(() => {
-        // Allows us to refresh page from other screens.
+        let uid = auth().currentUser.uid;
         let db = firestore();
-        db.collection('requirements').doc(props.route.params.data.licenseType).get()
+        db.collection('users').doc(uid).collection('CEs').doc('CEData').get()
+            .then((response) => {
+
+                let data = response.data();
+                // Checking if data is empty
+                if (typeof data == 'undefined' || Object.keys(data).length === 0 && data.constructor === Object) {
+                }
+                else {
+                    dispatch(updateCEs(data));
+                }
+            })
+            .catch((error) => {
+                console.log("Error getting CEs: ", error);
+            });
+
+        // Setting requirements that user assigned to license.
+        if (typeof licenseData["requirements"] !== "undefined" && licenseData["requirements"].length) {
+            let requirementsCopy = JSON.parse(JSON.stringify(licenseData["requirements"]));
+
+            // Adding in license total CE hours requirement
+            if (licenseData["totalCEHours"]) {
+                let completedHours = 0;
+                for (linkedCE in licenseData["linkedCEs"]) {
+                    completedHours += licenseData["linkedCEs"][linkedCE];
+                }
+                requirementsCopy.push({
+                    key: "5416f212-dd53-4d40-a563-dbc4fede097c",
+                    hours: licenseData["totalCEHours"],
+                    name: "Total CEs Needed",
+                    linkedCEs: licenseData["linkedCEs"],
+                    completedHours: completedHours,
+                })
+            }
+
+            // Adding in custom requirements
+            for (const requirementIndex in requirementsCopy) {
+                let completedHours = 0;
+                for (linkedCE in requirementsCopy[requirementIndex]["linkedCEs"]) {
+                    completedHours += requirementsCopy[requirementIndex]["linkedCEs"][linkedCE];
+                }
+                requirementsCopy[requirementIndex].completedHours = completedHours;
+            }
+            setRequirements(requirementsCopy);
+        }
+
+        // Overriding requirements with supported state requirements.
+        // Overrides previous requirement state due to setState being async.
+        db.collection('requirements').doc(props?.route?.params?.data?.licenseType).get()
             .then(res => {
-                const requirements = res.data();
-                console.log(`Got requirements: ${JSON.stringify(requirements[props.route.params.data.licenseState].requirements)}
-                \nCompared to: ${JSON.stringify(props.route.params.data.requirements)}`);
-                if (requirements[props.route.params.data.licenseState]) {
-                    setRequirements(requirements[props.route.params.data.licenseState].requirements);
+                const data = res.data();
+                if (data[props?.route?.params?.data?.licenseState]) {
+                    console.log(`Found state requirements: ${JSON.stringify(data[props?.route?.params?.data?.licenseState])}`);
+                    let requirementsCopy = JSON.parse(JSON.stringify(data[props.route.params.data.licenseState].requirements));
+                    // Setting totalCEHours needed
+                    if (data[props?.route?.params?.data?.licenseState].totalCEHours) {
+                        let licenseDataCopy = JSON.parse(JSON.stringify(licenseData));
+                        licenseDataCopy.totalCEHours = data[props?.route?.params?.data?.licenseState].totalCEHours;
+                        setLicenseData(licenseDataCopy);
+                    }
+
+                    for (const requirementIndex in requirementsCopy) {
+                        // Calculating completed hours.
+                        let completedHours = 0;
+                        if (requirementsCopy[requirementIndex].key == "5416f212-dd53-4d40-a563-dbc4fede097c") {
+                            // Total CE hours needed requirement
+                            requirementsCopy[requirementIndex]["linkedCEs"] = licenseData["linkedCEs"];
+                        }
+                        if (typeof requirementsCopy[requirementIndex]?.["linkedCEs"] !== "undefined") {
+                            for (linkedCE in requirementsCopy[requirementIndex]["linkedCEs"]) {
+                                completedHours += requirementsCopy[requirementIndex]["linkedCEs"][linkedCE];
+                            }
+                            requirementsCopy[requirementIndex].completedHours = completedHours;
+                            if (requirementsCopy[requirementIndex].key == "5416f212-dd53-4d40-a563-dbc4fede097c") {
+                                setCompleteCEHours(completedHours);
+                            }
+                        }
+                    }
+                    setRequirements(requirementsCopy);
                 }
             })
             .catch(e => {
-                console.log("Error getting state requirements: ", e);
+                console.log("Error getting requirements for this type of license: ", e);
             })
 
         let tempCompletedHours = 0;
@@ -41,14 +120,29 @@ export default function licenseCard(props) {
             tempCompletedHours += licenseData["linkedCEs"][linkedCE];
         }
         setCompleteCEHours(tempCompletedHours);
-        // Calculating requirements
-        // TODO: Finish calculating.
-        if (typeof licenseData['attachedCEs'] !== 'undefined') {
-            console.log("Some CEs are attached. Calculating...")
-        }
-        else {
 
+        if (typeof licenseData['linkedCEs'] !== 'undefined') {
+            console.log("CEs are linked to general CE requirement.")
+            setLinkedCEs(licenseData['linkedCEs']);
         }
+
+
+        // if (typeof licenseData["requirements"] !== "undefined") {
+        //     for (const requirement of licenseData["requirements"]) {
+        //         if (typeof requirement !== "undefined") {
+        //             for (linkedCE in requirement["linkedCEs"]) {
+        //                 // let linkedCEsCopy = JSON.parse(JSON.stringify(linkedCEs));
+        //                 // linkedCEsCopy[linkedCE] = "?";
+        //                 // console.log(`LinkedCEs: ${JSON.stringify(linkedCEsCopy)}`)
+        //                 setLinkedCEs(prevState => ({
+        //                     ...prevState,
+        //                     // [linkedCE]: "?"
+        //                     [linkedCE]: requirement["linkedCEs"][linkedCE],
+        //                 }));
+        //             }
+        //         }
+        //     }
+        // }
     }, [])
 
     // Accounting for if the license type is "Other"
@@ -119,12 +213,30 @@ export default function licenseCard(props) {
         });
     }
 
-    let openImage = () => {
+    let openImage = (photoUri) => {
+        setSelectedImage(photoUri);
+        setIsLoading(true);
         setIsModalVisible(true);
     }
 
     let openEllipsis = () => {
-        // TODO:
+
+    }
+
+    let toggleShowRequirements = (requirementID) => {
+        let requirementsCopy = JSON.parse(JSON.stringify(requirements));
+        for (requirement of requirementsCopy) {
+            if (requirement.key == requirementID) {
+                if (requirement.expanded) {
+                    requirement.expanded = !requirement.expanded;
+                }
+                else {
+                    requirement.expanded = true;
+                }
+                break;
+            }
+        }
+        setRequirements(requirementsCopy)
     }
 
     // Used to make element sizes more consistent across screen sizes.
@@ -325,6 +437,13 @@ export default function licenseCard(props) {
             height: 18 * rem,
             backgroundColor: 'rgba(208,233,251,1)',
         },
+        progressBarFillComplete: {
+            position: 'absolute',
+            width: (screenWidth - ((74 + 4) * rem)), // from progressBar
+            borderRadius: progressBarWidth,
+            height: 18 * rem,
+            backgroundColor: colors.green200,
+        },
         cardButtonsContainer: {
             flexDirection: 'row',
             width: '100%',
@@ -407,14 +526,24 @@ export default function licenseCard(props) {
             flexDirection: 'row',
             width: screenWidth - (36 * rem),
             lineHeight: 18 * rem,
+            // marginBottom: 6 * rem,
+        },
+        requirementClickableArea: {
+            flexDirection: 'row',
+            width: screenWidth - (62 * rem),
+            lineHeight: 18 * rem,
             marginBottom: 18 * rem,
-            // alignItems: 'center',
         },
         requirementName: {
             fontSize: 18 * rem,
             color: colors.grey800,
             marginLeft: 18 * rem,
             flex: 1,
+        },
+        chevron: {
+            width: 20 * rem,
+            marginRight: 20 * rem,
+            color: colors.grey800,
         },
         requirementHoursDone: {
             fontSize: 18 * rem,
@@ -426,103 +555,12 @@ export default function licenseCard(props) {
             fontWeight: '200',
             color: colors.grey400,
         },
+        incompleteIcon: {
+            color: colors.grey400,
+            opacity: 0.6,
+        },
         completeIcon: {
             color: colors.green600,
-        },
-        cardContainer: {
-            height: 97 * rem,
-            width: screenWidth - (48 * rem),
-            borderRadius: 10 * rem,
-            backgroundColor: 'white',
-            alignSelf: 'center',
-            marginBottom: 18 * rem,
-            shadowColor: "#000",
-            shadowOffset: {
-                width: 0,
-                height: 3,
-            },
-            shadowOpacity: 0.27,
-            shadowRadius: 4.65,
-
-            elevation: 6,
-        },
-        ceThumbnailContainer: {
-            alignSelf: 'flex-end',
-            marginTop: 11 * rem,
-            marginRight: 11 * rem,
-            width: 75 * rem,
-            aspectRatio: 1,
-            borderRadius: 10 * rem,
-            backgroundColor: 'white',
-            alignItems: 'center',
-            justifyContent: 'center',
-            shadowColor: "#000",
-            shadowOffset: {
-                width: 0,
-                height: 1,
-            },
-            shadowOpacity: 0.18,
-            shadowRadius: 1.00,
-
-            elevation: 1,
-        },
-        ceThumbnailImg: {
-            right: 0,
-            top: 0,
-            width: 75 * rem,
-            aspectRatio: 1,
-            borderRadius: 10 * rem,
-            backgroundColor: 'black',
-            alignItems: 'center',
-            justifyContent: 'center',
-            shadowColor: "#000",
-            shadowOffset: {
-                width: 0,
-                height: 1,
-            },
-            shadowOpacity: 0.18,
-            shadowRadius: 1.00,
-
-            elevation: 1,
-        },
-        topLeftHoursContainer: {
-            position: 'absolute',
-            borderTopWidth: 0,
-            borderRightWidth: 0,
-            borderBottomWidth: 60 * rem,
-            borderLeftWidth: 60 * rem,
-            borderTopColor: 'transparent',
-            borderRightColor: 'transparent',
-            borderBottomColor: 'white',
-            borderLeftColor: 'transparent',
-            borderTopLeftRadius: 10 * rem,
-            backgroundColor: colors.green500,
-        },
-        topLeftHours: {
-            position: 'absolute',
-            color: 'white',
-            fontSize: 20 * rem,
-            marginLeft: 6 * rem,
-            marginTop: 6 * rem,
-        },
-        ceInfoContainer: {
-            position: 'absolute',
-            height: '100%',
-            width: '52%',
-            justifyContent: 'center',
-            marginLeft: 60 * rem,
-        },
-        ceNameText: {
-            fontSize: 18 * rem,
-            color: colors.grey800,
-            lineHeight: 26 * rem,
-            marginLeft: 18 * rem,
-        },
-        ceDateText: {
-            fontSize: 16 * rem,
-            color: colors.grey400,
-            fontWeight: '300',
-            lineHeight: 26 * rem,
         },
     });
 
@@ -544,7 +582,7 @@ export default function licenseCard(props) {
                                     <FastImage
                                         style={{ height: 0, width: 0 }}
                                         source={{
-                                            uri: licenseData.licensePhoto,
+                                            uri: selectedImage,
                                             priority: FastImage.priority.normal,
                                         }}
                                         resizeMode={FastImage.resizeMode.contain}
@@ -557,7 +595,7 @@ export default function licenseCard(props) {
                                     <FastImage
                                         style={styles.ImgContainer}
                                         source={{
-                                            uri: licenseData.licensePhoto,
+                                            uri: selectedImage,
                                             priority: FastImage.priority.normal,
                                         }}
                                         resizeMode={FastImage.resizeMode.contain}
@@ -593,7 +631,7 @@ export default function licenseCard(props) {
                             <TouchableOpacity
                                 style={styles.thumbnailContainer}
                                 onPress={() => {
-                                    openImage();
+                                    openImage(licenseData.licensePhoto);
                                 }}
                             >
                                 <FastImage
@@ -618,7 +656,12 @@ export default function licenseCard(props) {
                         <View style={styles.ceContainer}>
                             <AntDesign name="copy1" size={20 * rem} style={styles.ceIcon} />
                             <View style={styles.progressBar}>
-                                <View style={styles.progressBarFill}></View>
+
+                                {completedCEHours >= licenseData.totalCEHours ? (
+                                    <View style={styles.progressBarFillComplete}></View>
+                                ) : (<View style={styles.progressBarFill}></View>
+                                    )}
+
                                 {completedCEHours ? (
                                     <Text style={styles.ceText}>{`${completedCEHours}/${licenseData.totalCEHours} CE`}</Text>
                                 ) : (
@@ -663,58 +706,103 @@ export default function licenseCard(props) {
                         data={requirements}
                         keyExtractor={item => item.key}
                         renderItem={({ item }) => (
-                            <View style={styles.requirementContainer}>
-                                <AntDesign name="checkcircleo" size={20 * rem} style={styles.completeIcon} />
-                                {item.hours ? (
-                                    <>
-                                        <Text style={styles.requirementHoursDone}>{completedCEHours}</Text>
-                                        <Text style={styles.requirementHoursTotal}>/{item.hours}hrs</Text>
-                                    </>
+                            <>
+                                <TouchableOpacity
+                                    onPress={() => {
+                                        toggleShowRequirements(item.key);
+                                    }}
+                                    style={styles.requirementClickableArea}>
+                                    <View style={styles.requirementContainer}>
+                                        {item.hours <= item.completedHours ? (
+                                            // TODO: Add requirement completed check (for non-hours related requiremnets)
+                                            <>
+                                                <AntDesign name="checkcircleo" size={24 * rem} style={styles.completeIcon} />
+                                            </>
+                                        ) : (<AntDesign name="checkcircleo" size={24 * rem} style={styles.incompleteIcon} />
+                                            )}
+
+                                        {item.hours ? (
+                                            <>
+                                                <Text style={styles.requirementHoursDone}>{item.completedHours}</Text>
+                                                <Text style={styles.requirementHoursTotal}>/{item.hours}hrs</Text>
+                                            </>
+                                        ) : (null)}
+                                        <Text style={styles.requirementName}>{item.name}</Text>
+                                        {item.expanded ? (<AntDesign name="up" size={20 * rem} style={styles.chevron} />
+                                        ) : (<AntDesign name="down" size={20 * rem} style={styles.chevron} />)}
+                                    </View>
+                                </TouchableOpacity>
+                                {item.expanded ? (
+                                    // Requirement is expanded: show linked CE cards
+                                    <FlatList
+                                        scrollEnabled={false}
+                                        data={Object.keys(item["linkedCEs"])}
+                                        keyExtractor={ce => ce}
+                                        renderItem={(ce) => (
+                                            <>
+                                                {(typeof item["linkedCEs"] !== "undefined" && ce["item"] in item?.["linkedCEs"]) ||
+                                                    (item.key == "5416f212-dd53-4d40-a563-dbc4fede097c" && ce["item"] in licenseData["linkedCEs"])
+                                                    ? (
+                                                        <View style={styles.pairedCeContainer}>
+                                                            <View style={styles.cardContainer}>
+                                                                <View style={styles.topLeftHoursContainer}></View>
+                                                                <Text numberOfLines={1} style={styles.topLeftHours}>{item["linkedCEs"][ce["item"]]}</Text>
+                                                                <View style={styles.ceInfoContainer}>
+                                                                    <Text numberOfLines={2} style={styles.ceNameText}>{ceData?.[ce["item"]]?.name}</Text>
+                                                                    <Text style={styles.ceDateText}>{ceData?.[ce["item"]]?.completionDate}</Text>
+                                                                </View>
+                                                                {ceData?.[ce["item"]]?.ceThumbnail ? (
+                                                                    <TouchableOpacity
+                                                                        style={styles.ceThumbnailContainer}
+                                                                        onPress={() => {
+                                                                            openImage(ceData?.[ce["item"]]?.cePhoto);
+                                                                        }}
+                                                                    >
+                                                                        <FastImage
+                                                                            style={styles.ceThumbnailImg}
+                                                                            source={{
+                                                                                uri: ceData?.[ce["item"]]?.ceThumbnail,
+                                                                                priority: FastImage.priority.normal,
+                                                                            }}
+                                                                            resizeMode={FastImage.resizeMode.contain}
+                                                                        />
+                                                                    </TouchableOpacity>
+                                                                ) : (
+
+                                                                        <TouchableOpacity
+                                                                            style={styles.ceThumbnailContainer}
+                                                                            onPress={() => {
+                                                                                props.navigation.navigate('Scanner', {
+                                                                                    fromThisScreen: 'LicenseDetails',
+                                                                                    initialFilterId: 2, // Black & White
+                                                                                    ceID: ceData?.[ce]?.id,
+                                                                                });
+                                                                            }}
+                                                                        >
+                                                                            <AntDesign name="camerao" size={32 * rem} style={styles.thumbnailIcon} />
+                                                                        </TouchableOpacity>
+                                                                    )}
+                                                            </View>
+                                                        </View>
+                                                    ) : (null)}
+                                            </>
+                                        )
+                                        }>
+                                    </FlatList>
                                 ) : (null)}
-                                <>
-                                    <Text style={styles.requirementName}>{item.name}</Text>
-                                </>
-                            </View>
+                            </>
                         )}>
                     </FlatList>
                 ) : (
                         <Text style={styles.noRequirementsText}>Edit license details to add requirements.</Text>
-                    )}
-            </View>
+                    )
+                }
+            </View >
 
-            <View style={styles.headerContainer}>
+            {/* <View style={styles.headerContainer}>
                 <Header text="Linked CEs" />
-            </View>
-
-            <View style={styles.pairedCeContainer}>
-                <View style={styles.cardContainer}>
-                    <View style={styles.topLeftHoursContainer}></View>
-                    <Text style={styles.topLeftHours}>20</Text>
-                    <View style={styles.ceInfoContainer}>
-                        <Text style={styles.ceNameText}>Bioterrorism</Text>
-                        <Text style={styles.ceDateText}>12/20/2020</Text>
-                    </View>
-                    <TouchableOpacity
-                        style={styles.ceThumbnailContainer}
-                        onPress={() => {
-                            openImage();
-                        }}
-                    >
-                        <FastImage
-                            style={styles.ceThumbnailImg}
-                            source={{
-                                uri: licenseData.licenseThumbnail,
-                                priority: FastImage.priority.normal,
-                            }}
-                            resizeMode={FastImage.resizeMode.contain}
-                        />
-                    </TouchableOpacity>
-                </View>
-                <View style={styles.cardContainer}>
-
-                </View>
-            </View>
-        </ScrollView>
+            </View> */}
+        </ScrollView >
     );
 }
 

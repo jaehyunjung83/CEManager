@@ -31,8 +31,9 @@ export default function licenseCard(props) {
     if (props.data.totalCEHours) {
         if (completedCEHours) {
             progressFill = parseInt(completedCEHours) / parseInt(props.data.totalCEHours);
-            if (progressFill > 0.88) { progressFill = 0.88 }
+            if (progressFill > 0.88 && progressFill < 1) { progressFill = 0.88 }
             else if (progressFill < 0.1) { progressFill = 0.1 }
+            // else if (progressFill > 1) { progressFill = 0.92 }
         }
     }
 
@@ -307,6 +308,13 @@ export default function licenseCard(props) {
             height: 18 * rem,
             backgroundColor: 'rgba(208,233,251,1)',
         },
+        progressBarFillComplete: {
+            position: 'absolute',
+            width: (screenWidth - ((112 + 4) * rem)), // from progressBar
+            borderRadius: progressBarWidth,
+            height: 18 * rem,
+            backgroundColor: colors.green200,
+        },
         insetDivider: {
             flexDirection: 'row',
             justifyContent: 'space-between',
@@ -435,6 +443,8 @@ export default function licenseCard(props) {
                     </View>
                 </TouchableWithoutFeedback>
             </Modal>
+
+
             <TouchableHighlight
                 style={styles.cardContainer}
                 onPress={cardPressed}
@@ -487,7 +497,10 @@ export default function licenseCard(props) {
                         <View style={styles.ceContainer}>
                             <AntDesign name="copy1" size={20 * rem} style={styles.ceIcon} />
                             <View style={styles.progressBar}>
-                                <View style={styles.progressBarFill}></View>
+                                {completedCEHours >= props.data.totalCEHours ? (
+                                    <View style={styles.progressBarFillComplete}></View>
+                                ) : (<View style={styles.progressBarFill}></View>
+                                    )}
                                 {completedCEHours ? (
                                     <Text style={styles.ceText}>{`${completedCEHours}/${props.data.totalCEHours} CE`}</Text>
                                 ) : (
