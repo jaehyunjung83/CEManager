@@ -41,7 +41,7 @@ export default function documents({ navigation }) {
         console.log("Error getting CEs: ", error);
       });
 
-  }, [])
+  }, [ceData])
 
   let openScannerHandler = () => {
     navigation.navigate("AddCE");
@@ -54,7 +54,8 @@ export default function documents({ navigation }) {
         isEmpty ? (
           <View style={styles.container}>
             <FlatList
-              scrollEnabled={false}
+            contentContainerStyle={{paddingBottom:48 * rem}}
+              // scrollEnabled={false}
               data={Object.keys(ceData)}
               keyExtractor={(item) => item}
               renderItem={({ item }) => (
@@ -100,6 +101,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     backgroundColor: colors.grey200,
+    // paddingBottom: 48 * rem,
   },
   addNewButtonContainer: {
     position: 'absolute',

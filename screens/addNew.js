@@ -1,4 +1,6 @@
 import React, { useState, useRef } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { updateLicenses } from '../actions';
 import { Animated, View, Text, StyleSheet, Dimensions, TouchableHighlight, Easing, ScrollView, Modal, FlatList, TouchableWithoutFeedback, TouchableOpacity, TextInput, KeyboardAvoidingView } from 'react-native';
 import { TextInputMask } from 'react-native-masked-text';
 import LicenseCard from '../components/licenseCard.js';
@@ -13,6 +15,7 @@ import FastImage from 'react-native-fast-image'
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 import storage from '@react-native-firebase/storage';
+import { useRoute } from '@react-navigation/native';
 
 
 const FadeInView = (props) => {
@@ -58,6 +61,9 @@ export default function addLicense(props) {
 
     const headerHeight = useHeaderHeight();
     const states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'];
+    const route = useRoute();
+    const dispatch = useDispatch();
+
 
     React.useEffect(() => {
         let db = firestore();
@@ -175,11 +181,15 @@ export default function addLicense(props) {
             db.collection('users').doc(uid).collection('licenses').doc('licenseData').set(licenseObj, { merge: true })
                 .then(() => {
                     console.log("Document successfully written!");
-                    props.navigation.navigate("Homepage", { refreshPage: true });
+                    db.collection('users').doc(uid).collection('licenses').doc('licenseData').get()
+                        .then(response => {
+                            dispatch(updateLicenses(response.data()));
+                        })
+                    props.navigation.navigate("Homepage");
                 })
                 .catch((error) => {
                     console.error("Error adding document: ", error);
-                    props.navigation.navigate("Homepage", { refreshPage: true });
+                    props.navigation.navigate("Homepage");
                 });
         }
     }
@@ -417,7 +427,7 @@ export default function addLicense(props) {
                                 <TouchableOpacity
                                     onPress={() => {
                                         props.navigation.navigate('Scanner', {
-                                            fromThisScreen: 'AddNew',
+                                            fromThisScreen: route.name,
                                             initialFilterId: 1, // Color photo
                                         });
                                     }}

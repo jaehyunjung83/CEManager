@@ -5,6 +5,7 @@ import AntDesign from 'react-native-vector-icons/AntDesign';
 import { colors } from '../components/colors.js';
 import FastImage from 'react-native-fast-image'
 import { useNavigation } from '@react-navigation/native';
+import {useRoute} from '@react-navigation/native';
 
 
 export default function licenseCard(props) {
@@ -17,6 +18,7 @@ export default function licenseCard(props) {
 
 
     const navigation = useNavigation();
+    const route = useRoute();
 
     React.useEffect(() => {
         let tempCompletedHours = 0;
@@ -91,7 +93,7 @@ export default function licenseCard(props) {
 
     let openScanner = () => {
         navigation.navigate('Scanner', {
-            fromThisScreen: 'Homepage',
+            fromThisScreen: route.name,
             initialFilterId: 1, // Color photo
             licenseId: props.data.id,
         });
@@ -125,7 +127,8 @@ export default function licenseCard(props) {
 
             elevation: 6,
             padding: 18 * rem,
-            marginTop: 36 * rem,
+            marginTop: 28 * rem,
+            marginBottom: 8 * rem,
         },
         topContainer: {
             flexShrink: 1,

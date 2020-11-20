@@ -4,6 +4,8 @@ import { updateCEs } from '../actions';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import FastImage from 'react-native-fast-image'
+import CEcard from '../components/ceCard.js';
+import LinkExistingCE from "../components/linkExistingCE.js";
 
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity, FlatList, Modal, TouchableWithoutFeedback } from 'react-native';
 import AntDesign from 'react-native-vector-icons/AntDesign';
@@ -11,10 +13,13 @@ import { colors } from '../components/colors.js';
 import Header from '../components/header.js';
 import { ScrollView } from 'react-native-gesture-handler';
 import { useNavigation } from '@react-navigation/native';
+import { useRoute } from '@react-navigation/native';
 
 
-export default function licenseCard(props) {
+export default function licenseDetails(props) {
     const navigation = useNavigation();
+    const route = useRoute();
+
     const ceData = useSelector(state => state.ces);
     const dispatch = useDispatch();
 
@@ -24,6 +29,8 @@ export default function licenseCard(props) {
     const [requirements, setRequirements] = useState(licenseData.requirements);
     const [linkedCEs, setLinkedCEs] = useState({});
     const [selectedImage, setSelectedImage] = useState("");
+
+    const [linkingExistingCEs, setLinkingExistingCEs] = useState(false);
 
     const [completedCEHours, setCompleteCEHours] = useState(0);
 
@@ -202,12 +209,12 @@ export default function licenseCard(props) {
     }
 
     let linkExistingCE = () => {
-        // TODO:
+        setLinkingExistingCEs(!linkingExistingCEs);
     }
 
     let openScanner = () => {
         props.navigation.navigate('Scanner', {
-            fromThisScreen: "LicenseDetails",
+            fromThisScreen: route.name,
             initialFilterId: 1, // Color photo
             licenseId: licenseData.id,
         });
@@ -734,61 +741,65 @@ export default function licenseCard(props) {
                                 </TouchableOpacity>
                                 {item.expanded ? (
                                     // Requirement is expanded: show linked CE cards
-                                    <FlatList
-                                        scrollEnabled={false}
-                                        data={Object.keys(item["linkedCEs"])}
-                                        keyExtractor={ce => ce}
-                                        renderItem={(ce) => (
-                                            <>
-                                                {(typeof item["linkedCEs"] !== "undefined" && ce["item"] in item?.["linkedCEs"]) ||
-                                                    (item.key == "5416f212-dd53-4d40-a563-dbc4fede097c" && ce["item"] in licenseData["linkedCEs"])
-                                                    ? (
-                                                        <View style={styles.pairedCeContainer}>
-                                                            <View style={styles.cardContainer}>
-                                                                <View style={styles.topLeftHoursContainer}></View>
-                                                                <Text numberOfLines={1} style={styles.topLeftHours}>{item["linkedCEs"][ce["item"]]}</Text>
-                                                                <View style={styles.ceInfoContainer}>
-                                                                    <Text numberOfLines={2} style={styles.ceNameText}>{ceData?.[ce["item"]]?.name}</Text>
-                                                                    <Text style={styles.ceDateText}>{ceData?.[ce["item"]]?.completionDate}</Text>
-                                                                </View>
-                                                                {ceData?.[ce["item"]]?.ceThumbnail ? (
-                                                                    <TouchableOpacity
-                                                                        style={styles.ceThumbnailContainer}
-                                                                        onPress={() => {
-                                                                            openImage(ceData?.[ce["item"]]?.cePhoto);
-                                                                        }}
-                                                                    >
-                                                                        <FastImage
-                                                                            style={styles.ceThumbnailImg}
-                                                                            source={{
-                                                                                uri: ceData?.[ce["item"]]?.ceThumbnail,
-                                                                                priority: FastImage.priority.normal,
-                                                                            }}
-                                                                            resizeMode={FastImage.resizeMode.contain}
-                                                                        />
-                                                                    </TouchableOpacity>
-                                                                ) : (
+                                    <>
+                                        <FlatList
+                                            scrollEnabled={false}
+                                            style={{ marginTop: 0, marginBottom: 32 * rem, }}
+                                            data={Object.keys(item["linkedCEs"])}
+                                            keyExtractor={ce => ce}
+                                            renderItem={(ce) => (
+                                                <>
+                                                    {(typeof item["linkedCEs"] !== "undefined" && ce["item"] in item?.["linkedCEs"]) ||
+                                                        (item.key == "5416f212-dd53-4d40-a563-dbc4fede097c" && ce["item"] in licenseData["linkedCEs"])
+                                                        ? (
+                                                            <CEcard data={ceData?.[ce["item"]]} licenseHours={licenseData["linkedCEs"][ce["item"]]} />
+                                                            // <View style={styles.pairedCeContainer}>
+                                                            //     <View style={styles.cardContainer}>
+                                                            //         <View style={styles.topLeftHoursContainer}></View>
+                                                            //         <Text numberOfLines={1} style={styles.topLeftHours}>{item["linkedCEs"][ce["item"]]}</Text>
+                                                            //         <View style={styles.ceInfoContainer}>
+                                                            //             <Text numberOfLines={2} style={styles.ceNameText}>{ceData?.[ce["item"]]?.name}</Text>
+                                                            //             <Text style={styles.ceDateText}>{ceData?.[ce["item"]]?.completionDate}</Text>
+                                                            //         </View>
+                                                            //         {ceData?.[ce["item"]]?.ceThumbnail ? (
+                                                            //             <TouchableOpacity
+                                                            //                 style={styles.ceThumbnailContainer}
+                                                            //                 onPress={() => {
+                                                            //                     openImage(ceData?.[ce["item"]]?.cePhoto);
+                                                            //                 }}
+                                                            //             >
+                                                            //                 <FastImage
+                                                            //                     style={styles.ceThumbnailImg}
+                                                            //                     source={{
+                                                            //                         uri: ceData?.[ce["item"]]?.ceThumbnail,
+                                                            //                         priority: FastImage.priority.normal,
+                                                            //                     }}
+                                                            //                     resizeMode={FastImage.resizeMode.contain}
+                                                            //                 />
+                                                            //             </TouchableOpacity>
+                                                            //         ) : (
 
-                                                                        <TouchableOpacity
-                                                                            style={styles.ceThumbnailContainer}
-                                                                            onPress={() => {
-                                                                                props.navigation.navigate('Scanner', {
-                                                                                    fromThisScreen: 'LicenseDetails',
-                                                                                    initialFilterId: 2, // Black & White
-                                                                                    ceID: ceData?.[ce]?.id,
-                                                                                });
-                                                                            }}
-                                                                        >
-                                                                            <AntDesign name="camerao" size={32 * rem} style={styles.thumbnailIcon} />
-                                                                        </TouchableOpacity>
-                                                                    )}
-                                                            </View>
-                                                        </View>
-                                                    ) : (null)}
-                                            </>
-                                        )
-                                        }>
-                                    </FlatList>
+                                                            //                 <TouchableOpacity
+                                                            //                     style={styles.ceThumbnailContainer}
+                                                            //                     onPress={() => {
+                                                            //                         props.navigation.navigate('Scanner', {
+                                                            //                             fromThisScreen: 'LicenseDetails',
+                                                            //                             initialFilterId: 2, // Black & White
+                                                            //                             ceID: ceData?.[ce]?.id,
+                                                            //                         });
+                                                            //                     }}
+                                                            //                 >
+                                                            //                     <AntDesign name="camerao" size={32 * rem} style={styles.thumbnailIcon} />
+                                                            //                 </TouchableOpacity>
+                                                            //             )}
+                                                            //     </View>
+                                                            // </View>
+                                                        ) : (null)}
+                                                </>
+                                            )
+                                            }>
+                                        </FlatList>
+                                    </>
                                 ) : (null)}
                             </>
                         )}>
@@ -799,9 +810,7 @@ export default function licenseCard(props) {
                 }
             </View >
 
-            {/* <View style={styles.headerContainer}>
-                <Header text="Linked CEs" />
-            </View> */}
+            <LinkExistingCE open={linkingExistingCEs}/>
         </ScrollView >
     );
 }

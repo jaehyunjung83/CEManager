@@ -5,27 +5,32 @@ import AntDesign from 'react-native-vector-icons/AntDesign';
 import { colors } from '../components/colors.js';
 import FastImage from 'react-native-fast-image'
 import { useNavigation } from '@react-navigation/native';
-
+import { useRoute } from '@react-navigation/native';
 
 export default function ceCard(props) {
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const ceData = useSelector(state => state.ces);
 
     const navigation = useNavigation();
+    const route = useRoute();
 
     React.useEffect(() => {
+        console.log(props.data);
     }, []);
 
+    let cardPressed = () => {
+        navigation.navigate("CEDetails", { data: ceData[props.data.id] });
+    }
 
     let openScanner = () => {
         navigation.navigate('Scanner', {
-            fromThisScreen: 'ceCard',
+            fromThisScreen: route.name,
             initialFilterId: 2, // Black and white photo
         });
     }
 
     let openImage = () => {
-        console.log("BOI");
         setIsModalVisible(true);
     }
 
@@ -42,7 +47,7 @@ export default function ceCard(props) {
             borderRadius: 10 * rem,
             backgroundColor: 'white',
             alignSelf: 'center',
-            marginBottom: 18 * rem,
+            marginTop: 24 * rem,
             shadowColor: "#000",
             shadowOffset: {
                 width: 0,
@@ -211,15 +216,13 @@ export default function ceCard(props) {
 
             <TouchableHighlight
                 style={styles.cardContainer}
-                onPress={() => {
-                    console.log("BOI");
-                }}
+                onPress={cardPressed}
                 underlayColor={colors.underlayColor}
             >
                 <>
-                
+
                     <View style={styles.topLeftHoursContainer}></View>
-                    <Text numberOfLines={1} style={styles.topLeftHours}>{props?.data?.hours}</Text>
+                    <Text numberOfLines={1} style={styles.topLeftHours}>{props?.licenseHours ? props?.licenseHours : props?.data?.hours}</Text>
                     <View style={styles.ceInfoContainer}>
                         <Text numberOfLines={2} style={styles.ceNameText}>{props?.data?.name}</Text>
                         <Text style={styles.ceDateText}>{props?.data?.completionDate}</Text>

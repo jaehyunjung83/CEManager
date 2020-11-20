@@ -15,7 +15,9 @@ import ScannedView from './screens/scannedView.js';
 import AddNew from './screens/addNew.js';
 import SplashScreen from './screens/splashScreen.js';
 import LicenseDetails from './screens/licenseDetails.js';
+import CEDetails from './screens/ceDetails.js';
 import AddCE from './screens/addCE.js';
+import EditCE from './screens/editCE.js';
 import { YellowBox } from 'react-native';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 
@@ -134,11 +136,53 @@ export default function App() {
                 },
                 gestureEnabled: false,
               }} />
+              <Stack.Screen
+              name="EditCE"
+              component={EditCE}
+              options={{
+                title: "Edit CE",
+                headerBackTitle: "Back",
+                headerBackTitleStyle: {
+                  color: colors.blue800,
+                },
+                headerTintColor: colors.blue800,
+                headerTitleStyle: {
+                  color: colors.blue800,
+                  fontSize: 23 * rem,
+                  fontWeight: '400',
+                  textAlign: 'left',
+                },
+                headerStyle: {
+                  backgroundColor: 'white',
+                },
+                gestureEnabled: false,
+              }} />
             <Stack.Screen
               name="LicenseDetails"
               component={LicenseDetails}
               options={{
                 title: "License Details",
+                headerBackTitle: "Home",
+                headerBackTitleStyle: {
+                  color: colors.blue800,
+                },
+                headerTintColor: colors.blue800,
+                headerTitleStyle: {
+                  color: colors.blue800,
+                  fontSize: 23 * rem,
+                  fontWeight: '400',
+                  textAlign: 'left',
+                },
+                headerStyle: {
+                  backgroundColor: 'white',
+                },
+                gestureEnabled: false,
+              }} />
+                         <Stack.Screen
+              name="CEDetails"
+              component={CEDetails}
+              options={{
+                title: "CE Details",
                 headerBackTitle: "Home",
                 headerBackTitleStyle: {
                   color: colors.blue800,

@@ -114,6 +114,7 @@ export default function homepage(props) {
             ) : (
                     <View style={styles.container}>
                         <FlatList
+                            contentContainerStyle={{ paddingBottom: 48 * rem }}
                             data={Object.keys(licenses)}
                             keyExtractor={(item) => item}
                             renderItem={({ item }) => (
