@@ -6,7 +6,6 @@ const path = require('path');
 const os = require('os');
 const fs = require('fs');
 
-// Saves a message to the Firebase Realtime Database but sanitizes the text by removing swearwords.
 exports.createThumbnail = functions.https.onRequest(async (req, res) => {
   console.log(req.body);
   const bucket = admin.storage().bucket(); // Default bucket.

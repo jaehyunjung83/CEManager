@@ -13,22 +13,21 @@ import auth from '@react-native-firebase/auth';
 import { v4 as uuidv4 } from 'uuid';
 import { useRoute } from '@react-navigation/native';
 
-const ceID = uuidv4();
 
-export default function addCE(props) {
-    // TODO: Create local state of licenses and update that instead of central state.
+export default function editCE(props) {
     const licenses = useSelector(state => state.licenses);
     const dispatch = useDispatch();
     const headerHeight = useHeaderHeight();
+    let ceID = props.route.params.ceData.id;
 
     const [licenseID, setLicenseID] = useState("");
-    const [name, setName] = useState("");
+    const [name, setName] = useState(props.route.params.ceData.name);
     const [nameErrorMsg, setNameErrorMsg] = useState("");
-    const [hours, setHours] = useState("");
+    const [hours, setHours] = useState(props.route.params.ceData.hours.toString());
     const [hoursErrorMsg, setHoursErrorMsg] = useState("");
-    const [completionDate, setCompletionDate] = useState("");
+    const [completionDate, setCompletionDate] = useState(props.route.params.ceData.completionDate);
     const [completionErrorMsg, setCompletionErrorMsg] = useState("");
-    const [providerNum, setProviderNum] = useState("");
+    const [providerNum, setProviderNum] = useState(props.route.params.ceData.providerNum);
     const [providerErrorMsg, setProviderErrorMsg] = useState("");
 
     const [generalErrorMsg, setGeneralErrorMsg] = useState("");
@@ -37,16 +36,18 @@ export default function addCE(props) {
 
     const [isLoading, setIsLoading] = useState(false);
 
-    const [cePhoto, setCEPhoto] = useState("");
-    const [ceThumbnail, setCEThumbnail] = useState("");
+    const [cePhoto, setCEPhoto] = useState(props.route.params.ceData?.cePhoto ? props.route.params.ceData?.cePhoto : "");
+    const [ceThumbnail, setCEThumbnail] = useState(""); // Handled in useEffect block below.
 
     const [linkedLicenses, setLinkedLicenses] = useState([]);
-    const [localLicensesCopy, setLocalLicensesCopy] = useState([]);
+    const [localLicensesCopy, setLocalLicensesCopy] = useState({});
 
     const route = useRoute();
 
     React.useEffect(() => {
-        if (typeof props.route?.params?.thumbnailURL !== 'undefined') {
+        setLocalLicensesCopy(JSON.parse(JSON.stringify(licenses)));
+
+        if (typeof props.route?.params?.ceData?.ceThumbnail !== 'undefined') {
             if (ceThumbnail) {
                 // User is replacing old thumbnail. Delete old one.
                 // Firebase couldn't parse the URL for some reason.
@@ -57,17 +58,17 @@ export default function addCE(props) {
                 oldThumbnailRef.delete()
                     .then(() => {
                         console.log("Deleted thumbnail successfully.");
-                        setCEThumbnail(props.route?.params?.thumbnailURL);
+                        setCEThumbnail(props.route?.params?.ceData?.ceThumbnail);
                     })
                     .catch(error => {
                         console.log("Failed to delete old thumbnail. Error: " + error.toString());
                     })
             }
             else {
-                setCEThumbnail(props.route?.params?.thumbnailURL);
+                setCEThumbnail(props.route?.params?.ceData?.ceThumbnail);
             }
         }
-        if (typeof props.route.params?.photoURL !== 'undefined') {
+        if (typeof props.route.params?.ceData?.photoURL !== 'undefined') {
             if (cePhoto) {
                 // User is replacing old photo. Delete old one.
                 const firstPhotoRef = storage().refFromURL(cePhoto).toString();
@@ -76,26 +77,26 @@ export default function addCE(props) {
                 oldPhotoRef.delete()
                     .then(() => {
                         console.log("Deleted photo successfully.");
-                        setCEPhoto(props.route?.params?.photoURL);
+                        setCEPhoto(props.route?.params?.ceData?.photoURL);
                     })
                     .catch(error => {
                         console.log("Failed to delete old photo. Error: " + error.toString());
                     })
             }
             else {
-                setCEPhoto(props.route?.params?.photoURL);
+                setCEPhoto(props.route?.params?.ceData?.photoURL);
             }
         }
         // For tracking license ID user came from
-        if (props?.route?.params?.id) {
+        if (props?.route?.params?.fromLicenseID) {
             let isArr = Object.prototype.toString.call(linkedLicenses) == '[object Array]';
             console.log(isArr);
-            setLicenseID(props.route.params.id);
-            let temp = linkedLicenses.concat(props.route.params.id);
+            setLicenseID(props.route.params.fromLicenseID);
+            let temp = linkedLicenses.concat(props.route.params.fromLicenseID);
             setLinkedLicenses(temp);
             console.log(typeof linkedLicenses);
         }
-    }, [props.route.params?.thumbnailURL]);
+    }, [props.route.params?.ceData?.ceThumbnail]);
     // Checks for license type, other license type (if Other is selected), state, and expiration of license.
     let isFormComplete = () => {
         let isComplete = true;
@@ -146,7 +147,7 @@ export default function addCE(props) {
         return isComplete;
     }
 
-    let setRequirementHours = (hours, licenseID, index) => {
+    let setSpecialRequirementHours = (hours, licenseID, index) => {
 
         // Set license state.
         let licensesCopy = JSON.parse(JSON.stringify(licenses));
@@ -233,8 +234,10 @@ export default function addCE(props) {
         setLinkedLicenses(temp);
     }
 
-    let addCE = () => {
+    let editCE = () => {
         setIsLoading(true);
+        setTotalRequirementHours(hours, licenseID);
+
         if (isFormComplete()) {
             let ceData = {
                 name: name,
@@ -257,7 +260,7 @@ export default function addCE(props) {
             db.collection('users').doc(uid).collection('CEs').doc('CEData').set(ceObj, { merge: true })
                 .then(() => {
                     console.log("CE successfully written!");
-                    db.collection('users').doc(uid).collection('licenses').doc('licenseData').set(licenses, { merge: true })
+                    db.collection('users').doc(uid).collection('licenses').doc('licenseData').set(localLicensesCopy, { merge: true })
                         .then(() => {
                             console.log("Document successfully written!");
                             props.navigation.navigate("Homepage");
@@ -389,7 +392,7 @@ export default function addCE(props) {
 
                 <Text style={styles.errorMessage}> {generalErrorMsg}</Text>
                 <TouchableOpacity
-                    onPress={() => { addCE() }}
+                    onPress={() => { editCE() }}
                     disabled={isLoading}
                     style={styles.addNewCEButton}
                 >
@@ -440,7 +443,7 @@ export default function addCE(props) {
                                                             placeholder={"Hrs"}
                                                             placeholderTextColor={colors.grey400}
                                                             style={styles.input}
-                                                            onChangeText={(hours) => setRequirementHours(hours, item, index)}
+                                                            onChangeText={(hours) => setSpecialRequirementHours(hours, item, index)}
                                                             keyboardType={'numeric'}
                                                             maxLength={4}
                                                         />
