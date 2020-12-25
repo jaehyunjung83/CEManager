@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { updateLicenses } from '../actions';
+import { useSelector, useDispatch, useEffect } from 'react-redux';
+import { updateLicenses, updateCEs } from '../actions';
 import { Modal, FlatList, TouchableWithoutFeedback, TouchableOpacity, Text, TextInput, View, StyleSheet, Dimensions, ScrollView, KeyboardAvoidingView } from 'react-native';
 import { colors } from '../components/colors.js';
 import AntDesign from 'react-native-vector-icons/AntDesign';
@@ -12,6 +12,7 @@ import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 import { v4 as uuidv4 } from 'uuid';
 import { useRoute } from '@react-navigation/native';
+import ApplyTowardLicense from '../components/applyTowardLicense';
 
 const ceID = uuidv4();
 
@@ -21,7 +22,6 @@ export default function addCE(props) {
     const dispatch = useDispatch();
     const headerHeight = useHeaderHeight();
 
-    const [licenseID, setLicenseID] = useState("");
     const [name, setName] = useState("");
     const [nameErrorMsg, setNameErrorMsg] = useState("");
     const [hours, setHours] = useState("");
@@ -31,9 +31,9 @@ export default function addCE(props) {
     const [providerNum, setProviderNum] = useState("");
     const [providerErrorMsg, setProviderErrorMsg] = useState("");
 
-    const [generalErrorMsg, setGeneralErrorMsg] = useState("");
+    const [applyingTowardsLicense, setApplyingTowardsLicense] = useState(false);
 
-    const [isModalVisible, setIsModalVisible] = useState(false);
+    const [generalErrorMsg, setGeneralErrorMsg] = useState("");
 
     const [isLoading, setIsLoading] = useState(false);
 
@@ -88,12 +88,8 @@ export default function addCE(props) {
         }
         // For tracking license ID user came from
         if (props?.route?.params?.id) {
-            let isArr = Object.prototype.toString.call(linkedLicenses) == '[object Array]';
-            console.log(isArr);
-            setLicenseID(props.route.params.id);
             let temp = linkedLicenses.concat(props.route.params.id);
             setLinkedLicenses(temp);
-            console.log(typeof linkedLicenses);
         }
     }, [props.route.params?.thumbnailURL]);
     // Checks for license type, other license type (if Other is selected), state, and expiration of license.
@@ -147,11 +143,14 @@ export default function addCE(props) {
     }
 
     let setRequirementHours = (hours, licenseID, index) => {
-
+        // Links CE to a special requirement.
         // Set license state.
         let licensesCopy = JSON.parse(JSON.stringify(licenses));
 
         if (hours) {
+            let temp = linkedLicenses.concat(licenseID);
+            setLinkedLicenses(temp);
+
             if (typeof licensesCopy[licenseID].requirements[index]["linkedCEs"] == "object") {
                 licensesCopy[licenseID].requirements[index]["linkedCEs"][ceID] = parseInt(hours);
             }
@@ -162,36 +161,18 @@ export default function addCE(props) {
         }
         else {
             delete licensesCopy[licenseID].requirements[index]["linkedCEs"][ceID];
+            let temp = linkedLicenses.filter(id => id !== licenseID || id == props?.route?.params?.id);
+            setLinkedLicenses(temp);
         }
         setLocalLicensesCopy(licensesCopy);
-
-        // Updating linkedLicenses (to display green checkmark and bolded text for license)
-        for (requirementIndex in licensesCopy[licenseID].requirements) {
-            for (linkedCE in licensesCopy[licenseID].requirements[requirementIndex]["linkedCEs"]) {
-                if (linkedCE == ceID) {
-                    let temp = linkedLicenses.concat(licenseID);
-                    setLinkedLicenses(temp);
-                    return
-                }
-            }
-        }
-        if (licensesCopy[licenseID]["linkedCEs"]) {
-            for (linkedCE in licensesCopy[licenseID]["linkedCEs"]) {
-                if (linkedCE == ceID) {
-                    let temp = linkedLicenses.concat(licenseID);
-                    setLinkedLicenses(temp);
-                    return;
-                }
-            }
-        }
-
-        // No linked CEs match current CE => remove current license from linkedLicenses
-        let temp = linkedLicenses.filter(id => id !== licenseID || id == props?.route?.params?.id);
-        setLinkedLicenses(temp);
     }
 
     let setTotalRequirementHours = (hours, licenseID) => {
-        // Set license state.
+        // Links CE to license/the total hours required for this license.
+        if(props?.route?.params?.id && props?.route?.params?.id == licenseID) {
+            setHours(hours);
+        }
+
         if (!licenseID) {
             return;
         }
@@ -248,8 +229,6 @@ export default function addCE(props) {
             let ceObj = {
                 [ceID]: ceData,
             }
-            dispatch(updateLicenses(localLicensesCopy));
-
             console.log(`CEData: ${JSON.stringify(ceData)}`);
 
             let uid = auth().currentUser.uid;
@@ -257,9 +236,15 @@ export default function addCE(props) {
             db.collection('users').doc(uid).collection('CEs').doc('CEData').set(ceObj, { merge: true })
                 .then(() => {
                     console.log("CE successfully written!");
-                    db.collection('users').doc(uid).collection('licenses').doc('licenseData').set(licenses, { merge: true })
+                    db.collection('users').doc(uid).collection('CEs').doc('CEData').get()
+                        .then((response) => {
+                            let data = response.data();
+                            dispatch(updateCEs(data));
+                        })
+                    db.collection('users').doc(uid).collection('licenses').doc('licenseData').set(localLicensesCopy, { merge: true })
                         .then(() => {
                             console.log("Document successfully written!");
+                            dispatch(updateLicenses(localLicensesCopy));
                             props.navigation.navigate("Homepage");
                         })
                         .catch((error) => {
@@ -277,6 +262,15 @@ export default function addCE(props) {
             this.scrollView.scrollTo({ y: 0 });
         }
     }
+
+    let applyTowardsLicense = () => {
+        setApplyingTowardsLicense(!applyingTowardsLicense);
+    }
+    React.useEffect(() => {
+        if (applyingTowardsLicense) {
+            setApplyingTowardsLicense(false);
+        }
+    }, [applyingTowardsLicense])
 
     return (
         <KeyboardAvoidingView
@@ -381,7 +375,7 @@ export default function addCE(props) {
                 </View>
 
                 <TouchableOpacity
-                    onPress={() => { setIsModalVisible(true) }}
+                    onPress={applyTowardsLicense}
                     style={styles.linkCEButton}
                 >
                     <Text style={styles.linkCEButtonText}>{('Link CE')}</Text>
@@ -398,108 +392,7 @@ export default function addCE(props) {
 
             </ScrollView >
 
-            <Modal
-                visible={isModalVisible}
-                animationType='fade'
-                transparent={true}
-            >
-                <TouchableWithoutFeedback onPress={() => setIsModalVisible(false)}>
-                    <View style={styles.modalTransparency} />
-                </TouchableWithoutFeedback>
-                <ScrollView style={styles.modalPopupContainer}>
-                    <Text style={styles.modalTitle}>Licenses</Text>
-                    {Object.keys(licenses).length ? (<FlatList
-                        data={Object.keys(licenses)}
-                        keyExtractor={item => item}
-                        renderItem={({ item }) => (
-                            <>
-                                {/* Licenses */}
-                                <View style={styles.flexRowContainer}>
-                                    {linkedLicenses.indexOf(item) !== -1 ?
-                                        (
-                                            <>
-                                                <AntDesign name="checkcircleo" size={32 * rem} style={styles.linkedLicenseIcon} />
-                                                <Text style={styles.linkedLicenseText}>{licenses[item].licenseState} {licenses[item].licenseType || licenses[item].otherLicenseType}</Text>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <AntDesign name="checkcircleo" size={32 * rem} style={styles.notLinkedLicenseIcon} />
-                                                <Text style={styles.notLinkedLicenseText}>{licenses[item].licenseState} {licenses[item].licenseType || licenses[item].otherLicenseType}</Text>
-                                            </>
-                                        )}
-                                </View>
-                                {/* Special requirements */}
-                                {licenses[item].requirements.length ?
-                                    (
-                                        <FlatList
-                                            data={licenses[item].requirements}
-                                            renderItem={({ index }) => (
-                                                <View style={styles.requirementFlexRowContainer}>
-                                                    <View style={styles.linkHoursContainer}>
-                                                        <TextInput
-                                                            placeholder={"Hrs"}
-                                                            placeholderTextColor={colors.grey400}
-                                                            style={styles.input}
-                                                            onChangeText={(hours) => setRequirementHours(hours, item, index)}
-                                                            keyboardType={'numeric'}
-                                                            maxLength={4}
-                                                        />
-                                                    </View>
-                                                    <Text style={styles.linkedReqText}>{licenses[item].requirements[index].name}</Text>
-                                                </View>
-                                            )}
-                                        />
-                                    ) : (null)}
-                                {/* Default requirement */}
-                                {licenses[item].totalCEHours ?
-                                    (
-                                        <View style={styles.requirementFlexRowContainer}>
-                                            <View style={styles.linkHoursContainer}>
-                                                <TextInput
-                                                    placeholder={"Hrs"}
-                                                    placeholderTextColor={colors.grey400}
-                                                    style={styles.input}
-                                                    value={props?.route?.params?.id == item ? (hours) : (null)}
-                                                    onChangeText={(hours) => {
-                                                        if (props?.route?.params?.id == item) {
-                                                            setHours(hours);
-                                                            setTotalRequirementHours(hours, item);
-                                                        }
-                                                        else {
-                                                            setTotalRequirementHours(hours, item);
-                                                        }
-                                                    }}
-                                                    keyboardType={'numeric'}
-                                                    maxLength={4}
-                                                />
-                                            </View>
-                                            <Text style={styles.linkedReqText}>Hours applied to license</Text>
-                                        </View>
-
-                                    ) : (null)}
-                            </>
-                        )}
-                    >
-                    </FlatList>) : (<Text style={styles.emptyText}>No licenses to link to!</Text>)}
-
-                    <Text style={styles.modalTitle}>Certifications</Text>
-
-
-                    {/* TODO: Implement certifications */}
-                    {Object.keys({}).length ? (null) : (<Text style={styles.emptyText}>No certifications to link to!</Text>)}
-
-
-                    <TouchableOpacity
-                        onPress={() => {
-                            setIsModalVisible(false);
-                        }}
-                        style={styles.linkCEButton}
-                    >
-                        <Text style={styles.linkCEButtonText}>{('Done')}</Text>
-                    </TouchableOpacity>
-                    <Text>{"\n"}</Text>
-                </ScrollView>
-            </Modal>
+            <ApplyTowardLicense open={applyingTowardsLicense} id={ceID} licenseID={props.route?.params?.id} new={true} hours={hours} setTotalRequirementHours={setTotalRequirementHours} setRequirementHours={setRequirementHours} />
         </KeyboardAvoidingView >
     )
 }
@@ -671,14 +564,6 @@ const styles = StyleSheet.create({
         width: 32 * rem,
         color: colors.grey300,
         marginRight: 12 * rem,
-    },
-    requirementFlexRowContainer: {
-        flexDirection: 'row',
-        minHeight: 50 * rem,
-        marginBottom: 16 * rem,
-        marginTop: -12 * rem,
-        alignContent: 'center',
-        alignItems: 'center',
     },
     licenseHoursContainer: {
         height: 50 * rem,

@@ -43,7 +43,6 @@ export default function login({ navigation, route }) {
     setButtonText("...");
     auth().signInWithEmailAndPassword(email, password)
       .then(() => {
-
         setButtonText("Log In");
       })
       .catch(function (error) {

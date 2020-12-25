@@ -16,32 +16,15 @@ const screenWidth = Math.round(Dimensions.get('window').width);
 const rem = (screenWidth / 380);
 
 export default function documents({ navigation }) {
-  const ceData = useSelector(state => state.ces);
-  const dispatch = useDispatch();
+  let ceData = useSelector(state => state.ces);
   const [isEmpty, setIsEmpty] = useState(true);
 
 
   React.useEffect(() => {
-    let uid = auth().currentUser.uid;
-    let db = firestore();
-
-    db.collection('users').doc(uid).collection('CEs').doc('CEData').get()
-      .then((response) => {
-
-        let data = response.data();
-        // Checking if data is empty
-        if (typeof data == 'undefined' || Object.keys(data).length === 0 && data.constructor === Object) {
-          setIsEmpty(false);
-        }
-        else {
-          dispatch(updateCEs(data));
-        }
-      })
-      .catch((error) => {
-        console.log("Error getting CEs: ", error);
-      });
-
-  }, [ceData])
+    if (Object.keys(ceData).length) {
+      setIsEmpty(false);
+    }
+  }, [JSON.parse(JSON.stringify(ceData))])
 
   let openScannerHandler = () => {
     navigation.navigate("AddCE");
@@ -52,21 +35,20 @@ export default function documents({ navigation }) {
     <>
       {
         isEmpty ? (
-          <View style={styles.container}>
-            <FlatList
-            contentContainerStyle={{paddingBottom:48 * rem}}
-              // scrollEnabled={false}
-              data={Object.keys(ceData)}
-              keyExtractor={(item) => item}
-              renderItem={({ item }) => (
-                <CEcard data={ceData[item]} />
-              )}
-            />
+          <View style={styles.emptyContainer}>
+            <AddDocument width={screenWidth - (50 * rem)} height={200 * rem} />
+            <Text style={styles.emptyText}>You don't have any documents scanned yet.</Text>
           </View>
         ) : (
-            <View style={styles.emptyContainer}>
-              <AddDocument width={screenWidth - (50 * rem)} height={200 * rem} />
-              <Text style={styles.emptyText}>You don't have any documents scanned yet.</Text>
+            <View style={styles.container}>
+              <FlatList
+                contentContainerStyle={{ paddingBottom: 48 * rem }}
+                data={Object.keys(ceData).sort((a, b) => { return new Date(ceData[b].completionDate) - new Date(ceData[a].completionDate) })}
+                keyExtractor={(item) => item}
+                renderItem={({ item }) => (
+                  <CEcard data={ceData[item]} />
+                )}
+              />
             </View>
           )
       }
@@ -115,11 +97,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.blue800,
     shadowColor: "#000",
     shadowOffset: {
-        width: 0,
-        height: 1,
+      width: 0,
+      height: 1,
     },
     shadowOpacity: 0.22,
     shadowRadius: 2.22,
     elevation: 3,
-},
+  },
 });

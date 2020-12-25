@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { updateCEs } from '../actions';
 import auth from '@react-native-firebase/auth';
@@ -20,13 +20,14 @@ export default function licenseDetails(props) {
     const navigation = useNavigation();
     const route = useRoute();
 
+    const licenses = useSelector(state => state.licenses);
     const ceData = useSelector(state => state.ces);
     const dispatch = useDispatch();
 
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [licenseData, setLicenseData] = useState(props.route.params.data);
-    const [requirements, setRequirements] = useState(licenseData.requirements);
+    const [requirements, setRequirements] = useState([]);
     const [linkedCEs, setLinkedCEs] = useState({});
     const [selectedImage, setSelectedImage] = useState("");
 
@@ -36,28 +37,10 @@ export default function licenseDetails(props) {
 
     // Initializing stuff
     React.useEffect(() => {
-        let uid = auth().currentUser.uid;
-        let db = firestore();
-        db.collection('users').doc(uid).collection('CEs').doc('CEData').get()
-            .then((response) => {
-
-                let data = response.data();
-                // Checking if data is empty
-                if (typeof data == 'undefined' || Object.keys(data).length === 0 && data.constructor === Object) {
-                }
-                else {
-                    dispatch(updateCEs(data));
-                }
-            })
-            .catch((error) => {
-                console.log("Error getting CEs: ", error);
-            });
-
         // Setting requirements that user assigned to license.
-        if (typeof licenseData["requirements"] !== "undefined" && licenseData["requirements"].length) {
+        // Adding in license total CE hours requirement
+        if (licenseData["totalCEHours"] || licenseData["requirements"]?.length) {
             let requirementsCopy = JSON.parse(JSON.stringify(licenseData["requirements"]));
-
-            // Adding in license total CE hours requirement
             if (licenseData["totalCEHours"]) {
                 let completedHours = 0;
                 for (linkedCE in licenseData["linkedCEs"]) {
@@ -72,55 +55,19 @@ export default function licenseDetails(props) {
                 })
             }
 
-            // Adding in custom requirements
-            for (const requirementIndex in requirementsCopy) {
-                let completedHours = 0;
-                for (linkedCE in requirementsCopy[requirementIndex]["linkedCEs"]) {
-                    completedHours += requirementsCopy[requirementIndex]["linkedCEs"][linkedCE];
+            if (typeof licenseData["requirements"] !== "undefined" && licenseData["requirements"].length) {
+                // Adding in custom requirements
+                for (const requirementIndex in requirementsCopy) {
+                    let completedHours = 0;
+                    for (linkedCE in requirementsCopy[requirementIndex]["linkedCEs"]) {
+                        completedHours += requirementsCopy[requirementIndex]["linkedCEs"][linkedCE];
+                    }
+                    requirementsCopy[requirementIndex].completedHours = completedHours;
                 }
-                requirementsCopy[requirementIndex].completedHours = completedHours;
             }
             setRequirements(requirementsCopy);
         }
 
-        // Overriding requirements with supported state requirements.
-        // Overrides previous requirement state due to setState being async.
-        db.collection('requirements').doc(props?.route?.params?.data?.licenseType).get()
-            .then(res => {
-                const data = res.data();
-                if (data[props?.route?.params?.data?.licenseState]) {
-                    console.log(`Found state requirements: ${JSON.stringify(data[props?.route?.params?.data?.licenseState])}`);
-                    let requirementsCopy = JSON.parse(JSON.stringify(data[props.route.params.data.licenseState].requirements));
-                    // Setting totalCEHours needed
-                    if (data[props?.route?.params?.data?.licenseState].totalCEHours) {
-                        let licenseDataCopy = JSON.parse(JSON.stringify(licenseData));
-                        licenseDataCopy.totalCEHours = data[props?.route?.params?.data?.licenseState].totalCEHours;
-                        setLicenseData(licenseDataCopy);
-                    }
-
-                    for (const requirementIndex in requirementsCopy) {
-                        // Calculating completed hours.
-                        let completedHours = 0;
-                        if (requirementsCopy[requirementIndex].key == "5416f212-dd53-4d40-a563-dbc4fede097c") {
-                            // Total CE hours needed requirement
-                            requirementsCopy[requirementIndex]["linkedCEs"] = licenseData["linkedCEs"];
-                        }
-                        if (typeof requirementsCopy[requirementIndex]?.["linkedCEs"] !== "undefined") {
-                            for (linkedCE in requirementsCopy[requirementIndex]["linkedCEs"]) {
-                                completedHours += requirementsCopy[requirementIndex]["linkedCEs"][linkedCE];
-                            }
-                            requirementsCopy[requirementIndex].completedHours = completedHours;
-                            if (requirementsCopy[requirementIndex].key == "5416f212-dd53-4d40-a563-dbc4fede097c") {
-                                setCompleteCEHours(completedHours);
-                            }
-                        }
-                    }
-                    setRequirements(requirementsCopy);
-                }
-            })
-            .catch(e => {
-                console.log("Error getting requirements for this type of license: ", e);
-            })
 
         let tempCompletedHours = 0;
         for (linkedCE in licenseData["linkedCEs"]) {
@@ -129,7 +76,6 @@ export default function licenseDetails(props) {
         setCompleteCEHours(tempCompletedHours);
 
         if (typeof licenseData['linkedCEs'] !== 'undefined') {
-            console.log("CEs are linked to general CE requirement.")
             setLinkedCEs(licenseData['linkedCEs']);
         }
 
@@ -150,7 +96,7 @@ export default function licenseDetails(props) {
         //         }
         //     }
         // }
-    }, [])
+    }, [JSON.stringify(licenses)])
 
     // Accounting for if the license type is "Other"
     let licenseTitle = '';
@@ -211,6 +157,11 @@ export default function licenseDetails(props) {
     let linkExistingCE = () => {
         setLinkingExistingCEs(!linkingExistingCEs);
     }
+    useEffect(() => {
+        if (linkingExistingCEs) {
+            setLinkingExistingCEs(false);
+        }
+    }, [linkingExistingCEs])
 
     let openScanner = () => {
         props.navigation.navigate('Scanner', {
@@ -745,7 +696,7 @@ export default function licenseDetails(props) {
                                         <FlatList
                                             scrollEnabled={false}
                                             style={{ marginTop: 0, marginBottom: 32 * rem, }}
-                                            data={Object.keys(item["linkedCEs"])}
+                                            data={Object.keys(item["linkedCEs"]).sort((a, b) => { return new Date(ceData[b].completionDate) - new Date(ceData[a].completionDate) })}
                                             keyExtractor={ce => ce}
                                             renderItem={(ce) => (
                                                 <>
@@ -810,7 +761,7 @@ export default function licenseDetails(props) {
                 }
             </View >
 
-            <LinkExistingCE open={linkingExistingCEs}/>
+            <LinkExistingCE open={linkingExistingCEs} licenseID={props.route.params.data.id} />
         </ScrollView >
     );
 }
