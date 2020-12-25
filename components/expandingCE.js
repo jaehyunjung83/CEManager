@@ -10,20 +10,14 @@ import { useRoute } from '@react-navigation/native';
 export default function ceCard(props) {
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [isOpen, setIsOpen] = useState(false);
     const ceData = useSelector(state => state.ces);
 
     const navigation = useNavigation();
     const route = useRoute();
 
     let cardPressed = () => {
-        navigation.navigate("CEDetails", { data: ceData[props.data.id] });
-    }
-
-    let openScanner = () => {
-        navigation.navigate('Scanner', {
-            fromThisScreen: route.name,
-            initialFilterId: 2, // Black and white photo
-        });
+        // TODO: Expand CE details
     }
 
     let openImage = () => {
@@ -33,31 +27,16 @@ export default function ceCard(props) {
     // Used to make element sizes more consistent across screen sizes.
     const screenWidth = Math.round(Dimensions.get('window').width);
     const rem = (screenWidth / 380);
+    const ceHeight = isOpen ? 196 * rem : 50 * rem;
 
     const styles = StyleSheet.create({
-        // Card stylings
         cardContainer: {
-            flexShrink: 1,
-            height: 97 * rem,
-            width: screenWidth - (48 * rem),
-            borderRadius: 10 * rem,
-            backgroundColor: 'white',
-            alignSelf: 'center',
-            marginTop: 24 * rem,
-            shadowColor: "#000",
-            shadowOffset: {
-                width: 0,
-                height: 3,
-            },
-            shadowOpacity: 0.27,
-            shadowRadius: 4.65,
-
-            elevation: 6,
+            flexGrow: 1,
         },
         ceThumbnailContainer: {
-            alignSelf: 'flex-end',
-            marginTop: 11 * rem,
-            marginRight: 11 * rem,
+            alignSelf: 'center',
+            // marginTop: (11 + 32) * rem,
+            marginLeft: 6 * rem,
             width: 75 * rem,
             aspectRatio: 1,
             borderRadius: 10 * rem,
@@ -99,44 +78,45 @@ export default function ceCard(props) {
             position: 'absolute',
             color: colors.blue300,
         },
-        topLeftHoursContainer: {
-            position: 'absolute',
-            borderTopWidth: 0,
-            borderRightWidth: 0,
-            borderBottomWidth: 60 * rem,
-            borderLeftWidth: 60 * rem,
-            borderTopColor: 'transparent',
-            borderRightColor: 'transparent',
-            borderBottomColor: 'white',
-            borderLeftColor: 'transparent',
-            borderTopLeftRadius: 10 * rem,
-            backgroundColor: colors.green500,
-        },
-        topLeftHours: {
-            position: 'absolute',
-            color: 'white',
-            fontSize: 20 * rem,
-            marginTop: 6 * rem,
-            width: 30 * rem,
-            textAlign: 'center',
-        },
         ceInfoContainer: {
-            position: 'absolute',
-            height: '100%',
-            width: '52%',
-            justifyContent: 'center',
-            marginLeft: 60 * rem,
+            maxHeight: ceHeight,
+            width: 260 * rem,
+            paddingTop: 12 * rem,
         },
         ceNameText: {
             fontSize: 18 * rem,
             color: colors.grey800,
             lineHeight: 26 * rem,
+            paddingRight: 20 * rem,
+            width: '100%',
+        },
+        chevronUp: {
+            position: 'absolute',
+            top: 4 * rem,
+            right: 0,
+            width: 20 * rem,
+            paddingLeft: 4 * rem,
+            color: colors.green600,
+        },
+        chevronDown: {
+            position: 'absolute',
+            top: 4 * rem,
+            right: 0,
+            width: 20 * rem,
+            paddingLeft: 4 * rem,
+            color: colors.grey800,
         },
         ceDateText: {
             fontSize: 16 * rem,
             color: colors.grey400,
             fontWeight: '300',
             lineHeight: 26 * rem,
+        },
+        ceDetailsContainer: {
+            width: '60%',
+        },
+        additionalInfoContainer: {
+            flexDirection: 'row',
         },
 
         // Photo styling
@@ -210,48 +190,52 @@ export default function ceCard(props) {
             </Modal>
 
 
-            <TouchableHighlight
+            <TouchableOpacity
                 style={styles.cardContainer}
-                onPress={cardPressed}
+                onPress={() => { setIsOpen(prevState => !prevState) }}
                 underlayColor={colors.underlayColor}
             >
                 <>
-
-                    <View style={styles.topLeftHoursContainer}></View>
-                    <Text numberOfLines={1} style={styles.topLeftHours}>{props?.licenseHours ? props?.licenseHours : props?.data?.hours}</Text>
                     <View style={styles.ceInfoContainer}>
-                        <Text numberOfLines={2} style={styles.ceNameText}>{props?.data?.name}</Text>
-                        <Text style={styles.ceDateText}>{props?.data?.completionDate}</Text>
-                    </View>
-                    {props?.data?.ceThumbnail ? (
-                        <TouchableOpacity
-                            style={styles.ceThumbnailContainer}
-                            onPress={() => {
-                                openImage(props?.data?.cePhoto);
-                            }}
-                        >
-                            <FastImage
-                                style={styles.ceThumbnailImg}
-                                source={{
-                                    uri: props?.data?.ceThumbnail,
-                                    priority: FastImage.priority.normal,
-                                }}
-                                resizeMode={FastImage.resizeMode.contain}
-                            />
-                        </TouchableOpacity>
-                    ) : (
+                        <View>
+                            <Text numberOfLines={3} style={styles.ceNameText}>{props?.data?.name}</Text>
+                            {isOpen ? (
+                                <AntDesign name="up" size={20 * rem} style={styles.chevronUp} />
+                            ) : (
+                                    <AntDesign name="down" size={20 * rem} style={styles.chevronDown} />
+                                )}
+                        </View>
 
-                            <TouchableOpacity
-                                style={styles.ceThumbnailContainer}
-                                onPress={() => {
-                                    openScanner();
-                                }}
-                            >
-                                <AntDesign name="camerao" size={32 * rem} style={styles.thumbnailIcon} />
-                            </TouchableOpacity>
-                        )}
+                        {isOpen &&
+                            <View style={styles.additionalInfoContainer}>
+                                <View style={styles.ceDetailsContainer}>
+                                    <Text style={styles.ceDateText}>{props?.data?.completionDate}</Text>
+                                    <Text style={styles.ceDateText}>{props?.data?.hours} <Text style={styles.infoLabel}>Hours</Text></Text>
+                                    <Text numberOfLines={2} style={styles.ceDateText}>{props?.data?.providerNum}</Text>
+                                </View>
+                                    {props?.data?.ceThumbnail ? (
+                                        <TouchableOpacity
+                                            style={styles.ceThumbnailContainer}
+                                            onPress={() => {
+                                                openImage(props?.data?.cePhoto);
+                                            }}
+                                        >
+                                            <FastImage
+                                                style={styles.ceThumbnailImg}
+                                                source={{
+                                                    uri: props?.data?.ceThumbnail,
+                                                    priority: FastImage.priority.normal,
+                                                }}
+                                                resizeMode={FastImage.resizeMode.contain}
+                                            />
+                                        </TouchableOpacity>
+                                    ) : (null)}
+                            </View>
+                        }
+
+                    </View>
                 </>
-            </TouchableHighlight>
+            </TouchableOpacity>
         </>
     );
 }

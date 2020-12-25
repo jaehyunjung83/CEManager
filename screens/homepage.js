@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { updateLicenses } from '../actions';
+import { updateLicenses, updateCEs } from '../actions';
 
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity, FlatList } from 'react-native';
 import AddNew from '../images/addNew.svg';
@@ -21,14 +21,7 @@ export default function homepage(props) {
         props.navigation.navigate("AddNew");
     }
 
-    let addCE = () => {
-    }
-
     let linkExistingCE = () => {
-        // TODO:
-    }
-
-    let cardPressed = () => {
         // TODO:
     }
 
@@ -43,100 +36,168 @@ export default function homepage(props) {
                 let data = response.data();
                 // Checking if data is empty
                 if (typeof data == 'undefined' || Object.keys(data).length === 0 && data.constructor === Object) {
-                    setIsLoading(false);
                     setIsEmpty(true);
                 }
                 else {
                     setIsEmpty(false);
-                    for (const license in data) {
-                        // Overriding requirements with supported state requirements.
-                        // Overrides previous requirement state due to setState being async.
-                        await db.collection('requirements').doc(data[license].licenseType).get()
-                            .then(res => {
-                                const reqData = res.data();
-                                if (reqData?.[data[license].licenseState]) {
-                                    // Setting totalCEHours needed
-                                    if (reqData[data[license].licenseState].totalCEHours) {
-                                        data[license].totalCEHours = reqData[data[license].licenseState].totalCEHours;
-                                    }
-                                }
-                            })
-                            .catch(e => {
-                                console.log("Error getting requirements for this type of license: ", e);
-                            })
-                    }
-                    setIsLoading(false);
-                    dispatch(updateLicenses(data));
+                    let updatedLicenses = await updateLicenseRequirements(data);
+                    dispatch(updateLicenses(updatedLicenses));
                 }
             })
             .catch((error) => {
                 console.log("Error getting document: ", error);
-                setIsLoading(false);
             });
     }
 
-    // Allows us to refresh page from other screens.
-    // Note, seems to cause problems with animations. Other pages navigating to here are no longer animated if this page is refreshed.
-    // if (typeof props.route?.params?.refreshPage !== 'undefined') {
-    //     if (props.route?.params?.refreshPage) {
-    //         props.navigation.setParams({
-    //             refreshPage: false
-    //         })
-    //         getLicenseData();
-    //     }
-    // }
+    let getCEData = async () => {
+        console.log("Getting CE data");
+        let uid = auth().currentUser.uid;
+        let db = firestore();
+        db.collection('users').doc(uid).collection('CEs').doc('CEData').get()
+            .then((response) => {
+
+                let data = response.data();
+                // Checking if data is empty
+                if (typeof data == 'undefined' || Object.keys(data).length === 0 && data.constructor === Object) {
+                }
+                else {
+                    dispatch(updateCEs(data));
+                }
+            })
+            .catch((error) => {
+                console.log("Error getting CEs: ", error);
+            });
+    }
+
+    let updateLicenseRequirements = async (licensesData) => {
+        let db = firestore();
+        // Overriding requirements with supported state requirements.
+        // Overrides previous requirement state due to setState being async.
+        let licensesCopy = JSON.parse(JSON.stringify(licensesData));
+        let hasUpdatedALicense = false;
+        for (let key in licensesData) {
+            let res = await db.collection('requirements').doc(licensesData[key].licenseType).get()
+            if (!res.data()) {
+                console.log(`${licensesData[key].licenseType}(${licensesData[key].licenseState}): State or license type not officially supported.`)
+                continue;
+            }
+            const data = res.data();
+            if (!data || !data[licensesData[key].licenseState]) {
+                console.log(`${licensesData[key].licenseType}(${licensesData[key].licenseState}): State or license type not officially supported.`)
+                continue;
+            }
+
+            if (licensesData[key].officialRequirementUpdateDate?.["_seconds"]) {
+                // Firebase Timestamp is converted to object when copying to new licensesCopy object.
+                // So it is convenient to convert it back to a Timestamp.
+                licensesCopy[key].officialRequirementUpdateDate = new firestore.Timestamp(licensesCopy[key].officialRequirementUpdateDate["_seconds"], 0);
+            }
+            if (licensesData[key].officialRequirementUpdateDate?.valueOf()?.seconds == data[licensesData[key].licenseState].lastUpdated.valueOf().seconds) {
+                console.log(`${licensesData[key].licenseType}(${licensesData[key].licenseState}): Officially supported and up to date.`)
+                continue;
+            }
+
+            hasUpdatedALicense = true;
+            licensesCopy[key].officialRequirementUpdateDate = new firestore.Timestamp(data[licensesData[key].licenseState].lastUpdated.valueOf().seconds, 0);
+            // Setting totalCEHours needed
+            if (data[licensesData[key].licenseState].totalCEHours) {
+                licensesCopy[key].totalCEHours = data[licensesData[key].licenseState].totalCEHours;
+            }
+            else {
+                delete licensesCopy.totalCEHours;
+            }
+
+            // Setting special requirements
+            let newRequirements = [];
+            for (const newRequirement of data[licensesData[key].licenseState].requirements) {
+                let found = false;
+                for (const oldRequirement of licensesCopy[key].requirements) {
+                    if (newRequirement.key == oldRequirement.key) {
+                        newRequirements.push(oldRequirement);
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    newRequirements.push(newRequirement);
+                }
+            }
+            licensesCopy[key].requirements = newRequirements;
+        }
+
+        if (hasUpdatedALicense) {
+            console.log("Some licenses requirements were updated. Updating firebase...");
+            let uid = auth().currentUser.uid;
+            db.collection('users').doc(uid).collection('licenses').doc('licenseData').set(licensesCopy, { merge: true })
+                .then(() => {
+                    console.log("Updated licenses with official supported state requirements.");
+                    return licensesCopy;
+                })
+                .catch((error) => {
+                    console.error("Error applying CE: ", error);
+                });
+        }
+        else {
+            console.log("All license requirements up to date with official requirements.");
+            return licensesCopy;
+        }
+    }
 
     React.useEffect(() => {
-        getLicenseData();
+        async function fetchData() {
+            await getLicenseData();
+            await getCEData();
+            setIsLoading(false);
+        };
+        fetchData();
     }, [])
 
     if (isLoading) {
         return (<View style={styles.emptyContainer}></View>)
     }
 
-    return (
-        <>
-            {isEmpty ? (
-                <View style={styles.emptyContainer}>
-                    <View style={styles.addNewButtonContainer}>
-                        <TouchableOpacity
-                            onPress={addNew}>
-                            <AntDesign
-                                name='plus'
-                                size={32 * rem}
-                                color={'white'}
-                            />
-                        </TouchableOpacity>
-                    </View>
-                    <AddNew width={screenWidth - (50 * rem)} height={200 * rem} />
-                    <Text style={styles.emptyText}>You don't have any licenses or certifications added yet. Add one to start tracking!</Text>
-                </View>
-            ) : (
-                    <View style={styles.container}>
-                        <FlatList
-                            contentContainerStyle={{ paddingBottom: 48 * rem }}
-                            data={Object.keys(licenses)}
-                            keyExtractor={(item) => item}
-                            renderItem={({ item }) => (
-                                <LicenseCard
-                                    data={licenses[item]}
-                                />
-                            )}
+    if (isEmpty) {
+        return (
+            <View style={styles.emptyContainer}>
+                <View style={styles.addNewButtonContainer}>
+                    <TouchableOpacity
+                        onPress={addNew}>
+                        <AntDesign
+                            name='plus'
+                            size={32 * rem}
+                            color={'white'}
                         />
-                        <View style={styles.addNewButtonContainer}>
-                            <TouchableOpacity
-                                onPress={addNew}>
-                                <AntDesign
-                                    name='plus'
-                                    size={32 * rem}
-                                    color={'white'}
-                                />
-                            </TouchableOpacity>
-                        </View>
-                    </View >
-                )
-            }
-        </>
+                    </TouchableOpacity>
+                </View>
+                <AddNew width={screenWidth - (50 * rem)} height={200 * rem} />
+                <Text style={styles.emptyText}>You don't have any licenses or certifications added yet. Add one to start tracking!</Text>
+            </View>
+        )
+    }
+
+    return (
+        <View style={styles.container}>
+            <FlatList
+                contentContainerStyle={{ paddingBottom: 48 * rem }}
+                data={Object.keys(licenses)}
+                keyExtractor={(item) => item}
+                renderItem={({ item }) => (
+                    <LicenseCard
+                        data={licenses[item]}
+                    />
+                )}
+            />
+            <View style={styles.addNewButtonContainer}>
+                <TouchableOpacity
+                    onPress={addNew}>
+                    <AntDesign
+                        name='plus'
+                        size={32 * rem}
+                        color={'white'}
+                    />
+                </TouchableOpacity>
+            </View>
+        </View >
     );
 }
 

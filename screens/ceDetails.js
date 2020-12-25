@@ -1,10 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { updateCEs } from '../actions';
-import auth from '@react-native-firebase/auth';
-import firestore from '@react-native-firebase/firestore';
 import FastImage from 'react-native-fast-image'
-import CEcard from '../components/ceCard.js';
+import ApplyTowardLicense from '../components/applyTowardLicense.js';
 
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity, SectionList, FlatList, Modal, TouchableWithoutFeedback } from 'react-native';
 import AntDesign from 'react-native-vector-icons/AntDesign';
@@ -16,7 +13,6 @@ import { useRoute } from '@react-navigation/native';
 
 
 export default function ceDetails(props) {
-// TODO: Change link to "apply" or "apply towards".
     const navigation = useNavigation();
     const route = useRoute();
     const allCEData = useSelector(state => state.ces);
@@ -29,60 +25,80 @@ export default function ceDetails(props) {
     const [isLoading, setIsLoading] = useState(true);
     const [selectedImage, setSelectedImage] = useState("");
     const [linkedLicenses, setLinkedLicenses] = useState([]);
+    const [applyingTowardsLicense, setApplyingTowardsLicense] = useState(false);
 
     const [completedCEHours, setCompleteCEHours] = useState(0);
 
     // Initializing stuff
     React.useEffect(() => {
-        for (const license of Object.keys(licenses)) {
-            let requirements = {
-                title: `${licenses[license].licenseState} ${licenses[license].licenseType}`,
-                data: [],
-            }
+        setLinkedLicenses([]);
+    }, [licenses, allCEData])
 
-            if (licenses[license].requirements.length) {
-                // Checking if linked to speciifc requirement
-                for (const requirement of licenses[license].requirements) {
-                    for (const linkedCE of Object.keys(requirement["linkedCEs"])) {
+    React.useEffect(() => {
+        if (!linkedLicenses.length) {
+            let linkedLicensesCopy = JSON.parse(JSON.stringify(linkedLicenses));
+            let foundLink = false;
+
+            for (const license of Object.keys(licenses)) {
+                let requirements = {
+                    title: `${licenses[license].licenseState} ${licenses[license].licenseType}`,
+                    data: [],
+                }
+
+                if (licenses[license].requirements.length) {
+                    // Checking if linked to specific requirement
+                    for (const requirement of licenses[license].requirements) {
+                        for (const linkedCE of Object.keys(requirement["linkedCEs"])) {
+                            if (linkedCE == ceData.id) {
+                                let linkedRequirement = {
+                                    name: requirement.name,
+                                    hours: requirement["linkedCEs"][linkedCE],
+                                }
+                                requirements.data.push(linkedRequirement);
+                            }
+                        }
+                    }
+                }
+
+                if (licenses[license].linkedCEs) {
+                    // Checking if linked to license
+                    for (const linkedCE of Object.keys(licenses[license]["linkedCEs"])) {
                         if (linkedCE == ceData.id) {
                             let linkedRequirement = {
-                                name: requirement.name,
-                                hours: requirement["linkedCEs"][linkedCE],
-                            }
+                                name: "Total Hours Needed",
+                                hours: licenses[license]["linkedCEs"][linkedCE],
+                            };
                             requirements.data.push(linkedRequirement);
                         }
                     }
                 }
-            }
 
-            if (licenses[license].linkedCEs) {
-                // Checking if linked to license
-                for (const linkedCE of Object.keys(licenses[license]["linkedCEs"])) {
-                    if (linkedCE == ceData.id) {
-                        let linkedRequirement = {
-                            name: "Total Hours Needed",
-                            hours: licenses[license]["linkedCEs"][linkedCE],
-                        };
-                        requirements.data.push(linkedRequirement);
-                    }
+                if (requirements.data.length > 0) {
+                    foundLink = true;
+                    linkedLicensesCopy.push(requirements);
                 }
             }
-            if (requirements.data.length > 0) {
-                let linkedLicensesCopy = JSON.parse(JSON.stringify(linkedLicenses));
-                linkedLicensesCopy.push(requirements);
+            if (foundLink) {
                 setLinkedLicenses(linkedLicensesCopy);
             }
+            else {
+                setLinkedLicenses([{}])
+            }
         }
-    }, [])
-
+    }, [JSON.stringify(linkedLicenses)])
 
     let addCE = () => {
         navigation.navigate("EditCE", { ceData: ceData, fromLicenseID: fromLicenseID });
     }
 
-    let linkWithLicenses = () => {
-        // TODO:
+    let applyTowardsLicense = () => {
+        setApplyingTowardsLicense(!applyingTowardsLicense);
     }
+    useEffect(() => {
+        if (applyingTowardsLicense) {
+            setApplyingTowardsLicense(false);
+        }
+    }, [applyingTowardsLicense])
 
     let openEllipsis = () => {
 
@@ -431,16 +447,16 @@ export default function ceDetails(props) {
 
             <View style={styles.cardButtonsContainer}>
                 <TouchableOpacity style={styles.linkButton}
-                    onPress={linkWithLicenses}>
-                    <Text style={styles.linkButtonText}>Link to Licenses</Text>
+                    onPress={applyTowardsLicense}>
+                    <Text style={styles.linkButtonText}>Apply Towards Licenses</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.whiteButton}
                     onPress={addCE}>
-                    <AntDesign
+                    {/* <AntDesign
                         name='edit'
                         size={20 * rem}
                         color={colors.blue800}
-                    />
+                    /> */}
                     <Text style={styles.whiteButtonText}> Edit CE</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.whiteButton}
@@ -451,13 +467,15 @@ export default function ceDetails(props) {
                         color={colors.blue800}
                     />
                 </TouchableOpacity>
+
+                <ApplyTowardLicense open={applyingTowardsLicense} id={props.route?.params?.data?.id} />
             </View>
 
             <View style={styles.headerContainer}>
-                <Header text='Linked Licenses & Certifications' />
+                <Header text='Applied Toward' />
             </View>
 
-            {linkedLicenses.length ? (<View style={styles.linkedLicensesContainer}>
+            {linkedLicenses.length && Object.keys(linkedLicenses[0]).length ? (<View style={styles.linkedLicensesContainer}>
                 <SectionList
                     scrollEnabled={false}
                     sections={linkedLicenses}
