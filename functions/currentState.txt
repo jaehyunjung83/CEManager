@@ -1,0 +1,124 @@
+
+    <div class="h2">Registered Nurse Renewal Application - Introduction</div>
+    
+        <div class="instructionFont">
+        <script src="js/common.js" type="text/javascript"></script> <p><strong>CALIFORNIA BOARD OF REGISTERED NURSING (BRN), ONLINE LICENSE RENEWAL APPLICATION</strong>
+<br>
+<br> <strong><span style="text-decoration: underline;">Requirements</span></strong>
+<br> In order to renew your RN license you will need to:</p> 
+<ol> <li>Answer the renewal questions </li><li>Verify your personal information 
+</li><li>Provide information regarding your Continuing Education
+ </li><li>Meet the fingerprint requirement*
+ </li><li>Certification of Accuracy Statement 
+</li><li>Attachments (if needed) 
+</li><li>Pay the appropriate renewal fee </li></ol>
+<p> <strong>Legality of Practice Between Renewal and Receipt of License:
+</strong> Section 121 of the Business and Professions Code provides that a nurse may work pending receipt of his/her renewed license providing the renewal fee has been submitted timely and all renewal requirements have been met.
+<br>
+<br> <strong>Certification Reminder:
+</strong> Registered nurses must be certified by the Board in order to use the titles Clinical Nurse Specialist (CNS), Nurse Practitioner (NP), Nurse Practitioner Furnishing (NPF), Nurse Anesthetist (NA), Public Health Nurse (PHN), Nurse-Midwife (NMW), Nurse-Midwife Furnishing (NMF).
+<br>
+<br> <strong>Advanced Practice Certificate Renewals:</strong> If you are a PHN, NP, CNS, NA, NMW, or if you possess a furnishing number certificate, you must renew your certificate(s) in addition to your registered nurse license. Each certificate has an associated fee due at time of renewal. 
+<br><br>
+<strong>Late Fee:</strong> Renewal fees are due prior to the expiration date. A late penalty is added for renewals submitted after the expiration date. 
+<br><br><strong>*Fingerprint Requirement:</strong>  All active licensees must meet the current fingerprint requirement. To determine if you have met this requirement, or if you need to submit new fingerprints, please visit <a onclick="return newWindow(this,'_vo', 'scrollbars=yes,location=no,directories=no,status=no,menubar=no,toolbar=no,resizable=yes');" href="http://www.rn.ca.gov/licensees/ren-fp.shtml" aria-label="Fingerprint Requirement for License Renewal" target="_blank">http://www.rn.ca.gov/licensees/ren-fp.shtml</a>. Your renewal may not be approved without valid fingerprint results.  Failure to submit a set of fingerprints, if required or directed, is grounds for discipline by the Board.<br>
+<br><strong>If you need to change your current address please go back to the quick start menu by pressing 'Cancel' and select the 'Address Change' application.</strong></p><br>
+        </div>
+    
+
+    
+    
+    
+
+    <a name="maincontent" id="maincontent"></a>
+    
+
+	 
+		<p class="instructionFont">
+			Press "Next" to continue.
+		</p>
+			
+	
+
+
+
+
+
+
+
+
+	<p class="instructionFont">
+		Press "Cancel" to exit this application.
+	</p>
+
+
+	<form action="introduction.do" class="formDetails" method="post">
+
+		
+
+
+
+
+
+
+
+
+
+<p class="instructionFont"><script src="js/common.js" type="text/javascript"></script> <strong>Fingerprint Requirement:</strong> If you are renewing your license to an ACTIVE status and were fingerprinted prior to 2014, you are required to furnish a full set of fingerprints, as directed by the Board for BOTH levels of service (DOJ and FBI). To determine if you have met this requirement, or if you need to submit new fingerprints, please visit <a onclick="return newWindow(this,'_vo', 'scrollbars=yes,location=no,directories=no,status=no,menubar=no,toolbar=no,resizable=yes');" href="http://www.rn.ca.gov/licensees/ren-fp.shtml" aria-label="Fingerprint Requirement for License Renewal" target="_blank">http://www.rn.ca.gov/licensees/ren-fp.shtml</a>. Your renewal may not be approved without valid fingerprint results. Please fax your completed Live Scan to (916) 574-8647. Failure to submit a set of fingerprints, if required or directed, is grounds for discipline by the Board. <br><br>
+
+<strong><a onclick="return newWindow(this,'_vo', 'scrollbars=yes,location=no,directories=no,status=no,menubar=no,toolbar=no,resizable=yes');" href="https://www.rn.ca.gov/applicants/fpinstruct.shtml#livescan" aria-label="Live Scan Process" target="_blank">Live Scan Process</a></strong><strong>:</strong> You must use a Live Scan site located in California to use this method. The Board will NOT be able to receive results for fingerprints taken at Live Scan locations that are outside of California. The Live Scan form can be downloaded here: <a onclick="return newWindow(this,'_vo', 'scrollbars=yes,location=no,directories=no,status=no,menubar=no,toolbar=no,resizable=yes');" href="https://www.rn.ca.gov/pdfs/livescan.pdf" aria-label="https://www.rn.ca.gov/pdfs/livescan.pdf" target="_blank">https://www.rn.ca.gov/pdfs/livescan.pdf</a><br><br>
+
+The Live Scan form will print in triplicate; take all three copies to the Live Scan site. Complete the required fields (marked with red "X"). At the Live Scan site, they will scan your fingerprints electronically and submit them immediately for processing.<br><br>
+
+After your fingerprints have been scanned:<br><br>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1.  &nbsp;&nbsp;First copy of the form is kept by the Live Scan operator.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2.  &nbsp;&nbsp;Second copy may be submitted to the Board through your online BreEZe account (this is NOT required <br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- please only submit a completed copy if it is being specifically requested by the Board).<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.  &nbsp;&nbsp;Third copy can be kept by you for your records.
+<br><br>
+<strong><a onclick="return newWindow(this,'_vo', 'scrollbars=yes,location=no,directories=no,status=no,menubar=no,toolbar=no,resizable=yes');" href="https://www.rn.ca.gov/applicants/fpinstruct.shtml#manual" aria-label="Manual Fingerprint Process" target="_blank">Manual Fingerprint Process</a></strong><strong>:</strong> If you are outside of California or are unable to access Live Scan, you may use the manual fingerprint (hard card) method. A fingerprint card can be requested by using the request form on the Board's website here: <a onclick="return newWindow(this,'_vo', 'scrollbars=yes,location=no,directories=no,status=no,menubar=no,toolbar=no,resizable=yes');" href="https://www.dca.ca.gov/webapps/rn/requests.php" aria-label="Fingerprint Requests" target="_blank">https://www.dca.ca.gov/webapps/rn/requests.php</a><br><br>
+</p>
+
+
+
+
+<script src="js/navigation.js" type="text/javascript"></script>
+
+
+<input type="hidden" id="contextPath" value="/datamart">
+<input type="hidden" id="param_applicationId" value="1">
+<input type="hidden" id="param_moduleCode" value="INTR">
+<input type="hidden" id="param_rsdIndex" value="null">
+
+<input type="hidden" id="param_fakeCode" value="null">
+<input type="hidden" id="param_fakeCode2" value="null">
+
+	
+
+
+
+
+
+
+
+
+
+<p class="instructionFont"></p>
+
+		<table summary="Introduction" width="100%"><tbody><tr><td align="right">
+		<div class="buttonBar">
+		   <div class="buttonBarRight">
+	 
+		<input type="submit" name="next" class="buttonMiddle" value="Next">
+			
+		<input type="submit" name="cancel" class="buttonMiddle" value="Cancel">
+		</div>
+		</div>
+	</td></tr></tbody></table>	
+		<input type="hidden" name="applicationId" value="1">
+		<input type="hidden" name="validationResult" value="true">
+	</form>
+
+
+      

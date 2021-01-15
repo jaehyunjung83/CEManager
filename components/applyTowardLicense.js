@@ -100,38 +100,6 @@ export default function applyTowardLicense(props) {
         setLocalLicensesCopy(licensesCopy);
     }
 
-    // let setTotalRequirementHours = (hours, licenseID) => {
-    //     // Links CE to total hour requirement of CE/license.
-    //     // Set license state.
-    //     if (!licenseID) return;
-    //     if (props.setTotalRequirementHours) props.setTotalRequirementHours(hours, licenseID);
-
-    //     let licensesCopy = JSON.parse(JSON.stringify(licenses));
-    //     if (hours) {
-    //         let temp = linkedLicenses.concat(licenseID);
-    //         setLinkedLicenses(temp);
-
-    //         if (typeof licensesCopy[licenseID]["linkedCEs"] == "object") {
-    //             licensesCopy[licenseID]["linkedCEs"][ceID] = parseInt(hours);
-    //         }
-    //         else {
-    //             licensesCopy[licenseID]["linkedCEs"] = {};
-    //             licensesCopy[licenseID]["linkedCEs"][ceID] = parseInt(hours);
-    //         }
-    //     }
-    //     else {
-    //         delete licensesCopy[licenseID]["linkedCEs"][ceID];
-    //         let temp = linkedLicenses.filter(id => id !== licenseID || id == props?.route?.params?.id);
-    //         setLinkedLicenses(temp);
-    //     }
-    //     setLocalLicensesCopy(licensesCopy);
-    // }
-
-    // let getTotalRequirementDefaultHours = (item) => {
-    //     if (props.hours && props.licenseID && item == props.licenseID) return props.hours;
-    //     return props.id && props.id in licenses[item].linkedCEs ? (licenses[item].linkedCEs[props.id].toString()) : (null)
-    // }
-
     // Used to make element sizes more consistent across screen sizes.
     const screenWidth = Math.round(Dimensions.get('window').width);
     const screenHeight = Math.round(Dimensions.get('window').height);
@@ -326,27 +294,6 @@ export default function applyTowardLicense(props) {
                                         )}
                                     />
                                 ) : (null)}
-                            {/* Default requirement
-                            {licenses[item].totalCEHours ?
-                                (
-                                    <View style={styles.requirementFlexRowContainer}>
-                                        <View style={styles.linkHoursContainer}>
-                                            <TextInput
-                                                placeholder={"Hrs"}
-                                                placeholderTextColor={colors.grey400}
-                                                style={styles.input}
-                                                defaultValue={getTotalRequirementDefaultHours(item)}
-                                                onChangeText={(hours) => {
-                                                    setTotalRequirementHours(hours, item);
-                                                }}
-                                                keyboardType={'numeric'}
-                                                maxLength={4}
-                                            />
-                                        </View>
-                                        <Text style={styles.linkedReqText}>Hours applied to license</Text>
-                                    </View>
-
-                                ) : (null)} */}
                         </>
                     )}
                 >

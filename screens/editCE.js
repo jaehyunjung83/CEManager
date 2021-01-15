@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { updateLicenses } from '../actions';
+import { updateLicenses, updateCEs } from '../actions';
 import { Modal, FlatList, TouchableWithoutFeedback, TouchableOpacity, Text, TextInput, View, StyleSheet, Dimensions, ScrollView, KeyboardAvoidingView } from 'react-native';
 import { colors } from '../components/colors.js';
 import AntDesign from 'react-native-vector-icons/AntDesign';
@@ -196,42 +196,24 @@ export default function editCE(props) {
         if (!licenseID) {
             return;
         }
-        let licensesCopy = JSON.parse(JSON.stringify(licenses));
-        if (hours) {
-            if (typeof licensesCopy[licenseID]["linkedCEs"] == "object") {
-                licensesCopy[licenseID]["linkedCEs"][ceID] = parseInt(hours);
+        let localLicensesCopy = JSON.parse(JSON.stringify(licenses));
+        for (const index in localLicensesCopy[licenseId].requirements) {
+            if (localLicensesCopy[licenseId].requirements[index].name !== "Total CEs Needed") continue;
+
+            if (!hours && localLicensesCopy[licenseId].requirements[index].linkedCEs?.[ceID]) {
+                delete localLicensesCopy[licenseId].requirements[index].linkedCEs[ceID];
             }
             else {
-                licensesCopy[licenseID]["linkedCEs"] = {};
-                licensesCopy[licenseID]["linkedCEs"][ceID] = parseInt(hours);
-            }
-        }
-        else {
-            delete licensesCopy[licenseID]["linkedCEs"][ceID];
-        }
-        setLocalLicensesCopy(licensesCopy);
-
-        // Updating linkedLicenses (to display green checkmark and bolded text for license)
-        for (requirementIndex in licensesCopy[licenseID].requirements) {
-            for (linkedCE in licensesCopy[licenseID].requirements[requirementIndex]["linkedCEs"]) {
-                if (linkedCE == ceID) {
-                    let temp = linkedLicenses.concat(licenseID);
-                    setLinkedLicenses(temp);
-                    return;
+                if (localLicensesCopy[licenseId].requirements[index].linkedCEs) {
+                    localLicensesCopy[licenseId].requirements[index].linkedCEs[ceID] = hours;
+                }
+                else {
+                    localLicensesCopy[licenseId].requirements[index].linkedCEs = {};
+                    localLicensesCopy[licenseId].requirements[index].linkedCEs[ceID] = hours;
                 }
             }
+            setLocalLicensesCopy(localLicensesCopy);
         }
-        for (linkedCE in licensesCopy[licenseID]["linkedCEs"]) {
-            if (linkedCE == ceID) {
-                let temp = linkedLicenses.concat(licenseID);
-                setLinkedLicenses(temp);
-                return;
-            }
-        }
-
-        // No linked CEs match current CE => remove current license from linkedLicenses
-        let temp = linkedLicenses.filter(id => id !== licenseID || id == props?.route?.params?.id);
-        setLinkedLicenses(temp);
     }
 
     let editCE = () => {
@@ -251,29 +233,41 @@ export default function editCE(props) {
             let ceObj = {
                 [ceID]: ceData,
             }
-            dispatch(updateLicenses(localLicensesCopy));
-
-            console.log(`CEData: ${JSON.stringify(ceData)}`);
 
             let uid = auth().currentUser.uid;
             let db = firestore();
             db.collection('users').doc(uid).collection('CEs').doc('CEData').set(ceObj, { merge: true })
                 .then(() => {
                     console.log("CE successfully written!");
-                    db.collection('users').doc(uid).collection('licenses').doc('licenseData').set(localLicensesCopy, { merge: true })
-                        .then(() => {
-                            console.log("Document successfully written!");
-                            props.navigation.navigate("Homepage");
+                    db.collection('users').doc(uid).collection('CEs').doc('CEData').get()
+                        .then((response) => {
+                            let data = response.data();
+                            // Checking if data is empty
+                            if (typeof data == 'undefined' || Object.keys(data).length === 0 && data.constructor === Object) {
+                                dispatch(updateCEs({}));
+                            }
+                            else {
+                                dispatch(updateCEs(data));
+                            }
+
+                            db.collection('users').doc(uid).collection('licenses').doc('licenseData').set(localLicensesCopy, { merge: true })
+                                .then(() => {
+                                    console.log("License data successfully written!");
+                                    dispatch(updateLicenses(localLicensesCopy));
+                                    props.navigation.navigate("Homepage");
+                                })
+                                .catch((error) => {
+                                    console.error("Error adding document: ", error);
+                                    props.navigation.navigate("Homepage");
+                                });
                         })
                         .catch((error) => {
-                            console.error("Error adding document: ", error);
-                            props.navigation.navigate("Homepage");
+                            console.log("Error getting CEs: ", error);
                         });
                 })
                 .catch((error) => {
                     setGeneralErrorMsg("Failed to save CE. Please try again later.");
                     console.error("Error adding CE: ", error);
-                    props.navigation.navigate("Homepage");
                 });
         }
         else {
@@ -452,33 +446,6 @@ export default function editCE(props) {
                                                 </View>
                                             )}
                                         />
-                                    ) : (null)}
-                                {/* Default requirement */}
-                                {licenses[item].totalCEHours ?
-                                    (
-                                        <View style={styles.requirementFlexRowContainer}>
-                                            <View style={styles.linkHoursContainer}>
-                                                <TextInput
-                                                    placeholder={"Hrs"}
-                                                    placeholderTextColor={colors.grey400}
-                                                    style={styles.input}
-                                                    value={props?.route?.params?.id == item ? (hours) : (null)}
-                                                    onChangeText={(hours) => {
-                                                        if (props?.route?.params?.id == item) {
-                                                            setHours(hours);
-                                                            setTotalRequirementHours(hours, item);
-                                                        }
-                                                        else {
-                                                            setTotalRequirementHours(hours, item);
-                                                        }
-                                                    }}
-                                                    keyboardType={'numeric'}
-                                                    maxLength={4}
-                                                />
-                                            </View>
-                                            <Text style={styles.linkedReqText}>Hours applied to license</Text>
-                                        </View>
-
                                     ) : (null)}
                             </>
                         )}

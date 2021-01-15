@@ -3,7 +3,6 @@ import { useSelector, useDispatch } from 'react-redux';
 import { updateLicenses } from '../actions';
 import { Animated, View, Text, StyleSheet, Dimensions, TouchableHighlight, Easing, ScrollView, Modal, FlatList, TouchableWithoutFeedback, TouchableOpacity, TextInput, KeyboardAvoidingView } from 'react-native';
 import { TextInputMask } from 'react-native-masked-text';
-import LicenseCard from '../components/licenseCard.js';
 import Header from '../components/header.js';
 import AutoCompleteInput from '../components/autoCompleteInput.js';
 import { colors } from '../components/colors.js';
@@ -57,8 +56,8 @@ const FadeInView = (props) => {
 
 // TODO: Remember auto generate CE's needed and requirements for specific states.
 // TODO: Delete pic and thumbnail if adding license is cancelled.
-export default function addLicense(props) {
-    passedLicenseData = props.route.params.licenseData;
+export default function editLicense(props) {
+    licenseID = props.route.params.licenseID;
 
     const headerHeight = useHeaderHeight();
     const states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'];
@@ -66,25 +65,6 @@ export default function addLicense(props) {
     const licenses = useSelector(state => state.licenses);
     const dispatch = useDispatch();
 
-    const [licenseTypes, setLicenseTypes] = useState([]);
-    const [isLicenseSelected, setIsLicenseSelected] = useState(false);
-    const [isCertSelected, setIsCertSelected] = useState(false);
-    const [licenseType, setLicenseType] = useState("");
-    const [typeErrorMsg, setTypeErrorMsg] = useState("");
-    const [otherLicenseType, setOtherLicenseType] = useState("");
-    const [otherTypeErrorMsg, setOtherTypeErrorMsg] = useState("");
-    const [licenseState, setLicenseState] = useState("");
-    const [stateErrorMsg, setStateErrorMsg] = useState("");
-    const [licenseNum, setLicenseNum] = useState("");
-    const [licenseExpiration, setLicenseExpiration] = useState("");
-    const [expirationErrorMsg, setExpirationErrorMsg] = useState("");
-    const [ceHoursRequired, setCEHoursRequired] = useState('');
-    const [isModalVisible, setIsModalVisible] = useState(false);
-    const [requirements, setRequirements] = useState([]);
-    const [textPositionY, setTextPositionY] = useState(0);
-    const [licenseThumbnail, setLicenseThumbnail] = useState("");
-    const [licensePhoto, setLicensePhoto] = useState("");
-    const [isLoading, setIsLoading] = useState(false);
 
     React.useEffect(() => {
         let db = firestore();
@@ -98,24 +78,45 @@ export default function addLicense(props) {
     }, [licenseTypes])
 
     React.useEffect(() => {
-        if(!passedLicenseData) return;
-        setIsLicenseSelected(true);
-        setLicenseType(passedLicenseData.licenseType);
-        setOtherLicenseType(passedLicenseData.otherLicenseType);
-        setLicenseState(passedLicenseData.licenseState);
-        setLicenseNum(passedLicenseData.licenseNum);
-        setLicenseExpiration(passedLicenseData.licenseExpiration);
-        for (const index in passedLicenseData.requirements) {
-            if (passedLicenseData.requirements[index].name == "Total CEs Needed") {
-                setCEHoursRequired(passedLicenseData.requirements[index].hours);
+        if (!licenses[licenseID]) return;
+        setLicenseType(licenses[licenseID].licenseType);
+        setOtherLicenseType(licenses[licenseID].otherLicenseType);
+        setLicenseState(licenses[licenseID].licenseState);
+        setLicenseNum(licenses[licenseID].licenseNum);
+        setLicenseExpiration(licenses[licenseID].licenseExpiration);
+        for (const index in licenses[licenseID].requirements) {
+            if (licenses[licenseID].requirements[index].name == "Total CEs Needed") {
+                setCEHoursRequired(licenses[licenseID].requirements[index].hours);
             }
         }
-        if (passedLicenseData.requirements.length > 1 || passedLicenseData.requirements[0]?.name !== "Total CEs Needed") {
-            setRequirements(passedLicenseData.requirements);
+        if (licenses[licenseID].requirements.length > 1 || licenses[licenseID].requirements[0]?.name !== "Total CEs Needed") {
+            setRequirements(licenses[licenseID].requirements);
         }
-        setLicenseThumbnail(passedLicenseData.licenseThumbnail);
-        setLicensePhoto(passedLicenseData.licensePhoto);
+        setLicenseThumbnail(licenses[licenseID].licenseThumbnail);
+        setLicensePhoto(licenses[licenseID].licensePhoto);
     }, [JSON.stringify(licenses)]);
+
+    const [licenseTypes, setLicenseTypes] = useState([]);
+    const [licenseType, setLicenseType] = useState("");
+    const [typeErrorMsg, setTypeErrorMsg] = useState("");
+
+    const [otherLicenseType, setOtherLicenseType] = useState("");
+    const [otherTypeErrorMsg, setOtherTypeErrorMsg] = useState("");
+
+    const [licenseState, setLicenseState] = useState("");
+    const [stateErrorMsg, setStateErrorMsg] = useState("");
+
+    const [licenseNum, setLicenseNum] = useState("");
+    const [licenseExpiration, setLicenseExpiration] = useState("");
+    const [expirationErrorMsg, setExpirationErrorMsg] = useState("");
+
+    const [ceHoursRequired, setCEHoursRequired] = useState('');
+    const [isModalVisible, setIsModalVisible] = useState(false);
+    const [requirements, setRequirements] = useState([]);
+    const [textPositionY, setTextPositionY] = useState(0);
+    const [licenseThumbnail, setLicenseThumbnail] = useState("");
+    const [licensePhoto, setLicensePhoto] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
 
     // Used for getting position of text label of state input. This is a workaround to get the effect of KeyboardAvoidingView.
     measure = () => {
@@ -133,19 +134,6 @@ export default function addLicense(props) {
         }
     }
 
-    let selectLicense = () => {
-        if (!isLicenseSelected) {
-            setIsLicenseSelected(true);
-        }
-        setIsCertSelected(false);
-    }
-
-    let selectCertification = () => {
-        if (!isCertSelected) {
-            setIsCertSelected(true);
-        }
-        setIsLicenseSelected(false);
-    }
 
     let addNewRequirement = () => {
         const key = uuidv4();
@@ -177,7 +165,7 @@ export default function addLicense(props) {
         setRequirements(temp);
     }
 
-    let addLicense = () => {
+    let editLicense = () => {
         setIsLoading(true);
         if (isFormComplete()) {
             let requirementsCopy = [...requirements];
@@ -189,7 +177,6 @@ export default function addLicense(props) {
                     linkedCEs: {},
                 })
             }
-            const licenseId = uuidv4();
             licenseData = {
                 licenseType: licenseType,
                 otherLicenseType: otherLicenseType,
@@ -199,10 +186,10 @@ export default function addLicense(props) {
                 licensePhoto: licensePhoto,
                 licenseThumbnail: licenseThumbnail,
                 requirements: requirementsCopy,
-                id: licenseId,
+                id: licenseID,
             }
             let licenseObj = {
-                [licenseId]: licenseData,
+                [licenseID]: licenseData,
             }
 
             let uid = auth().currentUser.uid;
@@ -328,252 +315,227 @@ export default function addLicense(props) {
             <ScrollView
                 ref={ref => this.scrollView = ref}
                 contentContainerStyle={styles.container}>
-                <View style={styles.addChoiceContainer}>
-                    <Text style={styles.choiceText}>Which would you like to add?</Text>
-                    <View style={styles.choiceButtonsContainer}>
-                        <TouchableHighlight style={isLicenseSelected ? styles.licenseButtonSelected : styles.licenseButtonNotSelected}
-                            onPress={selectLicense}
-                            underlayColor={colors.underlayColor}
-                        >
-                            <Text style={isLicenseSelected ? styles.choiceTextSelected : styles.choiceTextNotSelected}>License</Text>
-                        </TouchableHighlight>
-                        <TouchableHighlight style={isCertSelected ? styles.certButtonSelected : styles.certButtonNotSelected}
-                            onPress={selectCertification}
-                            underlayColor={colors.underlayColor}
-                        >
-                            <Text style={isCertSelected ? styles.choiceTextSelected : styles.choiceTextNotSelected}>Certification</Text>
-                        </TouchableHighlight>
+                <FadeInView style={styles.formContainer}>
+                    <View style={styles.headerContainer}>
+                        <Header text="License Information" />
                     </View>
-                </View>
-                {isLicenseSelected ? (
-                    <FadeInView style={styles.formContainer}>
-                        <View style={styles.headerContainer}>
-                            <Header text="License Information" />
-                        </View>
-                        <View style={styles.licenseInfoContainer}>
-                            <Text style={styles.inputLabel}>License Type {typeErrorMsg ? (<Text style={styles.errorMessage}> {typeErrorMsg}</Text>) : (null)}</Text>
-                            <TouchableOpacity
-                                style={styles.selectLicenseType}
-                                onPress={() => setIsModalVisible(true)}
-                            >
-                                <Text style={styles.selectLicenseTypeText}>{licenseType ? (licenseType) : ('Select License Type')}</Text>
-                            </TouchableOpacity>
-                            {(licenseType === "Other") ? (
-                                <View style={styles.flexRowContainer}>
-                                    <View style={styles.otherLicenseType}>
-                                        <Text style={styles.inputLabel}>Please specify {otherTypeErrorMsg ? (<Text style={styles.errorMessage}> {otherTypeErrorMsg}</Text>) : (null)}</Text>
-                                        <TextInput
-                                            placeholder={'e.g. Physician'}
-                                            placeholderTextColor={colors.grey400}
-                                            style={styles.licenseNumInput}
-                                            onChangeText={setOtherLicenseType}
-                                            maxLength={36}
-                                        />
-                                    </View>
-                                </View>
-                            ) : (
-                                    null
-                                )}
-                            <Modal
-                                visible={isModalVisible}
-                                animationType='fade'
-                                transparent={true}
-                            >
-                                <TouchableWithoutFeedback onPress={() => setIsModalVisible(false)}>
-                                    <View style={styles.modalTransparency} />
-                                </TouchableWithoutFeedback>
-                                <View style={styles.modalPopupContainer}>
-                                    <Text style={styles.modalTitle}>Select License Type</Text>
-                                    <FlatList
-                                        data={licenseTypes}
-                                        keyExtractor={item => item}
-                                        renderItem={({ item }) => (
-                                            <TouchableHighlight
-                                                style={styles.listItemContainer}
-                                                onPress={() => { setLicenseType(item); setIsModalVisible(false) }}
-                                                underlayColor={colors.underlayColor}
-                                            >
-                                                <Text style={styles.itemText}>{item}</Text>
-                                            </TouchableHighlight>
-                                        )}
-                                    />
-                                </View>
-                            </Modal>
-
-                            <View style={styles.stateAndLicenseNumContainer}>
-                                <View style={styles.stateContainer}>
-                                    <Text
-                                        onLayout={() => {
-                                            measure();
-                                        }}
-                                        ref={ref => this.text = ref}
-                                        style={styles.inputLabel}>State {stateErrorMsg ? (<Text style={styles.errorMessage}> {stateErrorMsg}</Text>) : (null)}</Text>
-                                    <AutoCompleteInput
-                                        data={states}
-                                        height={50 * rem}
-                                        placeholder="e.g. California"
-                                        maxSuggestions={3}
-                                        scrollToCallBack={scrollToCallBack}
-                                        setParentState={setLicenseState}
-                                        inputVal={licenseState}
-                                    />
-                                </View>
-                                <View style={styles.licenseNumContainer}>
-                                    <Text style={styles.inputLabel}>License # (optional)</Text>
-                                    <TextInput
-                                        placeholder={'e.g. 589304502'}
-                                        placeholderTextColor={colors.grey400}
-                                        style={styles.licenseNumInput}
-                                        onChangeText={setLicenseNum}
-                                        keyboardType={'numeric'}
-                                        maxLength={15}
-                                    />
-                                </View>
-                            </View>
-
-                            <View style={styles.flexRowContainer}>
-                                <View style={styles.expirationContainer}>
-                                    <Text style={styles.inputLabel}>Expiration {expirationErrorMsg ? (<Text style={styles.errorMessage}> {expirationErrorMsg}</Text>) : (null)}</Text>
-                                    <TextInputMask
-                                        style={styles.expirationInput}
-                                        keyboardType={'numeric'}
-                                        placeholder={'MM/DD/YYYY'}
-                                        placeholderTextColor={colors.grey400}
-                                        type={'datetime'}
-                                        value={licenseExpiration}
-                                        options={{
-                                            format: 'MM/DD/YYYY'
-                                        }}
-                                        onChangeText={text => {
-                                            setLicenseExpiration(text);
-                                        }}
-                                    />
-                                </View>
-                            </View>
-
-                            <View style={styles.thumbnailContainer}>
-                                <Text style={styles.inputLabel}>License Photo (optional)</Text>
-                                <TouchableOpacity
-                                    onPress={() => {
-                                        props.navigation.navigate('Scanner', {
-                                            fromThisScreen: route.name,
-                                            initialFilterId: 1, // Color photo
-                                        });
-                                    }}
-                                    style={styles.thumbnailButton}
-                                >
-                                    {licenseThumbnail ? (<FastImage
-                                        style={{ width: 75 * rem, aspectRatio: 1, borderRadius: 10 * rem, backgroundColor: 'black' }}
-                                        source={{
-                                            uri: licenseThumbnail,
-                                            priority: FastImage.priority.normal,
-                                        }}
-                                        resizeMode={FastImage.resizeMode.contain}
-                                    />
-                                    ) : (
-                                            <AntDesign name="camerao" size={32 * rem} style={styles.thumbnailIcon} />
-                                        )}
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-
-                        <View style={styles.headerContainer}>
-                            <Header text="CE Requirements (optional)" />
-                        </View>
-                        <View style={styles.ceRequirementsContainer}>
-                            <View style={styles.flexRowContainer}>
-                                <View style={styles.ceHoursRequired}>
-                                    <Text style={styles.inputLabel}>Total Hours</Text>
-                                    <TextInput
-                                        placeholder={'e.g. 30'}
-                                        placeholderTextColor={colors.grey400}
-                                        style={styles.licenseNumInput}
-                                        value={ceHoursRequired}
-                                        onChangeText={setCEHoursRequired}
-                                        keyboardType={'numeric'}
-                                        maxLength={5}
-                                    />
-                                </View>
-                                <TouchableOpacity style={styles.addRequirementButton}
-                                    onPress={() => addNewRequirement()}>
-                                    <AntDesign
-                                        name='book'
-                                        size={20 * rem}
-                                        color={colors.blue800}
-                                    />
-                                    <Text style={styles.addRequirementText}> Add Requirement</Text>
-                                </TouchableOpacity>
-                            </View>
-
-                            <Text style={styles.inputLabel}>Additional Requirements</Text>
-
-                            {requirements.length ? (
-                                <View style={styles.requirementsContainer}>
-                                    <Text style={styles.hoursOptionalText}>Inputting hours is optional.</Text>
-                                    <FlatList
-                                        keyExtractor={item => item.key}
-                                        data={requirements}
-                                        extraData={requirements}
-                                        renderItem={({ item, index }) => (
-                                            <View style={styles.requirementContainer}>
-                                                <TouchableOpacity
-                                                    style={styles.deleteButton}
-                                                    onPress={() => {
-                                                        let temp = [...requirements];
-                                                        temp.splice(index, 1);
-                                                        setRequirements(temp)
-                                                    }}
-                                                >
-                                                    <AntDesign
-                                                        name='closecircle'
-                                                        size={36 * rem}
-                                                        color={colors.blue800}
-                                                    />
-                                                </TouchableOpacity>
-                                                <TextInput
-                                                    placeholder={'Hrs'}
-                                                    placeholderTextColor={colors.grey400}
-                                                    style={styles.requirementHoursInput}
-                                                    value={item.hours}
-                                                    onChangeText={text => { handleHours(text, index) }}
-                                                    keyboardType={'numeric'}
-                                                    maxLength={5}
-                                                />
-                                                <TextInput
-                                                    placeholder={'e.g. Bioterrorism'}
-                                                    placeholderTextColor={colors.grey400}
-                                                    style={styles.requirementInput}
-                                                    value={item.name}
-                                                    onChangeText={text => { handleName(text, index) }}
-                                                    maxLength={70}
-                                                />
-                                            </View>
-                                        )}
-                                    />
-                                </View>
-                            ) : (
-                                    <Text style={styles.noRequirementsText}>Some states have special requirements for license renewal. Click Add Requirement to add some!</Text>
-                                )}
-                        </View>
+                    <View style={styles.licenseInfoContainer}>
+                        <Text style={styles.inputLabel}>License Type {typeErrorMsg ? (<Text style={styles.errorMessage}> {typeErrorMsg}</Text>) : (null)}</Text>
                         <TouchableOpacity
-                            onPress={() => {
-                                addLicense();
-                            }}
-                            disabled={isLoading}
-                            style={styles.addNewLicenseButton}
+                            style={styles.selectLicenseType}
+                            onPress={() => setIsModalVisible(true)}
                         >
-                            <Text style={styles.choiceTextSelected}>{isLoading ? ('...') : ('Add New License')}</Text>
+                            <Text style={styles.selectLicenseTypeText}>{licenseType ? (licenseType) : ('Select License Type')}</Text>
                         </TouchableOpacity>
-                    </FadeInView>
-                ) : (null)
-                }
-                {
-                    isCertSelected ? (
-                        <FadeInView style={styles.formContainer}>
-                            <LicenseCard />
-                        </FadeInView>
-                    ) : (null)
-                }
+                        {(licenseType === "Other") ? (
+                            <View style={styles.flexRowContainer}>
+                                <View style={styles.otherLicenseType}>
+                                    <Text style={styles.inputLabel}>Please specify {otherTypeErrorMsg ? (<Text style={styles.errorMessage}> {otherTypeErrorMsg}</Text>) : (null)}</Text>
+                                    <TextInput
+                                        placeholder={'e.g. Physician'}
+                                        placeholderTextColor={colors.grey400}
+                                        style={styles.licenseNumInput}
+                                        onChangeText={setOtherLicenseType}
+                                        maxLength={36}
+                                        value={otherLicenseType}
+                                    />
+                                </View>
+                            </View>
+                        ) : (
+                                null
+                            )}
+                        <Modal
+                            visible={isModalVisible}
+                            animationType='fade'
+                            transparent={true}
+                        >
+                            <TouchableWithoutFeedback onPress={() => setIsModalVisible(false)}>
+                                <View style={styles.modalTransparency} />
+                            </TouchableWithoutFeedback>
+                            <View style={styles.modalPopupContainer}>
+                                <Text style={styles.modalTitle}>Select License Type</Text>
+                                <FlatList
+                                    data={licenseTypes}
+                                    keyExtractor={item => item}
+                                    renderItem={({ item }) => (
+                                        <TouchableHighlight
+                                            style={styles.listItemContainer}
+                                            onPress={() => { setLicenseType(item); setIsModalVisible(false) }}
+                                            underlayColor={colors.underlayColor}
+                                        >
+                                            <Text style={styles.itemText}>{item}</Text>
+                                        </TouchableHighlight>
+                                    )}
+                                />
+                            </View>
+                        </Modal>
+
+                        <View style={styles.stateAndLicenseNumContainer}>
+                            <View style={styles.stateContainer}>
+                                <Text
+                                    onLayout={() => {
+                                        measure();
+                                    }}
+                                    ref={ref => this.text = ref}
+                                    style={styles.inputLabel}>State {stateErrorMsg ? (<Text style={styles.errorMessage}> {stateErrorMsg}</Text>) : (null)}</Text>
+                                <AutoCompleteInput
+                                    data={states}
+                                    height={50 * rem}
+                                    placeholder="e.g. California"
+                                    maxSuggestions={3}
+                                    scrollToCallBack={scrollToCallBack}
+                                    setParentState={setLicenseState}
+                                    inputVal={licenses[licenseID].licenseState}
+                                />
+                            </View>
+                            <View style={styles.licenseNumContainer}>
+                                <Text style={styles.inputLabel}>License # (optional)</Text>
+                                <TextInput
+                                    placeholder={'e.g. 589304502'}
+                                    placeholderTextColor={colors.grey400}
+                                    style={styles.licenseNumInput}
+                                    onChangeText={setLicenseNum}
+                                    value={licenseNum}
+                                    keyboardType={'numeric'}
+                                    maxLength={15}
+                                />
+                            </View>
+                        </View>
+
+                        <View style={styles.flexRowContainer}>
+                            <View style={styles.expirationContainer}>
+                                <Text style={styles.inputLabel}>Expiration {expirationErrorMsg ? (<Text style={styles.errorMessage}> {expirationErrorMsg}</Text>) : (null)}</Text>
+                                <TextInputMask
+                                    style={styles.expirationInput}
+                                    keyboardType={'numeric'}
+                                    placeholder={'MM/DD/YYYY'}
+                                    placeholderTextColor={colors.grey400}
+                                    type={'datetime'}
+                                    value={licenseExpiration}
+                                    options={{
+                                        format: 'MM/DD/YYYY'
+                                    }}
+                                    onChangeText={text => {
+                                        setLicenseExpiration(text);
+                                    }}
+                                />
+                            </View>
+                        </View>
+
+                        <View style={styles.thumbnailContainer}>
+                            <Text style={styles.inputLabel}>License Photo (optional)</Text>
+                            <TouchableOpacity
+                                onPress={() => {
+                                    props.navigation.navigate('Scanner', {
+                                        fromThisScreen: route.name,
+                                        initialFilterId: 1, // Color photo
+                                    });
+                                }}
+                                style={styles.thumbnailButton}
+                            >
+                                {licenseThumbnail ? (<FastImage
+                                    style={{ width: 75 * rem, aspectRatio: 1, borderRadius: 10 * rem, backgroundColor: 'black' }}
+                                    source={{
+                                        uri: licenseThumbnail,
+                                        priority: FastImage.priority.normal,
+                                    }}
+                                    resizeMode={FastImage.resizeMode.contain}
+                                />
+                                ) : (
+                                        <AntDesign name="camerao" size={32 * rem} style={styles.thumbnailIcon} />
+                                    )}
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                    <View style={styles.headerContainer}>
+                        <Header text="CE Requirements (optional)" />
+                    </View>
+                    <View style={styles.ceRequirementsContainer}>
+                        <View style={styles.flexRowContainer}>
+                            <View style={styles.ceHoursRequired}>
+                                <Text style={styles.inputLabel}>Total Hours</Text>
+                                <TextInput
+                                    placeholder={'e.g. 30'}
+                                    placeholderTextColor={colors.grey400}
+                                    style={styles.licenseNumInput}
+                                    value={ceHoursRequired}
+                                    onChangeText={setCEHoursRequired}
+                                    keyboardType={'numeric'}
+                                    maxLength={5}
+                                />
+                            </View>
+                            <TouchableOpacity style={styles.addRequirementButton}
+                                onPress={() => addNewRequirement()}>
+                                <AntDesign
+                                    name='book'
+                                    size={20 * rem}
+                                    color={colors.blue800}
+                                />
+                                <Text style={styles.addRequirementText}> Add Requirement</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <Text style={styles.inputLabel}>Additional Requirements</Text>
+
+                        {requirements.length ? (
+                            <View style={styles.requirementsContainer}>
+                                <Text style={styles.hoursOptionalText}>Inputting hours is optional.</Text>
+                                <FlatList
+                                    keyExtractor={item => item.key}
+                                    data={requirements}
+                                    extraData={requirements}
+                                    renderItem={({ item, index }) => (
+                                        <View style={styles.requirementContainer}>
+                                            <TouchableOpacity
+                                                style={styles.deleteButton}
+                                                onPress={() => {
+                                                    let temp = [...requirements];
+                                                    temp.splice(index, 1);
+                                                    setRequirements(temp)
+                                                }}
+                                            >
+                                                <AntDesign
+                                                    name='closecircle'
+                                                    size={36 * rem}
+                                                    color={colors.blue800}
+                                                />
+                                            </TouchableOpacity>
+                                            <TextInput
+                                                placeholder={'Hrs'}
+                                                placeholderTextColor={colors.grey400}
+                                                style={styles.requirementHoursInput}
+                                                value={item.hours}
+                                                onChangeText={text => { handleHours(text, index) }}
+                                                keyboardType={'numeric'}
+                                                maxLength={5}
+                                            />
+                                            <TextInput
+                                                placeholder={'e.g. Bioterrorism'}
+                                                placeholderTextColor={colors.grey400}
+                                                style={styles.requirementInput}
+                                                value={item.name}
+                                                onChangeText={text => { handleName(text, index) }}
+                                                maxLength={70}
+                                            />
+                                        </View>
+                                    )}
+                                />
+                            </View>
+                        ) : (
+                                <Text style={styles.noRequirementsText}>Some states have special requirements for license renewal. Click Add Requirement to add some!</Text>
+                            )}
+                    </View>
+                    <TouchableOpacity
+                        onPress={() => {
+                            editLicense();
+                        }}
+                        disabled={isLoading}
+                        style={styles.addNewLicenseButton}
+                    >
+                        <Text style={styles.choiceTextSelected}>{isLoading ? ('...') : ('Save')}</Text>
+                    </TouchableOpacity>
+                </FadeInView>
             </ScrollView >
         </KeyboardAvoidingView>
     )
