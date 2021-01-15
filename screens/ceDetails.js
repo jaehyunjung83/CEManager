@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import firestore from '@react-native-firebase/firestore';
 import FastImage from 'react-native-fast-image'
 import ApplyTowardLicense from '../components/applyTowardLicense.js';
 
@@ -21,13 +22,14 @@ export default function ceDetails(props) {
     let ceData = allCEData[props.route?.params?.data?.id];
     let fromLicenseID = props.route?.params?.id;
 
+    const [isOverflowOpen, setIsOverflowOpen] = useState(false);
+    const [overflowOptions, setOverflowOptions] = useState(["Delete CE"])
+
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedImage, setSelectedImage] = useState("");
     const [linkedLicenses, setLinkedLicenses] = useState([]);
     const [applyingTowardsLicense, setApplyingTowardsLicense] = useState(false);
-
-    const [completedCEHours, setCompleteCEHours] = useState(0);
 
     // Initializing stuff
     React.useEffect(() => {
@@ -60,19 +62,6 @@ export default function ceDetails(props) {
                     }
                 }
 
-                if (licenses[license].linkedCEs) {
-                    // Checking if linked to license
-                    for (const linkedCE of Object.keys(licenses[license]["linkedCEs"])) {
-                        if (linkedCE == ceData.id) {
-                            let linkedRequirement = {
-                                name: "Total Hours Needed",
-                                hours: licenses[license]["linkedCEs"][linkedCE],
-                            };
-                            requirements.data.push(linkedRequirement);
-                        }
-                    }
-                }
-
                 if (requirements.data.length > 0) {
                     foundLink = true;
                     linkedLicensesCopy.push(requirements);
@@ -94,13 +83,53 @@ export default function ceDetails(props) {
     let applyTowardsLicense = () => {
         setApplyingTowardsLicense(!applyingTowardsLicense);
     }
+
     useEffect(() => {
         if (applyingTowardsLicense) {
             setApplyingTowardsLicense(false);
         }
     }, [applyingTowardsLicense])
 
-    let openEllipsis = () => {
+    let handleOverflowOptionPressed = (option) => {
+        switch (option) {
+            case "Delete CE":
+                confirmDeletion();
+                break;
+            default:
+                console.log("option unknown");
+        }
+    }
+
+    let confirmDeletion = () => {
+        Alert.alert(
+            "Delete CE",
+            "Are you sure? This will delete the CE PERMANENTLY.",
+            [
+                {
+                    text: "Cancel",
+                    style: "cancel"
+                },
+                { text: "DELETE", onPress: () => handleDeleteCE(), style: "destructive" }
+            ],
+            { cancelable: true })
+    }
+
+    let handleDeleteCE = () => {
+        let uid = auth().currentUser.uid;
+        let db = firestore();
+        const FieldValue = firestore.FieldValue;
+        let dataToBeDeleted = { [licenseID]: FieldValue.delete() }
+        // db.collection('users').doc(uid).collection('licenses').doc('licenseData').update(dataToBeDeleted)
+        //     .then(() => {
+        //         setIsOverflowOpen(false);
+        //         let licensesCopy = JSON.parse(JSON.stringify(licenses));
+        //         delete licensesCopy[licenseID];
+        //         dispatch(updateLicenses(licensesCopy));
+        //         navigation.pop();
+        //     })
+        //     .catch((error) => {
+        //         console.error("Error deleting license: ", error);
+        //     });
 
     }
 
@@ -119,6 +148,7 @@ export default function ceDetails(props) {
 
     // Used to make element sizes more consistent across screen sizes.
     const screenWidth = Math.round(Dimensions.get('window').width);
+    const screenHeight = Math.round(Dimensions.get('window').height);
     const rem = (screenWidth / 380);
 
     const styles = StyleSheet.create({
@@ -347,7 +377,35 @@ export default function ceDetails(props) {
         hours: {
             fontStyle: "normal",
             color: colors.green600,
-        }
+        },
+
+        // Overflow menu and option styling
+        overflowContainer: {
+            backgroundColor: "white",
+            position: "absolute",
+            display: "flex",
+            width: "100%",
+            maxHeight: 0.4 * screenHeight,
+            bottom: 0,
+            borderRadius: 20 * rem,
+        },
+        optionContainer: {
+            flexDirection: 'row',
+            minHeight: 50 * rem,
+            alignContent: 'center',
+            alignItems: 'center',
+            justifyContent: 'space-evenly',
+            borderWidth: 2 * rem,
+            borderColor: "transparent",
+            borderBottomColor: colors.grey300,
+        },
+        optionText: {
+            fontSize: 16 * rem,
+        },
+        deleteOptionText: {
+            color: "red",
+            fontSize: 16 * rem,
+        },
     });
 
     return (
@@ -460,7 +518,7 @@ export default function ceDetails(props) {
                     <Text style={styles.whiteButtonText}> Edit CE</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.whiteButton}
-                    onPress={openEllipsis}>
+                    onPress={() => { setIsOverflowOpen(true) }}>
                     <AntDesign
                         name='ellipsis1'
                         size={20 * rem}
@@ -495,6 +553,33 @@ export default function ceDetails(props) {
                         <Text style={styles.licenseName}>Not linked to any licenses or certifications.</Text>
                     </View>
                 )}
+
+            <Modal visible={isOverflowOpen}
+                animationType='slide'
+                transparent={true}
+            >
+                <TouchableWithoutFeedback onPress={() => setIsOverflowOpen(false)}>
+                    <View style={styles.modalTransparency} />
+                </TouchableWithoutFeedback>
+                <View style={styles.overflowContainer}>
+                    <FlatList
+                        style={{ marginTop: 0, marginBottom: 32 * rem, }}
+                        data={overflowOptions}
+                        keyExtractor={item => item}
+                        renderItem={({ item }) => (
+                            <TouchableOpacity
+                                onPress={() => { handleOverflowOptionPressed(item) }}
+                                style={styles.optionContainer}>
+                                {item == "Delete CE" ? (
+                                    <Text style={styles.deleteOptionText}>{item}</Text>
+                                ) : (
+                                        <Text style={styles.optionText}>{item}</Text>
+                                    )}
+                            </TouchableOpacity>
+                        )}>
+                    </FlatList>
+                </View>
+            </Modal>
         </ScrollView >
     );
 }

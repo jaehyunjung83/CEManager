@@ -9,10 +9,12 @@ import LicenseCard from '../components/licenseCard.js';
 import { colors } from '../components/colors.js';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
+import { useNavigation } from '@react-navigation/native';
 
 export default function homepage(props) {
     const licenses = useSelector(state => state.licenses);
     const dispatch = useDispatch();
+    const navigation = useNavigation();
 
     const [isEmpty, setIsEmpty] = useState(true);
     const [isLoading, setIsLoading] = useState(true);
@@ -30,23 +32,17 @@ export default function homepage(props) {
         // Try converting to async function.
         let uid = auth().currentUser.uid;
         let db = firestore();
-        await db.collection('users').doc(uid).collection('licenses').doc('licenseData').get()
-            .then(async (response) => {
-
-                let data = response.data();
-                // Checking if data is empty
-                if (typeof data == 'undefined' || Object.keys(data).length === 0 && data.constructor === Object) {
-                    setIsEmpty(true);
-                }
-                else {
-                    setIsEmpty(false);
-                    let updatedLicenses = await updateLicenseRequirements(data);
-                    dispatch(updateLicenses(updatedLicenses));
-                }
-            })
-            .catch((error) => {
-                console.log("Error getting document: ", error);
-            });
+        let response = await db.collection('users').doc(uid).collection('licenses').doc('licenseData').get();
+        let data = response.data();
+        // Checking if data is empty
+        if (typeof data == 'undefined' || data && Object.keys(data).length === 0) {
+            setIsEmpty(true);
+        }
+        else {
+            setIsEmpty(false);
+            let updatedLicenses = await updateLicenseRequirements(data);
+            dispatch(updateLicenses(updatedLicenses));
+        }
     }
 
     let getCEData = async () => {
@@ -75,10 +71,10 @@ export default function homepage(props) {
         // Overrides previous requirement state due to setState being async.
         let licensesCopy = JSON.parse(JSON.stringify(licensesData));
         let hasUpdatedALicense = false;
-        for (let key in licensesData) {
-            let res = await db.collection('requirements').doc(licensesData[key].licenseType).get()
+        for (let key in licensesCopy) {
+            let res = await db.collection('requirements').doc(licensesCopy[key].licenseType).get()
             if (!res.data()) {
-                console.log(`${licensesData[key].licenseType}(${licensesData[key].licenseState}): State or license type not officially supported.`)
+                console.log(`${licensesCopy[key].licenseType}(${licensesCopy[key].licenseState}): State or license type not officially supported.`)
                 continue;
             }
             const data = res.data();
@@ -97,32 +93,44 @@ export default function homepage(props) {
                 continue;
             }
 
+
             hasUpdatedALicense = true;
             licensesCopy[key].officialRequirementUpdateDate = new firestore.Timestamp(data[licensesData[key].licenseState].lastUpdated.valueOf().seconds, 0);
-            // Setting totalCEHours needed
-            if (data[licensesData[key].licenseState].totalCEHours) {
-                licensesCopy[key].totalCEHours = data[licensesData[key].licenseState].totalCEHours;
-            }
-            else {
-                delete licensesCopy.totalCEHours;
-            }
 
             // Setting special requirements
             let newRequirements = [];
-            for (const newRequirement of data[licensesData[key].licenseState].requirements) {
+            for (let newRequirement of data[licensesCopy[key].licenseState].requirements) {
                 let found = false;
-                for (const oldRequirement of licensesCopy[key].requirements) {
-                    if (newRequirement.key == oldRequirement.key) {
-                        newRequirements.push(oldRequirement);
-                        found = true;
-                        break;
+                if (newRequirement.name == "Total CEs Needed") {
+                    // licensesCopy.linkedCEs used to be linked to the general CE hour requirement, so we move these to the Total CEs Needed requirement.
+                    if (typeof licensesCopy[key].linkedCEs == "object" && Object.keys(licensesCopy[key].linkedCEs).length) {
+                        newRequirement.linkedCEs = JSON.parse(JSON.stringify(licensesCopy[key].linkedCEs));
+                        licensesCopy[key].linkedCEs = {};
+                    }
+                    else {
+                        console.log(licensesCopy[key].linkedCEs);
                     }
                 }
+
+                if (licensesCopy[key].requirements) {
+                    for (let oldRequirement of licensesCopy[key].requirements) {
+                        if (newRequirement.key == oldRequirement.key) {
+                            if (oldRequirement.linkedCEs) {
+                                newRequirement.linkedCEs = oldRequirement.linkedCEs;
+                            }
+                            newRequirements.push(newRequirement);
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+
                 if (!found) {
                     newRequirements.push(newRequirement);
                 }
             }
             licensesCopy[key].requirements = newRequirements;
+            console.log(newRequirements);
         }
 
         if (hasUpdatedALicense) {
@@ -141,6 +149,7 @@ export default function homepage(props) {
             console.log("All license requirements up to date with official requirements.");
             return licensesCopy;
         }
+        return licensesCopy;
     }
 
     React.useEffect(() => {
@@ -151,6 +160,7 @@ export default function homepage(props) {
         };
         fetchData();
     }, [])
+
 
     if (isLoading) {
         return (<View style={styles.emptyContainer}></View>)
@@ -179,10 +189,10 @@ export default function homepage(props) {
         <View style={styles.container}>
             <FlatList
                 contentContainerStyle={{ paddingBottom: 48 * rem }}
-                data={Object.keys(licenses)}
+                data={Object.keys(licenses).sort((a, b) => { return new Date(licenses[a].licenseExpiration) - new Date(licenses[b].licenseExpiration) })}
                 keyExtractor={(item) => item}
                 renderItem={({ item }) => (
-                    <LicenseCard
+                    !licenses[item].complete && <LicenseCard
                         data={licenses[item]}
                     />
                 )}

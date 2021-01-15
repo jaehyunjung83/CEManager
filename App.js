@@ -13,6 +13,7 @@ import LoggedIn from './screens/loggedIn.js';
 import Scanner from './screens/scanner.js';
 import ScannedView from './screens/scannedView.js';
 import AddNew from './screens/addNew.js';
+import EditLicense from "./screens/editLicense.js";
 import SplashScreen from './screens/splashScreen.js';
 import LicenseDetails from './screens/licenseDetails.js';
 import CEDetails from './screens/ceDetails.js';
@@ -100,6 +101,27 @@ export default function App() {
               options={{
                 title: "Add New",
                 headerBackTitle: "Home",
+                headerBackTitleStyle: {
+                  color: colors.blue800,
+                },
+                headerTintColor: colors.blue800,
+                headerTitleStyle: {
+                  color: colors.blue800,
+                  fontSize: 23 * rem,
+                  fontWeight: '400',
+                  textAlign: 'left',
+                },
+                headerStyle: {
+                  backgroundColor: 'white',
+                },
+                gestureEnabled: false,
+              }} />
+              <Stack.Screen
+              name="EditLicense"
+              component={EditLicense}
+              options={{
+                title: "Edit License",
+                headerBackTitle: "Back",
                 headerBackTitleStyle: {
                   color: colors.blue800,
                 },

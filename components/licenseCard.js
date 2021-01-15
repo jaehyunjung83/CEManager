@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity, TouchableHighlight, Modal, TouchableWithoutFeedback } from 'react-native';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import { colors } from '../components/colors.js';
 import FastImage from 'react-native-fast-image'
 import { useNavigation } from '@react-navigation/native';
-import {useRoute} from '@react-navigation/native';
+import { useRoute } from '@react-navigation/native';
+import LinkExistingCE from "./linkExistingCE.js";
 
 
 export default function licenseCard(props) {
@@ -15,24 +16,33 @@ export default function licenseCard(props) {
     const [isLoading, setIsLoading] = useState(true);
 
     const [completedCEHours, setCompletedCEHours] = useState(0);
+    const [totalCEHoursNeeded, setTotalCEHoursNeeded] = useState(0);
 
+    const [linkingExistingCEs, setLinkingExistingCEs] = useState(false);
 
     const navigation = useNavigation();
     const route = useRoute();
 
     React.useEffect(() => {
         let tempCompletedHours = 0;
-        for (linkedCE in licenses?.[props.data.id]["linkedCEs"]) {
-            tempCompletedHours += licenses?.[props.data.id]["linkedCEs"][linkedCE];
+        for (const requirement of props.data.requirements) {
+            if(requirement.name !== "Total CEs Needed") continue;
+            setTotalCEHoursNeeded(requirement.hours);
+            if(requirement.linkedCEs && Object.keys(requirement.linkedCEs).length) {
+                for(const linkedCE in requirement.linkedCEs) {
+                    tempCompletedHours += requirement["linkedCEs"][linkedCE];
+                }
+            }
         }
         setCompletedCEHours(tempCompletedHours);
-    }, [licenses]);
+    }, [JSON.stringify(licenses)]);
 
     // Some logic to determine how to fill up progress bar.
     let progressFill = 0;
-    if (props.data.totalCEHours) {
+    for (const requirement of props.data.requirements) {
+        if (requirement.name !== "Total CEs Needed") continue;
         if (completedCEHours) {
-            progressFill = parseInt(completedCEHours) / parseInt(props.data.totalCEHours);
+            progressFill = parseInt(completedCEHours) / parseInt(requirement.hours);
             if (progressFill > 0.88 && progressFill < 1) { progressFill = 0.88 }
             else if (progressFill < 0.1) { progressFill = 0.1 }
             // else if (progressFill > 1) { progressFill = 0.92 }
@@ -84,11 +94,16 @@ export default function licenseCard(props) {
     }
 
     let linkExistingCE = () => {
-        // TODO:
+        setLinkingExistingCEs(!linkingExistingCEs);
     }
+    useEffect(() => {
+        if (linkingExistingCEs) {
+            setLinkingExistingCEs(false);
+        }
+    }, [linkingExistingCEs])
 
     let cardPressed = () => {
-        navigation.navigate("LicenseDetails", { data: licenses[props.data.id] });
+        navigation.navigate("LicenseDetails", { id: props.data.id });
     }
 
     let openScanner = () => {
@@ -496,18 +511,18 @@ export default function licenseCard(props) {
                                 </TouchableOpacity>
                             )}
                     </View>
-                    {props.data.totalCEHours ? (
+                    {totalCEHoursNeeded ? (
                         <View style={styles.ceContainer}>
                             <AntDesign name="copy1" size={20 * rem} style={styles.ceIcon} />
                             <View style={styles.progressBar}>
-                                {completedCEHours >= props.data.totalCEHours ? (
+                                {completedCEHours >= totalCEHoursNeeded ? (
                                     <View style={styles.progressBarFillComplete}></View>
                                 ) : (<View style={styles.progressBarFill}></View>
                                     )}
                                 {completedCEHours ? (
-                                    <Text style={styles.ceText}>{`${completedCEHours}/${props.data.totalCEHours} CE`}</Text>
+                                    <Text style={styles.ceText}>{`${completedCEHours}/${totalCEHoursNeeded} CE`}</Text>
                                 ) : (
-                                        <Text style={styles.ceText}>{`0/${props.data.totalCEHours} CE`}</Text>
+                                        <Text style={styles.ceText}>{`0/${totalCEHoursNeeded} CE`}</Text>
                                     )}
                             </View>
                         </View>
@@ -532,6 +547,7 @@ export default function licenseCard(props) {
                             <Text style={styles.addCEText}> Add CE</Text>
                         </TouchableOpacity>
                     </View>
+                    <LinkExistingCE open={linkingExistingCEs} licenseID={props.data.id} />
                 </>
             </TouchableHighlight>
         </>
