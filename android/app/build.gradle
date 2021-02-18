@@ -133,6 +133,7 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        multiDexEnabled true 
     }
     splits {
         abi {
@@ -143,6 +144,10 @@ android {
         }
     }
     signingConfigs {
+        release {
+        storeFile file('android_key.keystore')
+        storePassword 'Nuggies94!'
+        }
         debug {
             storeFile file('debug.keystore')
             storePassword 'android'
@@ -179,6 +184,7 @@ android {
 }
 
 dependencies {
+    implementation project(':tipsi-stripe')
     implementation project(':react-native-vector-icons')
     implementation fileTree(dir: "libs", include: ["*.jar"])
     implementation "com.facebook.react:react-native:+"  // From node_modules

@@ -85,11 +85,11 @@ export default function applyTowardLicense(props) {
             setLinkedLicenses(temp);
 
             if (typeof licensesCopy[licenseID].requirements[index]["linkedCEs"] == "object") {
-                licensesCopy[licenseID].requirements[index]["linkedCEs"][ceID] = parseInt(hours);
+                licensesCopy[licenseID].requirements[index]["linkedCEs"][ceID] = Number(hours);
             }
             else {
                 licensesCopy[licenseID].requirements[index]["linkedCEs"] = {};
-                licensesCopy[licenseID].requirements[index]["linkedCEs"][ceID] = parseInt(hours);
+                licensesCopy[licenseID].requirements[index]["linkedCEs"][ceID] = Number(hours);
             }
         }
         else {
@@ -200,7 +200,8 @@ export default function applyTowardLicense(props) {
             fontSize: 16 * rem,
             borderRadius: 10 * rem,
             backgroundColor: colors.grey200,
-            padding: 18 * rem,
+            paddingLeft: 18 * rem,
+            paddingRight: 18 * rem,
             color: colors.grey900,
         },
 

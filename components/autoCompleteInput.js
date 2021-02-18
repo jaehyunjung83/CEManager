@@ -59,7 +59,8 @@ export default function autoCompleteInput(props) {
             fontSize: 16 * rem,
             borderRadius: 10 * rem,
             backgroundColor: colors.grey200,
-            padding: 18 * rem,
+            paddingLeft: 18 * rem,
+            paddingRight: 18 * rem,
             color: colors.grey900,
         },
         listContainer: {

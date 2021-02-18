@@ -13,8 +13,8 @@ import auth from '@react-native-firebase/auth';
 import { v4 as uuidv4 } from 'uuid';
 import { useRoute } from '@react-navigation/native';
 import ApplyTowardLicense from '../components/applyTowardLicense';
+let ceID = uuidv4();
 
-const ceID = uuidv4();
 
 export default function addCE(props) {
     // TODO: Create local state of licenses and update that instead of central state.
@@ -24,6 +24,8 @@ export default function addCE(props) {
 
     const [name, setName] = useState("");
     const [nameErrorMsg, setNameErrorMsg] = useState("");
+    const [providerName, setProviderName] = useState("");
+    const [providerNameErrorMsg, setProviderNameErrorMsg] = useState("");
     const [hours, setHours] = useState("");
     const [hoursErrorMsg, setHoursErrorMsg] = useState("");
     const [completionDate, setCompletionDate] = useState("");
@@ -41,9 +43,13 @@ export default function addCE(props) {
     const [ceThumbnail, setCEThumbnail] = useState("");
 
     const [linkedLicenses, setLinkedLicenses] = useState([]);
-    const [localLicensesCopy, setLocalLicensesCopy] = useState([]);
+    const [localLicensesCopy, setLocalLicensesCopy] = useState(JSON.parse(JSON.stringify(licenses)));
 
     const route = useRoute();
+
+    React.useEffect(() => {
+        ceID = uuidv4();
+    }, [])
 
     React.useEffect(() => {
         if (typeof props.route?.params?.thumbnailURL !== 'undefined') {
@@ -128,13 +134,13 @@ export default function addCE(props) {
             setHoursErrorMsg("");
         }
 
-        if (!providerNum) {
-            isComplete = false;
-            setProviderErrorMsg("Enter Provider #");
-        }
-        else {
-            setProviderErrorMsg("");
-        }
+        // if (!providerNum) {
+        //     isComplete = false;
+        //     setProviderErrorMsg("Enter Provider #");
+        // }
+        // else {
+        //     setProviderErrorMsg("");
+        // }
 
         if (!isComplete) {
             setIsLoading(false);
@@ -152,11 +158,11 @@ export default function addCE(props) {
             setLinkedLicenses(temp);
 
             if (typeof licensesCopy[licenseID].requirements[index]["linkedCEs"] == "object") {
-                licensesCopy[licenseID].requirements[index]["linkedCEs"][ceID] = parseInt(hours);
+                licensesCopy[licenseID].requirements[index]["linkedCEs"][ceID] = Number(hours);
             }
             else {
                 licensesCopy[licenseID].requirements[index]["linkedCEs"] = {};
-                licensesCopy[licenseID].requirements[index]["linkedCEs"][ceID] = parseInt(hours);
+                licensesCopy[licenseID].requirements[index]["linkedCEs"][ceID] = Number(hours);
             }
         }
         else {
@@ -169,7 +175,7 @@ export default function addCE(props) {
 
     let setTotalRequirementHours = (hours, licenseID) => {
         // Links CE to license/the total hours required for this license.
-        if(props?.route?.params?.id && props?.route?.params?.id == licenseID) {
+        if (props?.route?.params?.id && props?.route?.params?.id == licenseID) {
             setHours(hours);
         }
 
@@ -179,11 +185,11 @@ export default function addCE(props) {
         let licensesCopy = JSON.parse(JSON.stringify(licenses));
         if (hours) {
             if (typeof licensesCopy[licenseID]["linkedCEs"] == "object") {
-                licensesCopy[licenseID]["linkedCEs"][ceID] = parseInt(hours);
+                licensesCopy[licenseID]["linkedCEs"][ceID] = Number(hours);
             }
             else {
                 licensesCopy[licenseID]["linkedCEs"] = {};
-                licensesCopy[licenseID]["linkedCEs"][ceID] = parseInt(hours);
+                licensesCopy[licenseID]["linkedCEs"][ceID] = Number(hours);
             }
         }
         else {
@@ -219,16 +225,15 @@ export default function addCE(props) {
         if (isFormComplete()) {
             let ceData = {
                 name: name,
-                hours: parseInt(hours),
+                hours: Number(hours),
                 completionDate: completionDate,
                 providerNum: providerNum,
                 id: ceID,
                 ceThumbnail: ceThumbnail,
                 cePhoto: cePhoto,
             }
-            let ceObj = {
-                [ceID]: ceData,
-            }
+            let ceObj = {}
+            ceObj[ceID] = ceData;
             console.log(`CEData: ${JSON.stringify(ceData)}`);
 
             let uid = auth().currentUser.uid;
@@ -294,7 +299,21 @@ export default function addCE(props) {
                             style={styles.input}
                             value={name}
                             onChangeText={setName}
-                            maxLength={70}
+                            maxLength={40}
+                        />
+                    </View>
+                </View>
+
+                <View style={styles.ceFlexRowContainer}>
+                    <View style={styles.nameContainer}>
+                        <Text style={styles.inputLabel}>Provider Name {providerNameErrorMsg ? (<Text style={styles.errorMessage}> {providerNameErrorMsg}</Text>) : (null)}</Text>
+                        <TextInput
+                            placeholder={'e.g. Bioterrorism'}
+                            placeholderTextColor={colors.grey400}
+                            style={styles.input}
+                            value={providerName}
+                            onChangeText={setProviderName}
+                            maxLength={40}
                         />
                     </View>
                 </View>
@@ -308,7 +327,7 @@ export default function addCE(props) {
                             style={styles.input}
                             value={providerNum}
                             onChangeText={setProviderNum}
-                            maxLength={70}
+                            maxLength={40}
                         />
                     </View>
                     <View style={styles.hoursContainer}>
@@ -452,7 +471,8 @@ const styles = StyleSheet.create({
         fontSize: 16 * rem,
         borderRadius: 10 * rem,
         backgroundColor: colors.grey200,
-        padding: 18 * rem,
+        paddingLeft: 18 * rem,
+            paddingRight: 18 * rem,
         color: colors.grey900,
     },
 
@@ -477,7 +497,8 @@ const styles = StyleSheet.create({
         fontSize: 16 * rem,
         borderRadius: 10 * rem,
         backgroundColor: colors.grey200,
-        padding: 18 * rem,
+        paddingLeft: 18 * rem,
+            paddingRight: 18 * rem,
         color: colors.grey900,
     },
 

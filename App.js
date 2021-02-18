@@ -19,9 +19,8 @@ import LicenseDetails from './screens/licenseDetails.js';
 import CEDetails from './screens/ceDetails.js';
 import AddCE from './screens/addCE.js';
 import EditCE from './screens/editCE.js';
+import Renewal from './screens/renewal.js';
 import { YellowBox } from 'react-native';
-import AntDesign from 'react-native-vector-icons/AntDesign';
-
 
 
 YellowBox.ignoreWarnings([
@@ -116,7 +115,7 @@ export default function App() {
                 },
                 gestureEnabled: false,
               }} />
-              <Stack.Screen
+            <Stack.Screen
               name="EditLicense"
               component={EditLicense}
               options={{
@@ -158,7 +157,7 @@ export default function App() {
                 },
                 gestureEnabled: false,
               }} />
-              <Stack.Screen
+            <Stack.Screen
               name="EditCE"
               component={EditCE}
               options={{
@@ -200,11 +199,32 @@ export default function App() {
                 },
                 gestureEnabled: false,
               }} />
-                         <Stack.Screen
+            <Stack.Screen
               name="CEDetails"
               component={CEDetails}
               options={{
                 title: "CE Details",
+                headerBackTitle: "Home",
+                headerBackTitleStyle: {
+                  color: colors.blue800,
+                },
+                headerTintColor: colors.blue800,
+                headerTitleStyle: {
+                  color: colors.blue800,
+                  fontSize: 23 * rem,
+                  fontWeight: '400',
+                  textAlign: 'left',
+                },
+                headerStyle: {
+                  backgroundColor: 'white',
+                },
+                gestureEnabled: false,
+              }} />
+            <Stack.Screen
+              name="Renewal"
+              component={Renewal}
+              options={{
+                title: "Renewal",
                 headerBackTitle: "Home",
                 headerBackTitleStyle: {
                   color: colors.blue800,
@@ -246,120 +266,6 @@ export default function App() {
     </NavigationContainer>
   );
 }
-
-// export default class App extends React.Component {
-
-//   constructor(props) {
-//     super(props);
-//     this.state = {
-//       user: "",
-//       isLoading: true,
-//     };
-
-//     // checkLoggedIn(this);
-//     this.onAuthStateChanged(null);
-//   }
-
-//   static getDerivedStateFromProps(props, state) {
-//     const subscriber = auth().onAuthStateChanged(onAuthStateChanged);
-//     return subscriber; // unsubscribe on unmount
-//   }
-
-//   // componentWillReceiveProps = () => {
-//   //   const subscriber = auth().onAuthStateChanged(onAuthStateChanged);
-//   //   return subscriber; // unsubscribe on unmount
-//   // }
-
-//   onAuthStateChanged = (user) => {
-//     // app.setState({ isLoggedIn: true })
-//     this.user = user;
-//     if (this.isLoading) this.isLoading = false;
-//   }
-
-//   render() {
-//     if (this.state.isLoading) {
-//       return <SplashScreen />;
-//     }
-
-
-//     return (
-//       <NavigationContainer>
-//         <Stack.Navigator>
-//           {this.state.user ? (
-//             <>
-//               <Stack.Screen
-//                 name="LoggedIn"
-//                 component={LoggedIn}
-//                 options={{
-//                   gestureEnabled: false,
-//                   headerShown: false,
-//                 }}
-//                 initialParams={{
-//                   setParentState: newState => this.setState(newState)
-//                 }}
-//               />
-//               <Stack.Screen
-//                 name="Scanner"
-//                 component={Scanner}
-//                 options={{
-//                   headerShown: false,
-//                   gestureEnabled: false,
-//                   animationEnabled: false,
-//                 }} />
-//               <Stack.Screen
-//                 name="ScannedView"
-//                 component={ScannedView}
-//                 options={{
-//                   headerShown: false,
-//                   gestureEnabled: false,
-//                 }} />
-//               <Stack.Screen
-//                 name="AddNew"
-//                 component={AddNew}
-//                 options={{
-//                   title: "Add New",
-//                   headerBackTitle: "Home",
-//                   headerBackTitleStyle: {
-//                     color: colors.blue800,
-//                   },
-//                   headerTintColor: colors.blue800,
-//                   headerTitleStyle: {
-//                     color: colors.blue800,
-//                     fontSize: 23 * rem,
-//                     fontWeight: '400',
-//                     textAlign: 'left',
-//                   },
-//                   headerStyle: {
-//                     backgroundColor: 'white',
-//                   },
-//                   gestureEnabled: false,
-//                 }} />
-//             </>
-//           ) : (
-//               <>
-//                 <Stack.Screen
-//                   name="Login"
-//                   component={Login}
-//                   options={{
-//                     headerShown: false,
-//                   }}
-//                   initialParams={{
-//                     setParentState: (newState) => this.setState(newState)
-//                   }}
-//                 />
-//                 <Stack.Screen
-//                   name="SignUp"
-//                   component={SignUp}
-//                   options={{
-//                     headerShown: false,
-//                   }} />
-//               </>
-//             )}
-//         </Stack.Navigator>
-//       </NavigationContainer>
-//     );
-//   }
-// };
 
 // Used to make element sizes more consistent across screen sizes.
 const screenWidth = Math.round(Dimensions.get('window').width);

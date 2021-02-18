@@ -140,7 +140,7 @@ export default function scannedView(props) {
                                             // User is replacing old thumbnail. Delete old one.
                                             // Firebase couldn't parse the URL for some reason.
                                             // const oldThumbnailRef = storage().refFromURL(licenseThumbnail);
-                                            const oldThumbnailPath = licenseThumbnail.replace('https://storage.googleapis.com/cetracker-2de23.appspot.com/', '');
+                                            const oldThumbnailPath = data[props.route?.params?.licenseId].licenseThumbnail.replace('https://storage.googleapis.com/cetracker-2de23.appspot.com/', '');
                                             const oldThumbnailRef = storage().ref().child(`${oldThumbnailPath}`);
 
                                             oldThumbnailRef.delete()
@@ -191,6 +191,7 @@ export default function scannedView(props) {
                                         // Checking for and deleting old photos from storage.
                                         if (data[props.route?.params?.ceID].cePhoto) {
                                             // User is replacing old photo. Delete old one.
+                                            const cePhoto = data[props.route?.params?.ceID].cePhoto;
                                             const firstPhotoRef = storage().refFromURL(cePhoto).toString();
                                             const oldPhotoPath = firstPhotoRef.replace('gs://cetracker-2de23', '');
                                             const oldPhotoRef = storage().ref().child(`${oldPhotoPath}`);
@@ -218,6 +219,7 @@ export default function scannedView(props) {
                                         }
 
                                         // Updating database with links to new photo and thumbnail URLs.
+                                        data[props.route?.params?.ceID].filePath = Obj.filePath;
                                         data[props.route?.params?.ceID].cePhoto = downloadURL;
                                         data[props.route?.params?.ceID].ceThumbnail = Obj.thumbnailURL;
                                         db.collection('users').doc(uid).collection('CEs').doc('CEData').set(data, { merge: true })
@@ -420,7 +422,6 @@ const styles = StyleSheet.create({
         minWidth: '70%',
         flexGrow: 1,
         marginTop: Dimensions.get('window').height / 2,
-        transform: [{ translateY: '-50%', }],
         backgroundColor: 'white',
         alignSelf: 'center',
         alignContent: 'center',

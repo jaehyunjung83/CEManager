@@ -40,6 +40,7 @@
     "redux-promise": "^0.6.0",
     "redux-thunk": "^2.3.0",
     "selenium-webdriver": "^4.0.0-alpha.5",
+    "tipsi-stripe": "^8.0.2",
     "uuid": "^7.0.3"
   },
   "devDependencies": {

@@ -1,6 +1,7 @@
 import React, { useState  } from 'react';
 import Home from './home.js';
 import Settings from './settings.js';
+import Account from './account.js';
 import Logout from '../components/logout.js'
 import { createDrawerNavigator } from '@react-navigation/drawer';
 
@@ -11,6 +12,7 @@ export default function loggedIn(props) {
     return (
         <Drawer.Navigator>
             <Drawer.Screen name="Home" component={Home}/>
+            <Drawer.Screen name="Account" component={Account} />
             <Drawer.Screen name="Settings" component={Settings} />
             <Drawer.Screen
                 name="Logout"

@@ -41,7 +41,8 @@ export default function login({ navigation, route }) {
 
   const loginHandler = () => {
     setButtonText("...");
-    auth().signInWithEmailAndPassword(email, password)
+    let validatedEmail = email.replace(/\s/g, '');
+    auth().signInWithEmailAndPassword(validatedEmail, password)
       .then(() => {
         setButtonText("Log In");
       })
@@ -123,9 +124,9 @@ const styles = StyleSheet.create({
   },
   bgDesignTop: {
     backgroundColor: "rgba(255, 255, 255, 0.3)",
-    width: screenWidth + (screenWidth * 1.7),
+    width: screenWidth + (screenWidth * 1.5),
     aspectRatio: 1,
-    borderRadius: screenWidth + (screenWidth * 1.7),
+    borderRadius: screenWidth + (screenWidth * 1.5),
     position: 'absolute',
     left: -(screenWidth * 1.5),
     top: -(screenWidth * 2.3),

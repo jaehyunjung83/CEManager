@@ -57,9 +57,8 @@ const hrem = (screenHeight / 380);
 
 const styles = StyleSheet.create({
   hamburgerButton: {
-    flex: 1,
     color: colors.blue800,
-    left: 14 * rem,
+    paddingLeft: 14 * rem,
     fontSize: 28 * rem,
   },
 })

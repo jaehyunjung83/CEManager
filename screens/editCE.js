@@ -16,6 +16,7 @@ import { useRoute } from '@react-navigation/native';
 
 export default function editCE(props) {
     const licenses = useSelector(state => state.licenses);
+    const allCEData = useSelector(state => state.ces);
     const dispatch = useDispatch();
     const headerHeight = useHeaderHeight();
     let ceID = props.route.params.ceData.id;
@@ -23,6 +24,8 @@ export default function editCE(props) {
     const [licenseID, setLicenseID] = useState("");
     const [name, setName] = useState(props.route.params.ceData.name);
     const [nameErrorMsg, setNameErrorMsg] = useState("");
+    const [providerName, setProviderName] = useState(props.route.params.ceData.providerName);
+    const [providerNameErrorMsg, setProviderNameErrorMsg] = useState("");
     const [hours, setHours] = useState(props.route.params.ceData.hours.toString());
     const [hoursErrorMsg, setHoursErrorMsg] = useState("");
     const [completionDate, setCompletionDate] = useState(props.route.params.ceData.completionDate);
@@ -47,46 +50,17 @@ export default function editCE(props) {
     React.useEffect(() => {
         setLocalLicensesCopy(JSON.parse(JSON.stringify(licenses)));
 
-        if (typeof props.route?.params?.ceData?.ceThumbnail !== 'undefined') {
-            if (ceThumbnail) {
-                // User is replacing old thumbnail. Delete old one.
-                // Firebase couldn't parse the URL for some reason.
-                // const oldThumbnailRef = storage().refFromURL(licenseThumbnail);
-                const oldThumbnailPath = ceThumbnail.replace('https://storage.googleapis.com/cetracker-2de23.appspot.com/', '');
-                const oldThumbnailRef = storage().ref().child(`${oldThumbnailPath}`);
+        if (props.route?.params?.ceData?.ceThumbnail) {
+            setCEThumbnail(props.route?.params?.ceData?.ceThumbnail);
+        }
 
-                oldThumbnailRef.delete()
-                    .then(() => {
-                        console.log("Deleted thumbnail successfully.");
-                        setCEThumbnail(props.route?.params?.ceData?.ceThumbnail);
-                    })
-                    .catch(error => {
-                        console.log("Failed to delete old thumbnail. Error: " + error.toString());
-                    })
-            }
-            else {
-                setCEThumbnail(props.route?.params?.ceData?.ceThumbnail);
-            }
+        if(allCEData[ceID].cePhoto !== cePhoto) {
+            setCEPhoto(allCEData[ceID].cePhoto);
         }
-        if (typeof props.route.params?.ceData?.photoURL !== 'undefined') {
-            if (cePhoto) {
-                // User is replacing old photo. Delete old one.
-                const firstPhotoRef = storage().refFromURL(cePhoto).toString();
-                const oldPhotoPath = firstPhotoRef.replace('gs://cetracker-2de23', '');
-                const oldPhotoRef = storage().ref().child(`${oldPhotoPath}`);
-                oldPhotoRef.delete()
-                    .then(() => {
-                        console.log("Deleted photo successfully.");
-                        setCEPhoto(props.route?.params?.ceData?.photoURL);
-                    })
-                    .catch(error => {
-                        console.log("Failed to delete old photo. Error: " + error.toString());
-                    })
-            }
-            else {
-                setCEPhoto(props.route?.params?.ceData?.photoURL);
-            }
+        if(allCEData[ceID].ceThumbnail !== ceThumbnail) {
+            setCEPhoto(allCEData[ceID].ceThumbnail);
         }
+
         // For tracking license ID user came from
         if (props?.route?.params?.fromLicenseID) {
             let isArr = Object.prototype.toString.call(linkedLicenses) == '[object Array]';
@@ -96,7 +70,7 @@ export default function editCE(props) {
             setLinkedLicenses(temp);
             console.log(typeof linkedLicenses);
         }
-    }, [props.route.params?.ceData?.ceThumbnail]);
+    }, [JSON.stringify(allCEData)]);
     // Checks for license type, other license type (if Other is selected), state, and expiration of license.
     let isFormComplete = () => {
         let isComplete = true;
@@ -154,11 +128,11 @@ export default function editCE(props) {
 
         if (hours) {
             if (typeof licensesCopy[licenseID].requirements[index]["linkedCEs"] == "object") {
-                licensesCopy[licenseID].requirements[index]["linkedCEs"][ceID] = parseInt(hours);
+                licensesCopy[licenseID].requirements[index]["linkedCEs"][ceID] = Number(hours);
             }
             else {
                 licensesCopy[licenseID].requirements[index]["linkedCEs"] = {};
-                licensesCopy[licenseID].requirements[index]["linkedCEs"][ceID] = parseInt(hours);
+                licensesCopy[licenseID].requirements[index]["linkedCEs"][ceID] = Number(hours);
             }
         }
         else {
@@ -223,7 +197,8 @@ export default function editCE(props) {
         if (isFormComplete()) {
             let ceData = {
                 name: name,
-                hours: parseInt(hours),
+                providerName: providerName,
+                hours: Number(hours),
                 completionDate: completionDate,
                 providerNum: providerNum,
                 id: ceID,
@@ -303,6 +278,20 @@ export default function editCE(props) {
                 </View>
 
                 <View style={styles.ceFlexRowContainer}>
+                    <View style={styles.nameContainer}>
+                        <Text style={styles.inputLabel}>Provider Name {providerNameErrorMsg ? (<Text style={styles.errorMessage}> {providerNameErrorMsg}</Text>) : (null)}</Text>
+                        <TextInput
+                            placeholder={'e.g. Nurse.com'}
+                            placeholderTextColor={colors.grey400}
+                            style={styles.input}
+                            value={providerName}
+                            onChangeText={setProviderName}
+                            maxLength={70}
+                        />
+                    </View>
+                </View>
+
+                <View style={styles.ceFlexRowContainer}>
                     <View style={styles.providerContainer}>
                         <Text style={styles.inputLabel}>Provider # {providerErrorMsg ? (<Text style={styles.errorMessage}> {providerErrorMsg}</Text>) : (null)}</Text>
                         <TextInput
@@ -355,6 +344,7 @@ export default function editCE(props) {
                             props.navigation.navigate('Scanner', {
                                 fromThisScreen: route.name,
                                 initialFilterId: 2, // Black & White
+                                ceID: ceID,
                             });
                         }}
                         style={styles.thumbnailButton}
@@ -529,7 +519,7 @@ const styles = StyleSheet.create({
         fontSize: 16 * rem,
         borderRadius: 10 * rem,
         backgroundColor: colors.grey200,
-        padding: 18 * rem,
+        paddingLeft: 18 * rem, paddingRight: 18 * rem,
         color: colors.grey900,
     },
 
@@ -554,7 +544,8 @@ const styles = StyleSheet.create({
         fontSize: 16 * rem,
         borderRadius: 10 * rem,
         backgroundColor: colors.grey200,
-        padding: 18 * rem,
+        paddingLeft: 18 * rem,
+            paddingRight: 18 * rem,
         color: colors.grey900,
     },
 

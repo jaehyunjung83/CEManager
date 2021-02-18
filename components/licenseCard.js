@@ -7,13 +7,15 @@ import FastImage from 'react-native-fast-image'
 import { useNavigation } from '@react-navigation/native';
 import { useRoute } from '@react-navigation/native';
 import LinkExistingCE from "./linkExistingCE.js";
-
+import firestore from '@react-native-firebase/firestore';
 
 export default function licenseCard(props) {
     const licenses = useSelector(state => state.licenses);
 
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+
+    const [renewalReady, setRenewalReady] = useState(false);
 
     const [completedCEHours, setCompletedCEHours] = useState(0);
     const [totalCEHoursNeeded, setTotalCEHoursNeeded] = useState(0);
@@ -26,16 +28,81 @@ export default function licenseCard(props) {
     React.useEffect(() => {
         let tempCompletedHours = 0;
         for (const requirement of props.data.requirements) {
-            if(requirement.name !== "Total CEs Needed") continue;
+            if (requirement.name !== "Total CEs Needed") continue;
             setTotalCEHoursNeeded(requirement.hours);
-            if(requirement.linkedCEs && Object.keys(requirement.linkedCEs).length) {
-                for(const linkedCE in requirement.linkedCEs) {
+            if (requirement.linkedCEs && Object.keys(requirement.linkedCEs).length) {
+                for (const linkedCE in requirement.linkedCEs) {
                     tempCompletedHours += requirement["linkedCEs"][linkedCE];
                 }
             }
         }
         setCompletedCEHours(tempCompletedHours);
+
+        checkLicenseRequirementsComplete(props.data);
     }, [JSON.stringify(licenses)]);
+
+    let checkLicenseRequirementsComplete = async (licenseData) => {
+        try {
+            console.log("checkLicenseRequirementsComplete()");
+            let db = firestore();
+            const licenseType = licenseData.licenseType;
+            const licenseState = licenseData.licenseState;
+            let officialRequirementUpdateDate = licenseData.officialRequirementUpdateDate;
+            if (officialRequirementUpdateDate?.["_seconds"]) {
+                // Last updated turned into obj instead of Firestore Timestamp.
+                officialRequirementUpdateDate = new firestore.Timestamp(officialRequirementUpdateDate["_seconds"], 0)
+            }
+
+            let expirationDate = new Date(licenseData.licenseExpiration);
+            let threeMonthsPrior = new Date(expirationDate);
+            threeMonthsPrior.setMonth(threeMonthsPrior.getMonth() - 3);
+            let now = new Date();
+            if(now <= threeMonthsPrior || now >= expirationDate) {
+                throw new Error("License is not ready for renewal based on expiration date.");
+            }
+            
+
+            const requirements = licenseData.requirements;
+
+            let response = await db.collection("requirements").doc(licenseType).get();
+            let allOfficialRequirements = response.data();
+            if (!allOfficialRequirements) {
+                throw new Error("License is not supported for renewals");
+            }
+
+            let officialRequirements = allOfficialRequirements[licenseState];
+            if (!officialRequirements) {
+                throw new Error("State is not supported for renewals");
+            }
+
+            if (officialRequirements.lastUpdated.toMillis() !== officialRequirementUpdateDate.toMillis()) {
+                console.log(`Official requirements last updated: ${officialRequirements.lastUpdated.toMillis()}`);
+                console.log(`User requirements last updated: ${officialRequirementUpdateDate.toMillis()}`);
+                throw new Error("License requirements not up to date.");
+            }
+            // License requirements up to date.
+
+            for (const requirement of requirements) {
+                if (requirement.complete) continue;
+                if (requirement.hours) {
+                    let hoursNeeded = Number(requirement.hours);
+                    let hoursDone = 0;
+                    for (const id in requirement.linkedCEs) {
+                        hoursDone += requirement.linkedCEs[id];
+                    }
+                    if (hoursDone < hoursNeeded) {
+                        throw new Error("License requirements incomplete");
+                    }
+                }
+            }
+            console.log("License up to date and meets all necessary requirements");
+            setRenewalReady(true);
+        }
+        catch (e) {
+            console.log(e);
+            setRenewalReady(false);
+        }
+    }
 
     // Some logic to determine how to fill up progress bar.
     let progressFill = 0;
@@ -116,6 +183,12 @@ export default function licenseCard(props) {
 
     let openImage = () => {
         setIsModalVisible(true);
+    }
+
+    let startRenewalProcess = () => {
+        navigation.navigate('Renewal', {
+            licenseID: props.data.id
+        })
     }
 
     // Used to make element sizes more consistent across screen sizes.
@@ -415,6 +488,36 @@ export default function licenseCard(props) {
             fontSize: 20 * rem,
             alignSelf: 'center',
         },
+
+        renewalButton: {
+            padding: 18 * rem,
+            paddingTop: 12 * rem,
+            paddingBottom: 12 * rem,
+            flexDirection: 'row',
+            borderRadius: 36 * rem,
+            borderWidth: 2 * rem,
+            borderColor: colors.green500,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: colors.green500,
+            marginTop: 6 * rem,
+            marginBottom: 6 * rem,
+
+            shadowColor: "green",
+            shadowOffset: {
+                width: 0,
+                height: 4,
+            },
+            shadowOpacity: 0.30,
+            shadowRadius: 4.65,
+
+            elevation: 8,
+        },
+        renewalButtonText: {
+            color: "white",
+            fontSize: 20 * rem,
+            fontWeight: '500',
+        },
     });
 
     return (
@@ -463,7 +566,7 @@ export default function licenseCard(props) {
             </Modal>
 
 
-            <TouchableHighlight
+            <TouchableOpacity
                 style={styles.cardContainer}
                 onPress={cardPressed}
                 underlayColor={colors.underlayColor}
@@ -528,6 +631,15 @@ export default function licenseCard(props) {
                         </View>
                     ) : (null)}
 
+                    {renewalReady ? (
+                        <View>
+                            <TouchableOpacity style={styles.renewalButton}
+                                onPress={startRenewalProcess}>
+                                <Text style={styles.renewalButtonText}>Start Renewal!</Text>
+                            </TouchableOpacity>
+                        </View>
+                    ) : (null)}
+
                     <View style={styles.insetDivider}>
                         <View style={styles.leftInset} />
                         <View style={styles.rightInset} />
@@ -535,7 +647,7 @@ export default function licenseCard(props) {
                     <View style={styles.cardButtonsContainer}>
                         <TouchableOpacity style={styles.linkButton}
                             onPress={linkExistingCE}>
-                            <Text style={styles.linkButtonText}>Link Existing CE</Text>
+                            <Text style={styles.linkButtonText}>Apply Existing CE</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.addCEButton}
                             onPress={addCE}>
@@ -549,7 +661,8 @@ export default function licenseCard(props) {
                     </View>
                     <LinkExistingCE open={linkingExistingCEs} licenseID={props.data.id} />
                 </>
-            </TouchableHighlight>
+
+            </TouchableOpacity>
         </>
     );
 }

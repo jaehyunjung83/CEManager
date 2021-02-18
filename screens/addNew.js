@@ -58,7 +58,7 @@ const FadeInView = (props) => {
 // TODO: Remember auto generate CE's needed and requirements for specific states.
 // TODO: Delete pic and thumbnail if adding license is cancelled.
 export default function addLicense(props) {
-    passedLicenseData = props.route.params.licenseData;
+    let passedLicenseData = props?.route?.params?.licenseData;
 
     const headerHeight = useHeaderHeight();
     const states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'];
@@ -118,13 +118,13 @@ export default function addLicense(props) {
     }, [JSON.stringify(licenses)]);
 
     // Used for getting position of text label of state input. This is a workaround to get the effect of KeyboardAvoidingView.
-    measure = () => {
+    let measure = () => {
         this.text.measure((x, y, width, height, px, py) => {
             setTextPositionY(py);
         })
     }
 
-    scrollToCallBack = () => {
+    let scrollToCallBack = () => {
         if (licenseType === "Other") {
             this.scrollView.scrollTo({ y: textPositionY - (245 * rem) });
         }
@@ -728,11 +728,12 @@ const styles = StyleSheet.create({
     },
     modalPopupContainer: {
         position: 'absolute',
-        flexGrow: 1,
-        marginTop: Dimensions.get('window').height / 2,
-        transform: [{ translateY: '-50%', }],
-        backgroundColor: 'white',
+        display: 'flex',
+        margin: 'auto',
         alignSelf: 'center',
+        // marginTop: Dimensions.get('window').height / 2,
+        top: 0,
+        backgroundColor: 'white',
         padding: 18 * rem,
         borderRadius: 10 * rem,
     },
@@ -773,7 +774,8 @@ const styles = StyleSheet.create({
         fontSize: 16 * rem,
         borderRadius: 10 * rem,
         backgroundColor: colors.grey200,
-        padding: 18 * rem,
+        paddingLeft: 18 * rem,
+            paddingRight: 18 * rem,
         color: colors.grey900,
     },
     flexRowContainer: {
@@ -793,7 +795,8 @@ const styles = StyleSheet.create({
         fontSize: 16 * rem,
         borderRadius: 10 * rem,
         backgroundColor: colors.grey200,
-        padding: 18 * rem,
+        paddingLeft: 18 * rem,
+            paddingRight: 18 * rem,
         color: colors.grey900,
     },
     thumbnailContainer: {
@@ -875,7 +878,8 @@ const styles = StyleSheet.create({
         fontSize: 16 * rem,
         borderRadius: 10 * rem,
         backgroundColor: colors.grey200,
-        padding: 18 * rem,
+        paddingLeft: 18 * rem,
+            paddingRight: 18 * rem,
         color: colors.grey900,
     },
     requirementInput: {
@@ -884,7 +888,8 @@ const styles = StyleSheet.create({
         fontSize: 16 * rem,
         borderRadius: 10 * rem,
         backgroundColor: colors.grey200,
-        padding: 18 * rem,
+        paddingLeft: 18 * rem,
+        paddingRight: 18 * rem,
         color: colors.grey900,
     },
     noRequirementsText: {

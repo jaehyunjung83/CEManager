@@ -3,14 +3,16 @@ import { useSelector, useDispatch } from 'react-redux';
 import firestore from '@react-native-firebase/firestore';
 import FastImage from 'react-native-fast-image'
 import ApplyTowardLicense from '../components/applyTowardLicense.js';
+import { updateLicenses, updateCEs } from '../actions';
 
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity, SectionList, FlatList, Modal, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity, SectionList, FlatList, Modal, TouchableWithoutFeedback, Alert } from 'react-native';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import { colors } from '../components/colors.js';
 import Header from '../components/header.js';
 import { ScrollView } from 'react-native-gesture-handler';
 import { useNavigation } from '@react-navigation/native';
 import { useRoute } from '@react-navigation/native';
+import auth from '@react-native-firebase/auth';
 
 
 export default function ceDetails(props) {
@@ -20,7 +22,7 @@ export default function ceDetails(props) {
     const licenses = useSelector(state => state.licenses);
     const dispatch = useDispatch();
     let ceData = allCEData[props.route?.params?.data?.id];
-    let fromLicenseID = props.route?.params?.id;
+    let licenseID = props.route?.params?.id;
 
     const [isOverflowOpen, setIsOverflowOpen] = useState(false);
     const [overflowOptions, setOverflowOptions] = useState(["Delete CE"])
@@ -51,7 +53,7 @@ export default function ceDetails(props) {
                     // Checking if linked to specific requirement
                     for (const requirement of licenses[license].requirements) {
                         for (const linkedCE of Object.keys(requirement["linkedCEs"])) {
-                            if (linkedCE == ceData.id) {
+                            if (ceData && linkedCE == ceData.id) {
                                 let linkedRequirement = {
                                     name: requirement.name,
                                     hours: requirement["linkedCEs"][linkedCE],
@@ -77,7 +79,7 @@ export default function ceDetails(props) {
     }, [JSON.stringify(linkedLicenses)])
 
     let addCE = () => {
-        navigation.navigate("EditCE", { ceData: ceData, fromLicenseID: fromLicenseID });
+        navigation.navigate("EditCE", { ceData: ceData, licenseID: licenseID });
     }
 
     let applyTowardsLicense = () => {
@@ -118,18 +120,30 @@ export default function ceDetails(props) {
         let uid = auth().currentUser.uid;
         let db = firestore();
         const FieldValue = firestore.FieldValue;
-        let dataToBeDeleted = { [licenseID]: FieldValue.delete() }
-        // db.collection('users').doc(uid).collection('licenses').doc('licenseData').update(dataToBeDeleted)
-        //     .then(() => {
-        //         setIsOverflowOpen(false);
-        //         let licensesCopy = JSON.parse(JSON.stringify(licenses));
-        //         delete licensesCopy[licenseID];
-        //         dispatch(updateLicenses(licensesCopy));
-        //         navigation.pop();
-        //     })
-        //     .catch((error) => {
-        //         console.error("Error deleting license: ", error);
-        //     });
+        let dataToBeDeleted = { [`${ceData.id}`]: FieldValue.delete() };
+
+        let licensesCopy = JSON.parse(JSON.stringify(licenses));
+        for (const id in licensesCopy) {
+            for(const requirementID in licensesCopy[id]) {
+                if (licensesCopy[id][requirementID].linkedCEs && ceData?.id in licensesCopy[id][requirementID].linkedCEs) {
+                    delete licensesCopy[id][requirement].linkedCEs[ceData?.id];
+                }
+            }
+        }
+        db.collection('users').doc(uid).collection('CEs').doc('CEData').update(dataToBeDeleted)
+            .then(() => {
+                db.collection('users').doc(uid).collection('licenses').doc('licenseData').set(licensesCopy)
+                    .then(() => {
+                        setIsOverflowOpen(false);
+                        let ceCopy = JSON.parse(JSON.stringify(allCEData));
+                        delete ceCopy[ceData.id];
+                        navigation.pop();
+                        dispatch(updateCEs(ceCopy));
+                    })
+            })
+            .catch((error) => {
+                console.error("Error deleting license: ", error);
+            });
 
     }
 
@@ -137,6 +151,7 @@ export default function ceDetails(props) {
         navigation.navigate('Scanner', {
             fromThisScreen: route.name,
             initialFilterId: 2, // Black and white photo
+            ceID: ceData.id,
         });
     }
 
@@ -456,7 +471,7 @@ export default function ceDetails(props) {
             <View style={styles.ceContainer}>
 
                 <View style={styles.topLeftHoursContainer}></View>
-                <Text numberOfLines={1} style={styles.topLeftHours}>{ceData.hours}</Text>
+                <Text numberOfLines={1} style={styles.topLeftHours}>{ceData?.hours}</Text>
                 <Text numberOfLines={1} style={styles.topLeftHrsText}>Hrs</Text>
 
                 <View style={styles.topContainer}>
@@ -464,29 +479,34 @@ export default function ceDetails(props) {
                         <View style={styles.titleContainer}>
                             <View style={{ width: 38 * rem }}></View>
                             {/* <AntDesign name="idcard" size={20 * rem} style={styles.icon} /> */}
-                            <Text style={styles.titleText}>{ceData.name}</Text>
+                            <Text style={styles.titleText}>{ceData?.name}</Text>
                         </View>
-                        {ceData.providerNum ? (
+                        {ceData?.providerName ? (
                             <View style={styles.idNumContainer}>
-                                <Text style={styles.idNum}>{`Provider #:${ceData.providerNum}`}</Text>
+                                <Text style={styles.idNum}>{`Provider Name:${ceData?.providerName}`}</Text>
+                            </View>
+                        ) : (null)}
+                        {ceData?.providerNum ? (
+                            <View style={styles.idNumContainer}>
+                                <Text style={styles.idNum}>{`Provider #:${ceData?.providerNum}`}</Text>
                             </View>
                         ) : (null)}
                         <View style={styles.takenDateContainer}>
                             <AntDesign name="calendar" size={20 * rem} style={styles.icon} />
-                            <Text style={styles.takenDateText}>{`Taken: ${ceData.completionDate}`}</Text>
+                            <Text style={styles.takenDateText}>{`Taken: ${ceData?.completionDate}`}</Text>
                         </View>
                     </View>
-                    {ceData.ceThumbnail ? (
+                    {ceData?.ceThumbnail ? (
                         <TouchableOpacity
                             style={styles.thumbnailContainer}
                             onPress={() => {
-                                openImage(ceData.cePhoto);
+                                openImage(ceData?.cePhoto);
                             }}
                         >
                             <FastImage
                                 style={styles.thumbnailImgContainer}
                                 source={{
-                                    uri: ceData.ceThumbnail,
+                                    uri: ceData?.ceThumbnail,
                                     priority: FastImage.priority.normal,
                                 }}
                                 resizeMode={FastImage.resizeMode.contain}

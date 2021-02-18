@@ -119,13 +119,13 @@ export default function editLicense(props) {
     const [isLoading, setIsLoading] = useState(false);
 
     // Used for getting position of text label of state input. This is a workaround to get the effect of KeyboardAvoidingView.
-    measure = () => {
+    let measure = () => {
         this.text.measure((x, y, width, height, px, py) => {
             setTextPositionY(py);
         })
     }
 
-    scrollToCallBack = () => {
+    let scrollToCallBack = () => {
         if (licenseType === "Other") {
             this.scrollView.scrollTo({ y: textPositionY - (245 * rem) });
         }
@@ -735,7 +735,8 @@ const styles = StyleSheet.create({
         fontSize: 16 * rem,
         borderRadius: 10 * rem,
         backgroundColor: colors.grey200,
-        padding: 18 * rem,
+        paddingLeft: 18 * rem,
+            paddingRight: 18 * rem,
         color: colors.grey900,
     },
     flexRowContainer: {
@@ -755,7 +756,8 @@ const styles = StyleSheet.create({
         fontSize: 16 * rem,
         borderRadius: 10 * rem,
         backgroundColor: colors.grey200,
-        padding: 18 * rem,
+        paddingLeft: 18 * rem,
+            paddingRight: 18 * rem,
         color: colors.grey900,
     },
     thumbnailContainer: {
@@ -837,7 +839,8 @@ const styles = StyleSheet.create({
         fontSize: 16 * rem,
         borderRadius: 10 * rem,
         backgroundColor: colors.grey200,
-        padding: 18 * rem,
+        paddingLeft: 18 * rem,
+            paddingRight: 18 * rem,
         color: colors.grey900,
     },
     requirementInput: {
@@ -846,7 +849,8 @@ const styles = StyleSheet.create({
         fontSize: 16 * rem,
         borderRadius: 10 * rem,
         backgroundColor: colors.grey200,
-        padding: 18 * rem,
+        paddingLeft: 18 * rem,
+            paddingRight: 18 * rem,
         color: colors.grey900,
     },
     noRequirementsText: {

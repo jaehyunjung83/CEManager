@@ -1,8 +1,19 @@
 platform :ios, '10.0'
 require_relative '../node_modules/@react-native-community/cli-platform-ios/native_modules'
 
+workspace 'CETracker'
+
 target 'CETracker' do
   # Pods for CETracker
+  # pod 'Stripe', '~> 19.4.0'
+  # pod 'Firebase/Auth'
+  # pod 'Firebase/Crashlytics'
+  # pod 'Firebase/Database'
+  # pod 'Firebase/Firestore'
+  # pod 'Firebase/Messaging'
+  # pod 'Firebase/Performance'
+  # pod 'Firebase/Storage'
+
   pod 'FBLazyVector', :path => "../node_modules/react-native/Libraries/FBLazyVector"
   pod 'FBReactNativeSpec', :path => "../node_modules/react-native/Libraries/FBReactNativeSpec"
   pod 'RCTRequired', :path => "../node_modules/react-native/Libraries/RCTRequired"
@@ -36,6 +47,8 @@ target 'CETracker' do
 
 
   pod 'RNVectorIcons', :path => '../node_modules/react-native-vector-icons'
+
+  pod 'tipsi-stripe', :path => '../node_modules/tipsi-stripe'
 
   target 'CETrackerTests' do
     inherit! :search_paths

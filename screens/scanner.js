@@ -16,18 +16,18 @@ export default function (props) {
   if (props.route?.params?.initialFilterId !== undefined) {
     additionalProps.initialFilterId = props.route.params.initialFilterId;
   }
-  if(props.route?.params?.licenseId !== undefined) {
+  if (props.route?.params?.licenseId !== undefined) {
     additionalProps.licenseId = props.route.params.licenseId;
   }
-  if(props.route?.params?.ceID !== undefined) {
+  if (props.route?.params?.ceID !== undefined) {
     additionalProps.ceID = props.route.params.ceID;
   }
 
-    return <DocumentScanner
-      navigation={props.navigation}
-      fromThisScreen={props.route.params.fromThisScreen}
-      additionalProps={additionalProps}
-    />;
+  return <DocumentScanner
+    navigation={props.navigation}
+    fromThisScreen={props.route.params.fromThisScreen}
+    additionalProps={additionalProps}
+  />;
   // else {
   //   return <DocumentScanner
   //     navigation={props.navigation}

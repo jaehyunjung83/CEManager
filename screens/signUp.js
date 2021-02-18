@@ -34,7 +34,12 @@ export default function signUp({ navigation }) {
       .createUserWithEmailAndPassword(email, password)
       .then(() => {
         console.log('User account created & signed in!');
-        navigation.navigate('Home');
+        let db = firestore();
+        let uid = auth().currentUser.uid;
+
+        db.collection("users").doc(uid).set({ plan: "Free" }).then(() => {
+          navigation.navigate('Home');
+        })
       })
       .catch(error => {
         if (error.code === 'auth/email-already-in-use') {

@@ -1,9 +1,10 @@
 const puppeteer = require('puppeteer');
-const { db } = require('../admin');
+const { db, admin } = require('../admin');
 
 exports.configureBrowser = async () => {
     const browser = await puppeteer.launch({
         headless: false,
+        defaultViewport: null,
         // args: ['--no-sandbox', '--disable-setuid-sandbox']
     })
     const page = await browser.newPage();
@@ -47,6 +48,7 @@ exports.getElementFromXpath = async (page, xpath) => {
     }
 }
 
+// Exclude array takes in the NAME of elements on the page.
 exports.checkPageChanged = async (page, licenseType, formPage, optionals = { exclude: [] }) => {
     try {
         let baselineData = await db.collection("renewalFormData").doc(licenseType).get();
@@ -133,22 +135,95 @@ exports.saveNewPageText = async (licenseType, formPage, currentPageText, selecto
 //     return;
 // }
 
-exports.saveDropdownOptions = async (formPage, selector) => {
-    let dataToStore = {
-        pages: {
-            [formPage]: {
-                dropDowns: {
-                    [selector]: {
-                        selector: selector,
-                        options: [
-                            {
-                                text: "",
-                                value="",
-                            }
-                        ],
+exports.saveDropdownOptions = async (page, licenseType, formPage, question, selector) => {
+    try {
+        let options = await page.evaluate(async (selector) => {
+            let dropdown = document.querySelector(selector);
+            let options = [];
+            for (const option of dropdown.childNodes) {
+                if (option.nodeName == "OPTION") {
+                    const value = option.getAttribute('value');
+                    if (!value) continue;
+
+                    console.log(`text: ${option.label}, value: ${value}`)
+                    options.push({ text: option.label, value: value })
+                }
+            }
+            return options;
+        }, selector)
+
+        let dataToStore = {
+            pages: {
+                [formPage]: {
+                    dropDowns: {
+                        [question]: {
+                            selector: selector,
+                            options: options,
+                        }
                     }
                 }
             }
         }
+
+        await db.collection("renewalFormData").doc(licenseType).set(dataToStore, { merge: true });
+    }
+    catch (e) {
+        this.dumpError(e);
+        return false;
+    }
+    return true;
+}
+
+// Note: this was written for California. It checks that all requirements of user are complete.
+// Other states may allow renewals without all requirements being met.
+exports.checkLicenseRequirementsComplete = async (licenseData) => {
+    try {
+        console.log("checkLicenseRequirementsComplete()");
+        const licenseType = licenseData.licenseType;
+        const licenseState = licenseData.licenseState;
+        let officialRequirementUpdateDate = licenseData.officialRequirementUpdateDate;
+        if (officialRequirementUpdateDate["_seconds"]) {
+            // Last updated turned into obj instead of Firestore Timestamp.
+            officialRequirementUpdateDate = new admin.firestore.Timestamp(officialRequirementUpdateDate["_seconds"], 0)
+        }
+
+        const requirements = licenseData.requirements;
+
+        let response = await db.collection("requirements").doc(licenseType).get();
+        let allOfficialRequirements = response.data();
+        if (!allOfficialRequirements) {
+            throw new Error("Something went wrong grabbing state requirements");
+        }
+
+        let officialRequirements = allOfficialRequirements[licenseState];
+        if (!officialRequirements) {
+            throw new Error("State is not supported for renewals");
+        }
+
+        if (officialRequirements.lastUpdated.toMillis() !== officialRequirementUpdateDate.toMillis()) {
+            console.log(`Official requirements last updated: ${officialRequirements.lastUpdated.toMillis()}`);
+            console.log(`User requirements last updated: ${officialRequirementUpdateDate.toMillis()}`);
+            throw new Error("License requirements not up to date.");
+        }
+        // License requirements up to date.
+
+        for (const requirement of requirements) {
+            if (requirement.complete) continue;
+            if (requirement.hours) {
+                let hoursNeeded = Number(requirement.hours);
+                let hoursDone = 0;
+                for (const id in requirement.linkedCEs) {
+                    hoursDone += requirement.linkedCEs[id];
+                }
+                if (hoursDone < hoursNeeded) {
+                    throw new Error("License requirements incomplete");
+                }
+            }
+        }
+        console.log("License up to date and meets all necessary requirements");
+        return { success: true }
+    }
+    catch (e) {
+        return { success: false, error: e, returnToUser: { status: 400, message: e.message } };
     }
 }

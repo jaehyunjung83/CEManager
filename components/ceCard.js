@@ -23,6 +23,7 @@ export default function ceCard(props) {
         navigation.navigate('Scanner', {
             fromThisScreen: route.name,
             initialFilterId: 2, // Black and white photo
+            ceID: props.data.id,
         });
     }
 
@@ -39,6 +40,8 @@ export default function ceCard(props) {
         cardContainer: {
             flexShrink: 1,
             height: 97 * rem,
+            marginLeft: 16 * rem,
+            marginRight: 16 * rem,
             width: screenWidth - (48 * rem),
             borderRadius: 10 * rem,
             backgroundColor: 'white',
@@ -51,8 +54,8 @@ export default function ceCard(props) {
             },
             shadowOpacity: 0.27,
             shadowRadius: 4.65,
-
             elevation: 6,
+            zIndex: -1,
         },
         ceThumbnailContainer: {
             alignSelf: 'flex-end',
@@ -107,18 +110,23 @@ export default function ceCard(props) {
             borderLeftWidth: 60 * rem,
             borderTopColor: 'transparent',
             borderRightColor: 'transparent',
-            borderBottomColor: 'white',
-            borderLeftColor: 'transparent',
+            borderBottomColor: 'transparent',
+            borderLeftColor: colors.green500,
             borderTopLeftRadius: 10 * rem,
-            backgroundColor: colors.green500,
+            // backgroundColor: colors.green500,
+            zIndex: 2,
+            top: 0,
+            left: 0,
         },
         topLeftHours: {
             position: 'absolute',
             color: 'white',
             fontSize: 20 * rem,
             marginTop: 6 * rem,
+            marginLeft: 1 * rem,
             width: 30 * rem,
             textAlign: 'center',
+            zIndex:3,
         },
         ceInfoContainer: {
             position: 'absolute',
@@ -210,13 +218,11 @@ export default function ceCard(props) {
             </Modal>
 
 
-            <TouchableHighlight
+            <TouchableOpacity
                 style={styles.cardContainer}
                 onPress={cardPressed}
-                underlayColor={colors.underlayColor}
             >
                 <>
-
                     <View style={styles.topLeftHoursContainer}></View>
                     <Text numberOfLines={1} style={styles.topLeftHours}>{props?.licenseHours ? props?.licenseHours : props?.data?.hours}</Text>
                     <View style={styles.ceInfoContainer}>
@@ -251,7 +257,7 @@ export default function ceCard(props) {
                             </TouchableOpacity>
                         )}
                 </>
-            </TouchableHighlight>
+            </TouchableOpacity>
         </>
     );
 }
