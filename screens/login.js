@@ -42,7 +42,7 @@ export default function login({ navigation, route }) {
   const loginHandler = () => {
     setButtonText("...");
     let validatedEmail = email.replace(/\s/g, '');
-    auth().signInWithEmailAndPassword(validatedEmail, password)
+    auth().signInWithEmailAndPassword(validatedEmail.trim(), password)
       .then(() => {
         setButtonText("Log In");
       })

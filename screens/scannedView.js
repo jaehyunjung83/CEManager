@@ -316,24 +316,30 @@ export default function scannedView(props) {
                     animationType='fade'
                     transparent={true}
                 >
-                    <TouchableWithoutFeedback>
-                        <View style={styles.modalTransparency} />
-                    </TouchableWithoutFeedback>
-                    <View style={styles.modalPopupContainer}>
+                    <View style={{
+                        flex: 1,
+                        justifyContent: 'center',
+                        margin: 0,
+                    }}>
+                        <TouchableWithoutFeedback>
+                            <View style={styles.modalTransparency} />
+                        </TouchableWithoutFeedback>
+                        <View style={styles.modalPopupContainer}>
 
-                        {isLoading ? (<Text style={styles.statusText}>Uploading. . .</Text>) : (null)}
-                        {isProcessing ? (<Text style={styles.statusText}>Processing. . .</Text>) : (null)}
-                        {errorUploading ? (
-                            <>
-                                <Text style={styles.statusText}>Something went wrong. {"\n"}Please try again later</Text>
-                                <TouchableOpacity
-                                    style={styles.okErrorButton}
-                                    onPress={() => {
-                                        setIsModalVisible(false);
-                                        props.navigation.navigate(props.route.params.fromThisScreen);
-                                    }}><Text style={styles.statusText}>OK</Text></TouchableOpacity>
-                            </>
-                        ) : (null)}
+                            {isLoading ? (<Text style={styles.statusText}>Uploading. . .</Text>) : (null)}
+                            {isProcessing ? (<Text style={styles.statusText}>Processing. . .</Text>) : (null)}
+                            {errorUploading ? (
+                                <>
+                                    <Text style={styles.statusText}>Something went wrong. {"\n"}Please try again later</Text>
+                                    <TouchableOpacity
+                                        style={styles.okErrorButton}
+                                        onPress={() => {
+                                            setIsModalVisible(false);
+                                            props.navigation.navigate(props.route.params.fromThisScreen);
+                                        }}><Text style={styles.statusText}>OK</Text></TouchableOpacity>
+                                </>
+                            ) : (null)}
+                        </View>
                     </View>
                 </Modal>
             ) : (null)}
@@ -415,17 +421,13 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0, 0.30)',
         height: '100%',
         width: '100%',
+        position: 'absolute',
     },
     modalPopupContainer: {
-        position: 'absolute',
         minHeight: '20%',
         minWidth: '70%',
-        flexGrow: 1,
-        marginTop: Dimensions.get('window').height / 2,
+        flexShrink: 1,
         backgroundColor: 'white',
-        alignSelf: 'center',
-        alignContent: 'center',
-        justifyContent: 'center',
         padding: 18 * rem,
         borderRadius: 10 * rem,
     },

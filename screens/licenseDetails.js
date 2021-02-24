@@ -26,6 +26,7 @@ export default function licenseDetails(props) {
 
     const licenses = useSelector(state => state.licenses);
     const ceData = useSelector(state => state.ces);
+    const accountData = useSelector(state => state.accountData);
     const dispatch = useDispatch();
 
     const [renewalReady, setRenewalReady] = useState(false);
@@ -98,7 +99,7 @@ export default function licenseDetails(props) {
             }
         }
 
-    }, [JSON.stringify(licenses[licenseID], showProgressBar, totalCEHours, completedCEHours)])
+    }, [JSON.stringify(licenses[licenseID]), showProgressBar, totalCEHours, completedCEHours, JSON.stringify(ceData)])
 
     React.useEffect(() => {
         checkLicenseRequirementsComplete(licenseData);
@@ -378,9 +379,23 @@ export default function licenseDetails(props) {
     }
 
     let startRenewalProcess = () => {
-        navigation.navigate('Renewal', {
-            licenseID: licenseID
-        })
+        if (accountData.plan !== "Concierge") {
+            Alert.alert(
+                "Unavailable",
+                "Renewing through the app is only available on our Conceriege Plan",
+                [
+                    {
+                        text: "Cancel",
+                    },
+                    { text: "Change Plan", onPress: () => { navigation.navigate("ChangePlan") }, }
+                ],
+                { cancelable: true })
+        }
+        else {
+            navigation.navigate('Renewal', {
+                licenseID: licenseID
+            })
+        }
     }
 
     // Used to make element sizes more consistent across screen sizes.
@@ -769,7 +784,7 @@ export default function licenseDetails(props) {
     });
 
     return (
-        <ScrollView style={styles.container}>
+        <ScrollView style={styles.container} keyboardShouldPersistTaps={'always'}>
             <Modal
                 visible={isModalVisible}
                 animationType='fade'
@@ -942,7 +957,7 @@ export default function licenseDetails(props) {
                         scrollEnabled={false}
                         data={requirements}
                         keyExtractor={item => item.key}
-                        renderItem={({ item }) => (
+                        renderItem={({ item, index }) => (
                             <>
                                 <TouchableOpacity
                                     onPress={() => { toggleShowRequirements(item.key) }}
@@ -975,7 +990,10 @@ export default function licenseDetails(props) {
                                         <FlatList
                                             scrollEnabled={false}
                                             style={{ marginTop: 0, marginBottom: 32 * rem, }}
-                                            data={Object.keys(item["linkedCEs"]).sort((a, b) => { return new Date(ceData[b].completionDate) - new Date(ceData[a].completionDate) })}
+                                            data={Object.keys(item["linkedCEs"]).sort((a, b) => {
+                                                if(ceData)
+                                                return new Date(ceData[b]?.completionDate) - new Date(ceData[a]?.completionDate)
+                                            })}
                                             keyExtractor={ce => ce}
                                             renderItem={(ce) => (
                                                 <>

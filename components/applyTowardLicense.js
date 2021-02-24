@@ -18,9 +18,12 @@ export default function applyTowardLicense(props) {
     let ceID = props?.id;
 
     const [isModalVisible, setIsModalVisible] = useState(false);
+    const [modalHasBeenOpened, setModalHasBeenOpened] = useState(false)
 
     const [linkedLicenses, setLinkedLicenses] = useState([]);
     const [localLicensesCopy, setLocalLicensesCopy] = useState({});
+
+    const [specialDefaultValue, setSpecialDefaultValue] = useState(null);
 
     const navigation = useNavigation();
     const route = useRoute();
@@ -53,14 +56,31 @@ export default function applyTowardLicense(props) {
 
     React.useEffect(() => {
         if (props.open) {
+            getDefaultHoursValue();
             setIsModalVisible(true);
         }
     }, [props.open]);
 
+    let getDefaultHoursValue = (item, index) => {
+        // console.log(`getDefaultHoursValue(): modalHasBeenOpened: ${modalHasBeenOpened}, hours: ${props.hours}, item: ${item}, index: ${index}`);
+        if (!modalHasBeenOpened && props.hours && props.licenseID && props.licenseID == item) {
+            // If this is the first time this has been opened, we can set hours to hours on Add CE screen.
+            return props.hours.toString();
+        }
+        else if(localLicensesCopy[item] && ceID && ceID in localLicensesCopy[item].requirements[index].linkedCEs) {
+            console.log(localLicensesCopy[item].requirements[index]?.["linkedCEs"]?.[ceID].toString())
+            return localLicensesCopy[item].requirements[index]?.["linkedCEs"]?.[ceID].toString();
+        }
+        else {
+            return null;
+        }
+    }
+
     let handleDone = () => {
+        setModalHasBeenOpened(true);
         setIsModalVisible(false);
         if (props.new) return; // Don't save if user is adding new CE. Save will be handled elsewhere if this is for a new CE.
-        if(!Object.keys(localLicensesCopy).length) return;
+        if (!Object.keys(localLicensesCopy).length) return;
         let uid = auth().currentUser.uid;
         let db = firestore();
         db.collection('users').doc(uid).collection('licenses').doc('licenseData').set(localLicensesCopy, { merge: true })
@@ -110,9 +130,9 @@ export default function applyTowardLicense(props) {
             backgroundColor: 'rgba(0,0,0, 0.30)',
             height: '100%',
             width: '100%',
+            position: 'absolute',
         },
         modalPopupContainer: {
-            position: 'absolute',
             top: screenHeight / 8,
             backgroundColor: 'white',
             alignSelf: 'center',
@@ -247,74 +267,76 @@ export default function applyTowardLicense(props) {
             animationType='fade'
             transparent={true}
         >
-            <TouchableWithoutFeedback onPress={() => setIsModalVisible(false)}>
+            <TouchableWithoutFeedback onPress={() => { setIsModalVisible(false); setModalHasBeenOpened(true); }}>
                 <View style={styles.modalTransparency} />
             </TouchableWithoutFeedback>
-            <ScrollView style={styles.modalPopupContainer}>
-                <Text style={styles.modalTitle}>Licenses</Text>
-                {Object.keys(licenses).length ? (<FlatList
-                    data={Object.keys(licenses)}
-                    keyExtractor={item => item}
-                    renderItem={({ item }) => (
-                        <>
-                            {/* Licenses */}
-                            <View style={styles.flexRowContainer}>
-                                {linkedLicenses.includes(item) ?
-                                    (
-                                        <>
-                                            <AntDesign name="checkcircleo" size={32 * rem} style={styles.linkedLicenseIcon} />
-                                            <Text style={styles.linkedLicenseText}>{licenses[item].licenseState} {licenses[item].licenseType || licenses[item].otherLicenseType}</Text>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <AntDesign name="checkcircleo" size={32 * rem} style={styles.notLinkedLicenseIcon} />
-                                            <Text style={styles.notLinkedLicenseText}>{licenses[item].licenseState} {licenses[item].licenseType || licenses[item].otherLicenseType}</Text>
-                                        </>
-                                    )}
-                            </View>
-                            {/* Special requirements */}
-                            {licenses[item].requirements.length ?
-                                (
-                                    <FlatList
-                                        data={licenses[item].requirements}
-                                        renderItem={({ index }) => (
-                                            <View style={styles.requirementFlexRowContainer}>
-                                                <View style={styles.linkHoursContainer}>
-                                                    <TextInput
-                                                        placeholder={"Hrs"}
-                                                        placeholderTextColor={colors.grey400}
-                                                        style={styles.input}
-                                                        defaultValue={props.id && props.id in licenses[item].requirements[index].linkedCEs ? (licenses[item].requirements[index].linkedCEs[props.id].toString()) : (null)}
-                                                        onChangeText={(hours) => setRequirementHours(hours, item, index)}
-                                                        keyboardType={'numeric'}
-                                                        maxLength={4}
-                                                    />
-                                                </View>
-                                                <Text style={styles.linkedReqText}>{licenses[item].requirements[index].name}</Text>
-                                            </View>
+            <View style={styles.modalPopupContainer}>
+                <ScrollView keyboardShouldPersistTaps={'always'}>
+                    <Text style={styles.modalTitle}>Licenses</Text>
+                    {Object.keys(licenses).length ? (<FlatList
+                        data={Object.keys(licenses)}
+                        keyExtractor={item => item}
+                        renderItem={({ item }) => (
+                            <>
+                                {/* Licenses */}
+                                <View style={styles.flexRowContainer}>
+                                    {linkedLicenses.includes(item) ?
+                                        (
+                                            <>
+                                                <AntDesign name="checkcircleo" size={32 * rem} style={styles.linkedLicenseIcon} />
+                                                <Text style={styles.linkedLicenseText}>{licenses[item].licenseState} {licenses[item].licenseType || licenses[item].otherLicenseType}</Text>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <AntDesign name="checkcircleo" size={32 * rem} style={styles.notLinkedLicenseIcon} />
+                                                <Text style={styles.notLinkedLicenseText}>{licenses[item].licenseState} {licenses[item].licenseType || licenses[item].otherLicenseType}</Text>
+                                            </>
                                         )}
-                                    />
-                                ) : (null)}
-                        </>
-                    )}
-                >
-                </FlatList>) : (<Text style={styles.emptyText}>No licenses to link to!</Text>)}
+                                </View>
+                                {/* Special requirements */}
+                                {licenses[item].requirements.length ?
+                                    (
+                                        <FlatList
+                                            data={licenses[item].requirements}
+                                            renderItem={({ index }) => (
+                                                <View style={styles.requirementFlexRowContainer}>
+                                                    <View style={styles.linkHoursContainer}>
+                                                        <TextInput
+                                                            placeholder={"Hrs"}
+                                                            placeholderTextColor={colors.grey400}
+                                                            style={styles.input}
+                                                            defaultValue={props.id && props.id in licenses[item].requirements[index].linkedCEs ? (licenses[item].requirements[index].linkedCEs[props.id].toString()) : (getDefaultHoursValue(item,index))}
+                                                            onChangeText={(hours) => setRequirementHours(hours, item, index)}
+                                                            keyboardType={'numeric'}
+                                                            maxLength={4}
+                                                        />
+                                                    </View>
+                                                    <Text style={styles.linkedReqText}>{licenses[item].requirements[index].name}</Text>
+                                                </View>
+                                            )}
+                                        />
+                                    ) : (null)}
+                            </>
+                        )}
+                    >
+                    </FlatList>) : (<Text style={styles.emptyText}>No licenses to link to!</Text>)}
 
-                <Text style={styles.modalTitle}>Certifications</Text>
+                    <Text style={styles.modalTitle}>Certifications</Text>
 
 
-                {/* TODO: Implement certifications */}
-                {Object.keys({}).length ? (null) : (<Text style={styles.emptyText}>No certifications to link to!</Text>)}
+                    {/* TODO: Implement certifications */}
+                    {Object.keys({}).length ? (null) : (<Text style={styles.emptyText}>No certifications to link to!</Text>)}
 
 
-                <TouchableOpacity
-                    onPress={handleDone}
-                    style={styles.linkCEButton}
-                >
-                    <Text style={styles.linkCEButtonText}>{('Done')}</Text>
-                </TouchableOpacity>
-                <Text>{"\n"}</Text>
-            </ScrollView>
+                    <TouchableOpacity
+                        onPress={handleDone}
+                        style={styles.linkCEButton}
+                    >
+                        <Text style={styles.linkCEButtonText}>{('Done')}</Text>
+                    </TouchableOpacity>
+                    <Text>{"\n"}</Text>
+                </ScrollView>
+            </View>
         </Modal>
     );
 }

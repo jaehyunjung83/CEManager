@@ -1,16 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity, TouchableHighlight, Modal, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Modal, TouchableWithoutFeedback, Alert } from 'react-native';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import { colors } from '../components/colors.js';
 import FastImage from 'react-native-fast-image'
 import { useNavigation } from '@react-navigation/native';
 import { useRoute } from '@react-navigation/native';
 import LinkExistingCE from "./linkExistingCE.js";
+
+import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
+
+import { useSelector, useDispatch } from 'react-redux';
+import { updateLicenses } from '../actions';
 
 export default function licenseCard(props) {
     const licenses = useSelector(state => state.licenses);
+    const accountData = useSelector(state => state.accountData);
+    const licenseData = licenses[props.data];
 
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
@@ -27,7 +33,7 @@ export default function licenseCard(props) {
 
     React.useEffect(() => {
         let tempCompletedHours = 0;
-        for (const requirement of props.data.requirements) {
+        for (const requirement of licenseData.requirements) {
             if (requirement.name !== "Total CEs Needed") continue;
             setTotalCEHoursNeeded(requirement.hours);
             if (requirement.linkedCEs && Object.keys(requirement.linkedCEs).length) {
@@ -38,12 +44,11 @@ export default function licenseCard(props) {
         }
         setCompletedCEHours(tempCompletedHours);
 
-        checkLicenseRequirementsComplete(props.data);
+        checkLicenseRequirementsComplete(licenseData);
     }, [JSON.stringify(licenses)]);
 
     let checkLicenseRequirementsComplete = async (licenseData) => {
         try {
-            console.log("checkLicenseRequirementsComplete()");
             let db = firestore();
             const licenseType = licenseData.licenseType;
             const licenseState = licenseData.licenseState;
@@ -57,10 +62,10 @@ export default function licenseCard(props) {
             let threeMonthsPrior = new Date(expirationDate);
             threeMonthsPrior.setMonth(threeMonthsPrior.getMonth() - 3);
             let now = new Date();
-            if(now <= threeMonthsPrior || now >= expirationDate) {
+            if (now <= threeMonthsPrior || now >= expirationDate) {
                 throw new Error("License is not ready for renewal based on expiration date.");
             }
-            
+
 
             const requirements = licenseData.requirements;
 
@@ -106,7 +111,7 @@ export default function licenseCard(props) {
 
     // Some logic to determine how to fill up progress bar.
     let progressFill = 0;
-    for (const requirement of props.data.requirements) {
+    for (const requirement of licenseData.requirements) {
         if (requirement.name !== "Total CEs Needed") continue;
         if (completedCEHours) {
             progressFill = parseInt(completedCEHours) / parseInt(requirement.hours);
@@ -118,20 +123,20 @@ export default function licenseCard(props) {
 
     // Accounting for if the license type is "Other"
     let licenseTitle = '';
-    if (props.data['licenseType'] === 'Other') {
-        const stateAcronym = getStateAcronym(props.data['licenseState'])
-        licenseTitle = `${props.data['otherLicenseType']} License (${stateAcronym})`;
+    if (licenseData['licenseType'] === 'Other') {
+        const stateAcronym = getStateAcronym(licenseData['licenseState'])
+        licenseTitle = `${licenseData['otherLicenseType']} License (${stateAcronym})`;
     }
     else {
-        const licenseType = getShortenedTitle(props.data['licenseType']);
-        const stateAcronym = getStateAcronym(props.data['licenseState'])
+        const licenseType = getShortenedTitle(licenseData['licenseType']);
+        const stateAcronym = getStateAcronym(licenseData['licenseState'])
         licenseTitle = licenseType + ` License (${stateAcronym})`;
     }
 
     // Function for calculating the status and what to display.
     let getStatus = () => {
         const now = new Date().getTime();
-        const expiration = new Date(props.data.licenseExpiration).getTime();
+        const expiration = new Date(licenseData.licenseExpiration).getTime();
         const diffInDays = (expiration - now) / (1000 * 3600 * 24);
         if (diffInDays > 90) {
             return (
@@ -157,7 +162,7 @@ export default function licenseCard(props) {
     }
 
     let addCE = () => {
-        navigation.navigate("AddCE", { id: props.data.id });
+        navigation.navigate("AddCE", { id: licenseData.id });
     }
 
     let linkExistingCE = () => {
@@ -170,14 +175,14 @@ export default function licenseCard(props) {
     }, [linkingExistingCEs])
 
     let cardPressed = () => {
-        navigation.navigate("LicenseDetails", { id: props.data.id });
+        navigation.navigate("LicenseDetails", { id: licenseData.id });
     }
 
     let openScanner = () => {
         navigation.navigate('Scanner', {
             fromThisScreen: route.name,
             initialFilterId: 1, // Color photo
-            licenseId: props.data.id,
+            licenseId: licenseData.id,
         });
     }
 
@@ -186,9 +191,23 @@ export default function licenseCard(props) {
     }
 
     let startRenewalProcess = () => {
-        navigation.navigate('Renewal', {
-            licenseID: props.data.id
-        })
+        if (accountData.plan !== "Concierge") {
+            Alert.alert(
+                "Unavailable",
+                "Renewing through the app is only available on our Conceriege Plan",
+                [
+                    {
+                        text: "Cancel",
+                    },
+                    { text: "Change Plan", onPress: () => { navigation.navigate("ChangePlan") }, }
+                ],
+                { cancelable: true })
+        }
+        else {
+            navigation.navigate('Renewal', {
+                licenseID: licenseData.id
+            })
+        }
     }
 
     // Used to make element sizes more consistent across screen sizes.
@@ -473,8 +492,7 @@ export default function licenseCard(props) {
             width: '100%',
         },
         ImgContainer: {
-            marginTop: Dimensions.get('window').height / 2,
-            transform: [{ translateY: -screenWidth / 2, }],
+            marginTop: (Dimensions.get('window').height / 2) - (screenWidth / 2),
             width: screenWidth,
             aspectRatio: 1,
             backgroundColor: 'black',
@@ -538,7 +556,7 @@ export default function licenseCard(props) {
                                     <FastImage
                                         style={{ height: 0, width: 0 }}
                                         source={{
-                                            uri: props.data.licensePhoto,
+                                            uri: licenseData.licensePhoto,
                                             priority: FastImage.priority.normal,
                                         }}
                                         resizeMode={FastImage.resizeMode.contain}
@@ -551,7 +569,7 @@ export default function licenseCard(props) {
                                     <FastImage
                                         style={styles.ImgContainer}
                                         source={{
-                                            uri: props.data.licensePhoto,
+                                            uri: licenseData.licensePhoto,
                                             priority: FastImage.priority.normal,
                                         }}
                                         resizeMode={FastImage.resizeMode.contain}
@@ -578,18 +596,18 @@ export default function licenseCard(props) {
                                 <AntDesign name="idcard" size={20 * rem} style={styles.icon} />
                                 <Text style={styles.titleText}>{licenseTitle}</Text>
                             </View>
-                            {props.data.licenseNum ? (
+                            {licenseData.licenseNum ? (
                                 <View style={styles.idNumContainer}>
-                                    <Text style={styles.idNum}>{`#${props.data.licenseNum}`}</Text>
+                                    <Text style={styles.idNum}>{`#${licenseData.licenseNum}`}</Text>
                                 </View>
                             ) : (null)}
                             <View style={styles.expirationContainer}>
                                 <AntDesign name="calendar" size={20 * rem} style={styles.icon} />
-                                <Text style={styles.expirationText}>{`Exp: ${props.data.licenseExpiration}`}</Text>
+                                <Text style={styles.expirationText}>{`Exp: ${licenseData.licenseExpiration}`}</Text>
                             </View>
                             {getStatus()}
                         </View>
-                        {props.data.licenseThumbnail ? (
+                        {licenseData.licenseThumbnail ? (
                             <TouchableOpacity
                                 style={styles.thumbnailContainer}
                                 onPress={() => {
@@ -599,7 +617,7 @@ export default function licenseCard(props) {
                                 <FastImage
                                     style={styles.thumbnailImgContainer}
                                     source={{
-                                        uri: props.data.licenseThumbnail,
+                                        uri: licenseData.licenseThumbnail,
                                         priority: FastImage.priority.normal,
                                     }}
                                     resizeMode={FastImage.resizeMode.contain}
@@ -659,7 +677,7 @@ export default function licenseCard(props) {
                             <Text style={styles.addCEText}> Add CE</Text>
                         </TouchableOpacity>
                     </View>
-                    <LinkExistingCE open={linkingExistingCEs} licenseID={props.data.id} />
+                    <LinkExistingCE open={linkingExistingCEs} licenseID={licenseData.id} />
                 </>
 
             </TouchableOpacity>

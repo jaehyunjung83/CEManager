@@ -20,6 +20,8 @@ import CEDetails from './screens/ceDetails.js';
 import AddCE from './screens/addCE.js';
 import EditCE from './screens/editCE.js';
 import Renewal from './screens/renewal.js';
+import CustomCardScreen from './screens/stripeScreens/CustomCardScreen.js';
+import ChangePlan from './screens/ChangePlan.js';
 import { YellowBox } from 'react-native';
 
 
@@ -33,18 +35,12 @@ YellowBox.ignoreWarnings([
 
 const Stack = createStackNavigator();
 
-// checkLoggedIn = (app) => {
-//   firebase.auth().onAuthStateChanged((user) => {
-//     if (user) {
-//       app.setState({ isLoggedIn: true })
-//       app.setState({ isLoading: false })
-//     }
-//     else {
-//       app.setState({ isLoggedIn: false })
-//       app.setState({ isLoading: false })
-//     }
-//   })
-// }
+
+import stripe from 'tipsi-stripe'
+stripe.setOptions({
+    publishableKey: 'pk_test_cGkQlPvs51UzF6W4lfRdq7gu00faHg5vSC',
+    androidPayMode: 'test', // Android only
+  })
 export default function App() {
   // Set an initializing state whilst Firebase connects
   const [initializing, setInitializing] = useState(true);
@@ -226,6 +222,48 @@ export default function App() {
               options={{
                 title: "Renewal",
                 headerBackTitle: "Home",
+                headerBackTitleStyle: {
+                  color: colors.blue800,
+                },
+                headerTintColor: colors.blue800,
+                headerTitleStyle: {
+                  color: colors.blue800,
+                  fontSize: 23 * rem,
+                  fontWeight: '400',
+                  textAlign: 'left',
+                },
+                headerStyle: {
+                  backgroundColor: 'white',
+                },
+                gestureEnabled: false,
+              }} />
+              <Stack.Screen
+              name="CustomCardScreen"
+              component={CustomCardScreen}
+              options={{
+                title: "Card Input",
+                headerBackTitle: "Back",
+                headerBackTitleStyle: {
+                  color: colors.blue800,
+                },
+                headerTintColor: colors.blue800,
+                headerTitleStyle: {
+                  color: colors.blue800,
+                  fontSize: 23 * rem,
+                  fontWeight: '400',
+                  textAlign: 'left',
+                },
+                headerStyle: {
+                  backgroundColor: 'white',
+                },
+                gestureEnabled: false,
+              }} />
+              <Stack.Screen
+              name="ChangePlan"
+              component={ChangePlan}
+              options={{
+                title: "Change Plan",
+                headerBackTitle: "Back",
                 headerBackTitleStyle: {
                   color: colors.blue800,
                 },

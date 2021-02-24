@@ -54,21 +54,19 @@ export default function editCE(props) {
             setCEThumbnail(props.route?.params?.ceData?.ceThumbnail);
         }
 
-        if(allCEData[ceID].cePhoto !== cePhoto) {
+        if (allCEData[ceID].cePhoto !== cePhoto) {
             setCEPhoto(allCEData[ceID].cePhoto);
         }
-        if(allCEData[ceID].ceThumbnail !== ceThumbnail) {
+        if (allCEData[ceID].ceThumbnail !== ceThumbnail) {
             setCEPhoto(allCEData[ceID].ceThumbnail);
         }
 
         // For tracking license ID user came from
         if (props?.route?.params?.fromLicenseID) {
             let isArr = Object.prototype.toString.call(linkedLicenses) == '[object Array]';
-            console.log(isArr);
             setLicenseID(props.route.params.fromLicenseID);
             let temp = linkedLicenses.concat(props.route.params.fromLicenseID);
             setLinkedLicenses(temp);
-            console.log(typeof linkedLicenses);
         }
     }, [JSON.stringify(allCEData)]);
     // Checks for license type, other license type (if Other is selected), state, and expiration of license.
@@ -258,7 +256,7 @@ export default function editCE(props) {
         >
             <ScrollView
                 ref={ref => this.scrollView = ref}
-                contentContainerStyle={styles.container}>
+                contentContainerStyle={styles.container} keyboardShouldPersistTaps={'always'}>
 
                 <View style={styles.headerContainer}>
                     <Header text="CE Information" />
@@ -390,75 +388,81 @@ export default function editCE(props) {
                 animationType='fade'
                 transparent={true}
             >
-                <TouchableWithoutFeedback onPress={() => setIsModalVisible(false)}>
-                    <View style={styles.modalTransparency} />
-                </TouchableWithoutFeedback>
-                <ScrollView style={styles.modalPopupContainer}>
-                    <Text style={styles.modalTitle}>Licenses</Text>
-                    {Object.keys(licenses).length ? (<FlatList
-                        data={Object.keys(licenses)}
-                        keyExtractor={item => item}
-                        renderItem={({ item }) => (
-                            <>
-                                {/* Licenses */}
-                                <View style={styles.flexRowContainer}>
-                                    {linkedLicenses.indexOf(item) !== -1 ?
-                                        (
-                                            <>
-                                                <AntDesign name="checkcircleo" size={32 * rem} style={styles.linkedLicenseIcon} />
-                                                <Text style={styles.linkedLicenseText}>{licenses[item].licenseState} {licenses[item].licenseType || licenses[item].otherLicenseType}</Text>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <AntDesign name="checkcircleo" size={32 * rem} style={styles.notLinkedLicenseIcon} />
-                                                <Text style={styles.notLinkedLicenseText}>{licenses[item].licenseState} {licenses[item].licenseType || licenses[item].otherLicenseType}</Text>
-                                            </>
-                                        )}
-                                </View>
-                                {/* Special requirements */}
-                                {licenses[item].requirements.length ?
-                                    (
-                                        <FlatList
-                                            data={licenses[item].requirements}
-                                            renderItem={({ index }) => (
-                                                <View style={styles.requirementFlexRowContainer}>
-                                                    <View style={styles.linkHoursContainer}>
-                                                        <TextInput
-                                                            placeholder={"Hrs"}
-                                                            placeholderTextColor={colors.grey400}
-                                                            style={styles.input}
-                                                            onChangeText={(hours) => setSpecialRequirementHours(hours, item, index)}
-                                                            keyboardType={'numeric'}
-                                                            maxLength={4}
-                                                        />
-                                                    </View>
-                                                    <Text style={styles.linkedReqText}>{licenses[item].requirements[index].name}</Text>
-                                                </View>
+                <View style={{
+                    flex: 1,
+                    justifyContent: 'center',
+                    margin: 0,
+                }}>
+                    <TouchableWithoutFeedback onPress={() => setIsModalVisible(false)}>
+                        <View style={styles.modalTransparency} />
+                    </TouchableWithoutFeedback>
+                    <ScrollView style={styles.modalPopupContainer} keyboardShouldPersistTaps={'always'}>
+                        <Text style={styles.modalTitle}>Licenses</Text>
+                        {Object.keys(licenses).length ? (<FlatList
+                            data={Object.keys(licenses)}
+                            keyExtractor={item => item}
+                            renderItem={({ item }) => (
+                                <>
+                                    {/* Licenses */}
+                                    <View style={styles.flexRowContainer}>
+                                        {linkedLicenses.indexOf(item) !== -1 ?
+                                            (
+                                                <>
+                                                    <AntDesign name="checkcircleo" size={32 * rem} style={styles.linkedLicenseIcon} />
+                                                    <Text style={styles.linkedLicenseText}>{licenses[item].licenseState} {licenses[item].licenseType || licenses[item].otherLicenseType}</Text>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <AntDesign name="checkcircleo" size={32 * rem} style={styles.notLinkedLicenseIcon} />
+                                                    <Text style={styles.notLinkedLicenseText}>{licenses[item].licenseState} {licenses[item].licenseType || licenses[item].otherLicenseType}</Text>
+                                                </>
                                             )}
-                                        />
-                                    ) : (null)}
-                            </>
-                        )}
-                    >
-                    </FlatList>) : (<Text style={styles.emptyText}>No licenses to link to!</Text>)}
+                                    </View>
+                                    {/* Special requirements */}
+                                    {licenses[item].requirements.length ?
+                                        (
+                                            <FlatList
+                                                data={licenses[item].requirements}
+                                                renderItem={({ index }) => (
+                                                    <View style={styles.requirementFlexRowContainer}>
+                                                        <View style={styles.linkHoursContainer}>
+                                                            <TextInput
+                                                                placeholder={"Hrs"}
+                                                                placeholderTextColor={colors.grey400}
+                                                                style={styles.input}
+                                                                onChangeText={(hours) => setSpecialRequirementHours(hours, item, index)}
+                                                                keyboardType={'numeric'}
+                                                                maxLength={4}
+                                                            />
+                                                        </View>
+                                                        <Text style={styles.linkedReqText}>{licenses[item].requirements[index].name}</Text>
+                                                    </View>
+                                                )}
+                                            />
+                                        ) : (null)}
+                                </>
+                            )}
+                        >
+                        </FlatList>) : (<Text style={styles.emptyText}>No licenses to link to!</Text>)}
 
-                    <Text style={styles.modalTitle}>Certifications</Text>
+                        <Text style={styles.modalTitle}>Certifications</Text>
 
 
-                    {/* TODO: Implement certifications */}
-                    {Object.keys({}).length ? (null) : (<Text style={styles.emptyText}>No certifications to link to!</Text>)}
+                        {/* TODO: Implement certifications */}
+                        {Object.keys({}).length ? (null) : (<Text style={styles.emptyText}>No certifications to link to!</Text>)}
 
 
-                    <TouchableOpacity
-                        onPress={() => {
-                            setIsModalVisible(false);
-                        }}
-                        style={styles.linkCEButton}
-                    >
-                        <Text style={styles.linkCEButtonText}>{('Done')}</Text>
-                    </TouchableOpacity>
-                    <Text>{"\n"}</Text>
-                </ScrollView>
+                        <TouchableOpacity
+                            onPress={() => {
+                                setIsModalVisible(false);
+                            }}
+                            style={styles.linkCEButton}
+                        >
+                            <Text style={styles.linkCEButtonText}>{('Done')}</Text>
+                        </TouchableOpacity>
+                        <Text>{"\n"}</Text>
+                    </ScrollView>
+                </View>
             </Modal>
         </KeyboardAvoidingView >
     )
@@ -545,7 +549,7 @@ const styles = StyleSheet.create({
         borderRadius: 10 * rem,
         backgroundColor: colors.grey200,
         paddingLeft: 18 * rem,
-            paddingRight: 18 * rem,
+        paddingRight: 18 * rem,
         color: colors.grey900,
     },
 
@@ -687,10 +691,10 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0, 0.30)',
         height: '100%',
         width: '100%',
+        position: 'absolute',
     },
     modalPopupContainer: {
-        position: 'absolute',
-        top: screenHeight / 8,
+        flexShrink: 1,
         backgroundColor: 'white',
         alignSelf: 'center',
         padding: 18 * rem,

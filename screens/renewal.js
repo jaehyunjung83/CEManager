@@ -256,6 +256,7 @@ export default function renewal(props) {
 
     let nextPage = () => {
         this.scrollView.scrollTo({ x: (pageIndex + 1) * screenWidth, y: 0, animated: true })
+
     }
 
     handleModalOptionInput = (item) => {
@@ -376,7 +377,7 @@ export default function renewal(props) {
             language3: language3Value, // dropdown
             language4: language4Value, // dropdown
         }
-        const response = await fetch('https://us-central1-cetracker-2de23.cloudfunctions.net/renewLicense', {
+        const response = await fetch('http://localhost:5000/cetracker-2de23/us-central1/renewLicense', {
             method: 'POST',
             headers: {
                 'Accept': 'application/json, text/plain, */*',
@@ -393,7 +394,7 @@ export default function renewal(props) {
                 healingArtSurveyData: healingArtSurveyData,
             })
         })
-        console.log(response);
+        console.log(response.json());
     }
 
     // Used to make element sizes more consistent across screen sizes.
@@ -575,7 +576,8 @@ export default function renewal(props) {
             horizontal={true}
             pagingEnabled={true}
             showsHorizontalScrollIndicator={true}
-            onScroll={this.handleScroll}
+            onScroll={handleScroll}
+            keyboardShouldPersistTaps={'always'}
         >
             {/* Intro page */}
             <View style={styles.backgroundView}>
@@ -629,7 +631,7 @@ export default function renewal(props) {
                     </View>
                 }
                 {changingContactInfo == "Yes" &&
-                    <ScrollView style={{ marginTop: 12 * rem, marginBottom: 60 * rem }}>
+                    <ScrollView style={{ marginTop: 12 * rem, marginBottom: 60 * rem }} keyboardShouldPersistTaps={'always'}>
                         <TextInput
                             placeholder={'Address line 1'}
                             placeholderTextColor={colors.grey400}
@@ -712,8 +714,7 @@ export default function renewal(props) {
             <View style={styles.backgroundView}>
                 <Text style={styles.title}>Renewing Inactive</Text>
                 <Text style={styles.bodyText}>Are you renewing inactive?</Text>
-                {/* TODO */}
-                <Text style={styles.greyText}>ADD RENEWING INACTIVE EXPLANATION HERE</Text>
+                <Text style={styles.greyText}>"Inactive status" means that the RN has paid the renewal fee, but has not completed the continuing education requirement. A licensee cannot practice in California with an inactive license.</Text>
                 <View style={styles.flexRowContainer}>
                     <TouchableOpacity style={styles.roundButton}
                         onPress={() => { setRenewingInactive(true); nextPage(); }}>
@@ -849,7 +850,7 @@ export default function renewal(props) {
                     </View>
                 }
                 {disciplined &&
-                    <ScrollView style={{ marginBottom: 60 * rem, paddingBottom: 48 * rem }}>
+                    <ScrollView style={{ marginBottom: 60 * rem, paddingBottom: 48 * rem }} keyboardShouldPersistTaps={'always'}>
                         <Text style={styles.bodyText}>For each disciplinary action, please fill out some details.</Text>
                         {disciplinaryActions.length > 0 &&
                             <View style={styles.crimesContainer}>
@@ -1025,7 +1026,7 @@ export default function renewal(props) {
                 }
 
                 {workLocationSurvey &&
-                    <ScrollView style={{ marginBottom: 60 * rem, paddingBottom: 48 * rem }}>
+                    <ScrollView style={{ marginBottom: 60 * rem, paddingBottom: 48 * rem }} keyboardShouldPersistTaps={'always'}>
                         <Text style={styles.bodyText}>For each work location, please fill out some details.</Text>
                         {workLocationData.length > 0 &&
                             <View style={styles.crimesContainer}>
@@ -1325,7 +1326,7 @@ export default function renewal(props) {
                     </>
                 }
                 {healingArtsSurvey &&
-                    <ScrollView style={{ marginBottom: 60 * rem, paddingBottom: 48 * rem }}>
+                    <ScrollView style={{ marginBottom: 60 * rem, paddingBottom: 48 * rem }} keyboardShouldPersistTaps={'always'}>
                         <View style={styles.flexRowContainer}>
                             <Text style={styles.switchText}>Are you currently pursuing credentials or certifications?</Text>
                             <Switch
@@ -1569,6 +1570,18 @@ export default function renewal(props) {
                     </ScrollView>}
             </View>
 
+            {/* Attestation */}
+            <View style={styles.backgroundView}>
+                <Text style={styles.title}>Attestation</Text>
+                <Text>I declare under penalty of perjury under the laws of the State of California that the information contained in this application and, if necessary, copies of all documents submitted as part of the application are true and correct and that I have read and understand the disclosure statements provided in the instructions for this application. I hereby grant the Department of Consumer Affairs entity permission to verify any information contained in this application.</Text>
+                <View style={styles.flexRowContainer}>
+                    <TouchableOpacity style={styles.roundButton}
+                        onPress={() => { nextPage }}>
+                        <Text style={styles.roundButtonText}>Agree and Continue</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+
             {/* Summary page */}
             <View style={styles.backgroundView}>
                 <Text style={styles.title}>Summary Page</Text>
@@ -1583,6 +1596,7 @@ export default function renewal(props) {
                     </TouchableOpacity>
                 </View>
             </View>
+
         </ScrollView>
     );
 }

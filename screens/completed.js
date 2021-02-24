@@ -39,7 +39,7 @@ export default function documents() {
           keyExtractor={(item) => item}
           renderItem={({ item }) => (
             licenses[item].complete && <LicenseCard
-              data={licenses[item]}
+              data={item}
             />
           )}
         />

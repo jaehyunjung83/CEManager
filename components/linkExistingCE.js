@@ -27,13 +27,13 @@ export default function linkExistingCE(props) {
     const NEWLY_LINKED = "NEWLY LINKED";
 
     const licenses = useSelector(state => state.licenses);
-    const ceData = useSelector(state => state.ces);
+    const allCEData = useSelector(state => state.ces);
     const dispatch = useDispatch();
 
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [selectedRequirement, setSelectedRequirement] = useState("");
     const [licenseCopy, setLicenseCopy] = useState(JSON.parse(JSON.stringify(licenses[licenseID])));
-    const [ceDataCopy, setCEDataCopy] = useState(JSON.parse(JSON.stringify(ceData)));
+    const [ceDataCopy, setCEDataCopy] = useState(JSON.parse(JSON.stringify(allCEData)));
     const [currentStep, setCurrentStep] = useState(SELECTING_REQUIREMENT);
     const [previousStep, setPreviousStep] = useState(0);
     const [ceChanges, setCEChanges] = useState([]);
@@ -49,7 +49,7 @@ export default function linkExistingCE(props) {
             resetState();
             setIsModalVisible(true);
         }
-    }, [props.open]);
+    }, [props.open], JSON.stringify(allCEData));
 
     let resetState = () => {
         setCurrentStep(SELECTING_REQUIREMENT);
@@ -79,25 +79,25 @@ export default function linkExistingCE(props) {
             if (linkedCE in oldLinkedCEs) {
                 if (oldLinkedCEs[linkedCE] !== newLinkedCEs[linkedCE]) {
                     // CE was previously linked, number of hours changed.
-                    console.log(`${ceData[linkedCE].name} changed from ${oldLinkedCEs[linkedCE]} to ${newLinkedCEs[linkedCE]}`);
+                    console.log(`${allCEData[linkedCE].name} changed from ${oldLinkedCEs[linkedCE]} to ${newLinkedCEs[linkedCE]}`);
                     ceChangesArr.push({
                         type: UPDATED,
                         ceID: linkedCE,
                         hours: newLinkedCEs[linkedCE],
-                        name: ceData[linkedCE].name,
-                        completionDate: ceData[linkedCE].completionDate,
+                        name: allCEData[linkedCE].name,
+                        completionDate: allCEData[linkedCE].completionDate,
                     })
                 }
             }
             else {
                 // CE is newly linked.
-                console.log(`Newly linked CE ${ceData[linkedCE].name}: ${newLinkedCEs[linkedCE]}`);
+                console.log(`Newly linked CE ${allCEData[linkedCE].name}: ${newLinkedCEs[linkedCE]}`);
                 ceChangesArr.push({
                     type: NEWLY_LINKED,
                     ceID: linkedCE,
                     hours: newLinkedCEs[linkedCE],
-                    name: ceData[linkedCE].name,
-                    completionDate: ceData[linkedCE].completionDate,
+                    name: allCEData[linkedCE].name,
+                    completionDate: allCEData[linkedCE].completionDate,
                 })
             }
         }
@@ -106,12 +106,12 @@ export default function linkExistingCE(props) {
             if (linkedCE in newLinkedCEs) continue;
             // CE that was previously in the old linked CEs is not in new linked CEs.
             // Therefore, it has been unlinked.
-            console.log(`Unlinked CE: ${ceData[linkedCE].name}`);
+            console.log(`Unlinked CE: ${allCEData[linkedCE].name}`);
             ceChangesArr.push({
                 type: UNLINKED,
                 ceID: linkedCE,
-                name: ceData[linkedCE].name,
-                completionDate: ceData[linkedCE].completionDate,
+                name: allCEData[linkedCE].name,
+                completionDate: allCEData[linkedCE].completionDate,
             })
         }
 
@@ -239,12 +239,11 @@ export default function linkExistingCE(props) {
             backgroundColor: 'rgba(0,0,0, 0.30)',
             height: '100%',
             width: '100%',
+            position: 'absolute',
         },
         modalPopupContainer: {
-            position: 'absolute',
-            top: screenHeight / 8,
+            flexShrink: 1,
             backgroundColor: 'white',
-            alignSelf: 'center',
             padding: 18 * rem,
             borderRadius: 10 * rem,
             maxHeight: screenHeight * (6 / 8),
@@ -379,123 +378,139 @@ export default function linkExistingCE(props) {
             animationType='fade'
             transparent={true}
         >
-            <TouchableWithoutFeedback onPress={() => setIsModalVisible(false)}>
-                <View style={styles.modalTransparency} />
-            </TouchableWithoutFeedback>
+            <View style={{
+                flex: 1,
+                justifyContent: 'center',
+                margin: 0,
+            }}>
+                <TouchableWithoutFeedback onPress={() => setIsModalVisible(false)}>
+                    <View style={styles.modalTransparency} />
+                </TouchableWithoutFeedback>
 
-            {currentStep == SELECTING_REQUIREMENT ? (
-                <ScrollView style={styles.modalPopupContainer}>
-                    <Text style={styles.modalTitle}>Select a requirement</Text>
-                    {licenseCopy.requirements.length ? (<FlatList
-                        data={licenseCopy.requirements}
-                        keyExtractor={item => item.key}
-                        renderItem={({ item, index }) => (
+                {currentStep == SELECTING_REQUIREMENT ? (
+                    <View style={styles.modalPopupContainer}>
+                        <ScrollView keyboardShouldPersistTaps={'always'}>
+                            <Text style={styles.modalTitle}>Select a requirement</Text>
+                            {licenseCopy.requirements.length ? (<FlatList
+                                data={licenseCopy.requirements}
+                                keyExtractor={item => item.key}
+                                renderItem={({ item, index }) => (
+                                    <TouchableOpacity
+                                        style={styles.requirementContainer}
+                                        onPress={() => { handleRequirementSelected(item, index) }}>
+                                        <Text style={styles.requirementText}>
+                                            {item.hours ? (<Text style={styles.requirementHoursNeeded}>{item.hours}  </Text>) : (null)}{item.name}
+                                        </Text>
+                                        <AntDesign name="right" size={20 * rem} style={styles.nextArrow} />
+
+                                    </TouchableOpacity>
+                                )}
+                            >
+                            </FlatList>) : (<Text style={styles.emptyText}>No requirements to apply to! Edit license to add requirements.</Text>)}
+
+                            <TouchableHighlight
+                                onPress={() => { setIsModalVisible(false) }}
+                                style={styles.linkCEButton}
+                            >
+                                <Text style={styles.linkCEButtonText}>Cancel</Text>
+                            </TouchableHighlight>
+                        </ScrollView>
+                    </View>) : (null)}
+
+                {currentStep == INPUTTING_CE_HOURS ? (
+                    <View style={styles.modalPopupContainer}>
+                        <ScrollView keyboardShouldPersistTaps={'always'}>
+                            <Text style={styles.modalTitle}>Input CE Hours</Text>
+                            {Object.keys(ceDataCopy).length ? (<FlatList
+                                data={Object.keys(ceDataCopy).sort((a, b) => { return new Date(ceDataCopy[b].completionDate) - new Date(ceDataCopy[a].completionDate) })}
+                                keyExtractor={item => item}
+                                renderItem={({ item, index }) => (
+                                    <View style={styles.expandingCEContainer}>
+                                        <TextInput
+                                            placeholder={"Hrs"}
+                                            placeholderTextColor={colors.grey400}
+                                            style={styles.hoursInput}
+                                            defaultValue={getDefaultCEHours(item)}
+                                            value={linkedHoursInputs[index]}
+                                            onChangeText={(hours) => { handleLinkedHours(hours, item, index) }}
+                                            keyboardType={'numeric'}
+                                            maxLength={4}
+                                        />
+                                        <ExpandingCE data={ceDataCopy[item]} />
+                                    </View>
+                                )}
+                            >
+                            </FlatList>) : (<Text style={styles.emptyText}>No CEs to link!</Text>)}
+                        </ScrollView>
+                        <View style={styles.flexRowContainer}>
+                            <Text>You can review your changes on the next screen</Text>
+                        </View>
+                        <View style={styles.flexRowContainer}>
+                            <TouchableHighlight
+                                onPress={() => { handleBack() }}
+                                style={styles.linkCEButton}
+                            >
+                                <Text style={styles.linkCEButtonText}>{('Back')}</Text>
+                            </TouchableHighlight>
+
                             <TouchableOpacity
-                                style={styles.requirementContainer}
-                                onPress={() => { handleRequirementSelected(item, index) }}>
-                                <Text style={styles.requirementText}>
-                                    {item.hours ? (<Text style={styles.requirementHoursNeeded}>{item.hours}  </Text>) : (null)}{item.name}
-                                </Text>
-                                <AntDesign name="right" size={20 * rem} style={styles.nextArrow} />
-
+                                onPress={() => { handleDone() }}
+                                style={styles.linkCEButton}
+                            >
+                                <Text style={styles.linkCEButtonText}>{('Done')}</Text>
                             </TouchableOpacity>
-                        )}
-                    >
-                    </FlatList>) : (<Text style={styles.emptyText}>No requirements to apply to! Edit license to add requirements.</Text>)}
+                        </View>
+                        <Text>{"\n"}</Text>
+                    </View>) : (null)}
 
-                </ScrollView>) : (null)}
+                {currentStep == SELECTING_CE ? (
+                    // TODO: HANDLE SELECTING CE. User should be able to select a CE to link it without inputting hours it is worth.
+                    null
+                ) : (null)}
 
-            {currentStep == INPUTTING_CE_HOURS ? (
-                <View style={styles.modalPopupContainer}>
-                    <ScrollView >
-                        <Text style={styles.modalTitle}>Input CE Hours</Text>
-                        {Object.keys(ceDataCopy).length ? (<FlatList
-                            data={Object.keys(ceDataCopy).sort((a, b) => { return new Date(ceDataCopy[b].completionDate) - new Date(ceDataCopy[a].completionDate) })}
-                            keyExtractor={item => item}
-                            renderItem={({ item, index }) => (
-                                <View style={styles.expandingCEContainer}>
-                                    <TextInput
-                                        placeholder={"Hrs"}
-                                        placeholderTextColor={colors.grey400}
-                                        style={styles.hoursInput}
-                                        defaultValue={getDefaultCEHours(item)}
-                                        value={linkedHoursInputs[index]}
-                                        onChangeText={(hours) => { handleLinkedHours(hours, item, index) }}
-                                        keyboardType={'numeric'}
-                                        maxLength={4}
-                                    />
-                                    <ExpandingCE data={ceDataCopy[item]} />
-                                </View>
-                            )}
-                        >
-                        </FlatList>) : (<Text style={styles.emptyText}>No CEs to link!</Text>)}
-                    </ScrollView>
-                    <View style={styles.flexRowContainer}>
-                        <Text>You can review your changes on the next screen</Text>
+                {currentStep == CONFIRMATION_PAGE ? (
+                    <View style={styles.modalPopupContainer}>
+                        <ScrollView keyboardShouldPersistTaps={'always'}>
+                            <Text style={styles.modalTitle}>Changes Summary</Text>
+                            <Text style={styles.requirementName}>REQUIREMENT: {licenseCopy.requirements[selectedRequirement].name}</Text>
+                            {ceChanges.length ? (<FlatList
+                                data={ceChanges}
+                                keyExtractor={item => item.ceID}
+                                renderItem={({ item }) => {
+                                    if (item.type == UNLINKED) return (
+                                        <Text style={styles.unlinkedType}>{item.type}: <Text style={styles.ceName}>{item.name}</Text></Text>
+                                    )
+                                    else if (item.type == UPDATED) return (
+                                        <Text style={styles.updatedType}>{item.type}: <Text style={styles.ceName}><Text style={styles.ceHours}>{item.hours}Hrs</Text> - {item.name}</Text></Text>
+                                    )
+                                    else if (item.type == NEWLY_LINKED) return (
+                                        <Text style={styles.newlyLinkedType}>{item.type}: <Text style={styles.ceName}><Text style={styles.ceHours}>{item.hours}Hrs</Text> - {item.name}</Text></Text>
+                                    )
+                                }}
+                            >
+                            </FlatList>) : (<Text style={styles.emptyText}>No changes made!</Text>)}
+
+                            <Text>{errorMsg}</Text>
+                            <View style={styles.flexRowContainer}>
+                                <TouchableHighlight
+                                    onPress={() => { handleBack() }}
+                                    style={styles.linkCEButton}
+                                >
+                                    <Text style={styles.linkCEButtonText}>{('Back')}</Text>
+                                </TouchableHighlight>
+
+                                <TouchableOpacity
+                                    onPress={() => { handleSave() }}
+                                    style={styles.linkCEButton}
+                                >
+                                    <Text style={styles.linkCEButtonText}>{('Save')}</Text>
+                                </TouchableOpacity>
+                            </View>
+                            <Text>{"\n"}</Text>
+                        </ScrollView>
                     </View>
-                    <View style={styles.flexRowContainer}>
-                        <TouchableHighlight
-                            onPress={() => { handleBack() }}
-                            style={styles.linkCEButton}
-                        >
-                            <Text style={styles.linkCEButtonText}>{('Back')}</Text>
-                        </TouchableHighlight>
-
-                        <TouchableOpacity
-                            onPress={() => { handleDone() }}
-                            style={styles.linkCEButton}
-                        >
-                            <Text style={styles.linkCEButtonText}>{('Done')}</Text>
-                        </TouchableOpacity>
-                    </View>
-                    <Text>{"\n"}</Text>
-                </View>) : (null)}
-
-            {currentStep == SELECTING_CE ? (
-                // TODO: HANDLE SELECTING CE. User should be able to select a CE to link it without inputting hours it is worth.
-                null
-            ) : (null)}
-
-            {currentStep == CONFIRMATION_PAGE ? (
-                <ScrollView style={styles.modalPopupContainer}>
-                    <Text style={styles.modalTitle}>Changes Summary</Text>
-                    <Text style={styles.requirementName}>REQUIREMENT: {licenseCopy.requirements[selectedRequirement].name}</Text>
-                    {ceChanges.length ? (<FlatList
-                        data={ceChanges}
-                        keyExtractor={item => item.ceID}
-                        renderItem={({ item }) => {
-                            if (item.type == UNLINKED) return (
-                                <Text style={styles.unlinkedType}>{item.type}: <Text style={styles.ceName}>{item.name}</Text></Text>
-                            )
-                            else if (item.type == UPDATED) return (
-                                <Text style={styles.updatedType}>{item.type}: <Text style={styles.ceName}><Text style={styles.ceHours}>{item.hours}Hrs</Text> - {item.name}</Text></Text>
-                            )
-                            else if (item.type == NEWLY_LINKED) return (
-                                <Text style={styles.newlyLinkedType}>{item.type}: <Text style={styles.ceName}><Text style={styles.ceHours}>{item.hours}Hrs</Text> - {item.name}</Text></Text>
-                            )
-                        }}
-                    >
-                    </FlatList>) : (<Text style={styles.emptyText}>No changes made!</Text>)}
-
-                    <Text>{errorMsg}</Text>
-                    <View style={styles.flexRowContainer}>
-                        <TouchableHighlight
-                            onPress={() => { handleBack() }}
-                            style={styles.linkCEButton}
-                        >
-                            <Text style={styles.linkCEButtonText}>{('Back')}</Text>
-                        </TouchableHighlight>
-
-                        <TouchableOpacity
-                            onPress={() => { handleSave() }}
-                            style={styles.linkCEButton}
-                        >
-                            <Text style={styles.linkCEButtonText}>{('Save')}</Text>
-                        </TouchableOpacity>
-                    </View>
-                    <Text>{"\n"}</Text>
-                </ScrollView>
-            ) : (null)}
+                ) : (null)}
+            </View>
         </Modal>
     );
 }

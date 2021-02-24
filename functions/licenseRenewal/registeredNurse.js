@@ -1274,9 +1274,187 @@ exports.handleApplicationSummary = async (page, uid) => {
         await bucket.upload(tempPDFPath, { destination: filePath + ".pdf" })
         await bucket.upload(tempSSPath, { destination: filePath + ".png" })
 
-        // const nextBtn = await generalHelpers.getElementFromXpath(page, "/html/body/div/div[3]/div[2]/div/div/div/div/div/div[3]/form/table[17]/tbody/tr[2]/td/div/div/input[2]");
+        // const nextBtn = await generalHelpers.getElementFromXpath(page, "/html/body/div/div[3]/div[2]/div/div/div/div/div/div[3]/form/table[16]/tbody/tr[2]/td/div/div/input[2]");
         // await nextBtn.click();
         // await page.waitForNavigation({ waitUntil: 'networkidle0' });
+    }
+    catch (e) {
+        return { success: false, error: e, returnToUser: { status: 400, message: e.message } };
+    }
+
+    return { success: true };
+}
+
+exports.handleAttestation = async (page, uid) => {
+    try {
+        console.log("handleAttestation()");
+        // const formPage = "applicationSummary";
+        // const excludeArr = ["BaseForm"];
+
+        const yesBtn = await generalHelpers.getElementFromXpath(page, "/html/body/div/div[3]/div[2]/div/div/div/div/div/div[3]/form/table[1]/tbody/tr/td/div[2]/input[1]");
+        yesBtn.click();
+
+        const nextBtn = await generalHelpers.getElementFromXpath(page, "/html/body/div/div[3]/div[2]/div/div/div/div/div/div[3]/form/table[2]/tbody/tr/td/div/div/input[3]");
+        await nextBtn.click();
+        await page.waitForNavigation({ waitUntil: 'networkidle0' });
+    }
+    catch (e) {
+        return { success: false, error: e, returnToUser: { status: 400, message: e.message } };
+    }
+
+    return { success: true };
+}
+
+exports.handleFeeAndSummaryReport = async (page) => {
+    try {
+        console.log("handleFeeAndSummaryReport()");
+        const tempSSPath = path.join(os.tmpdir(), fileName) + ".png";
+        const bucket = storage.bucket();
+        let now = new Date();
+        year = now.getUTCFullYear();
+        const fileName = `feeSummary${year}`;
+        const filePath = `renewalFiles/${uid}/${fileName}`
+
+        await page.screenshot({ path: tempSSPath, fullPage: true });
+        await bucket.upload(tempSSPath, { destination: filePath + ".png" })
+
+        // const yesBtn = await generalHelpers.getElementFromXpath(page, "/html/body/div/div[3]/div[2]/div/div/div/div/div/div[3]/form/table[1]/tbody/tr/td/div[2]/input[1]");
+        // yesBtn.click();
+
+        const payNowBtn = await generalHelpers.getElementFromXpath(page, "/html/body/div/div[3]/div[2]/div/div/div/div/div/div[2]/form/table/tbody/tr[8]/td/div/div/input[1]");
+        await payNowBtn.click();
+        await page.waitForNavigation({ waitUntil: 'networkidle0' });
+
+        const visaBtn = await generalHelpers.getElementFromXpath(page, "/html/body/div/div[3]/div[2]/div/div/div/div/div/div[2]/form/table[2]/tbody/tr[2]/td[2]/table/tbody/tr[1]/td[1]/input");
+        visaBtn.click();
+
+        const nextBtn = await generalHelpers.getElementFromXpath(page, "/html/body/div/div[3]/div[2]/div/div/div/div/div/div[2]/form/table[3]/tbody/tr[2]/td/div/div/input[1]");
+        nextBtn.click();
+        await page.waitForNavigation({ waitUntil: 'networkidle0' });
+
+        const confirmPaymentBtn = await generalHelpers.getElementFromXpath(page, "/html/body/div/div[3]/div[2]/div/div/div/div/div/div[2]/form[1]/table/tbody/tr[9]/td/div/div/input[1]");
+        confirmPaymentBtn.click();
+        await page.waitForNavigation({ waitUntil: 'networkidle0' });
+    }
+    catch (e) {
+        return { success: false, error: e, returnToUser: { status: 400, message: e.message } };
+    }
+
+    return { success: true };
+}
+
+exports.handleCreditCardForm = async (page) => {
+    try {
+        const CREDIT_CARD_DATA = {
+            number: "5268760046849068",
+            expiration: "0225",
+            cvv: "300",
+            firstName: "Peter",
+            lastName: "Hwang",
+            addr1: "2390 Crenshaw Boulevard",
+            addr2: "Ste E #342",
+            city: "Torrance",
+            state: "CA",
+            zip: "90501",
+        }
+        console.log("handleCreditCardForm()");
+
+        await page.evaluate((CREDIT_CARD_DATA) => {
+            let el = document.querySelector('#ssl_account_data');
+            el.value = CREDIT_CARD_DATA.number;
+        }, CREDIT_CARD_DATA);
+
+        await page.evaluate((CREDIT_CARD_DATA) => {
+            let el = document.querySelector('#ssl_exp_date');
+            el.value = CREDIT_CARD_DATA.expiration;
+        }, CREDIT_CARD_DATA);
+
+        await page.evaluate((CREDIT_CARD_DATA) => {
+            let el = document.querySelector('#ssl_cvv2cvc2');
+            el.value = CREDIT_CARD_DATA.cvv;
+        }, CREDIT_CARD_DATA);
+
+        await page.evaluate((CREDIT_CARD_DATA) => {
+            let el = document.querySelector('#ssl_first_name');
+            el.value = CREDIT_CARD_DATA.firstName;
+        }, CREDIT_CARD_DATA);
+
+        await page.evaluate((CREDIT_CARD_DATA) => {
+            let el = document.querySelector('#ssl_last_name');
+            el.value = CREDIT_CARD_DATA.lastName;
+        }, CREDIT_CARD_DATA);
+
+        await page.evaluate((CREDIT_CARD_DATA) => {
+            let el = document.querySelector('#ssl_last_name');
+            el.value = CREDIT_CARD_DATA.lastName;
+        }, CREDIT_CARD_DATA);
+
+        await page.evaluate((CREDIT_CARD_DATA) => {
+            let el = document.querySelector('#ssl_avs_address');
+            el.value = CREDIT_CARD_DATA.addr1;
+        }, CREDIT_CARD_DATA);     
+        
+        await page.evaluate((CREDIT_CARD_DATA) => {
+            let el = document.querySelector('#ssl_address2');
+            el.value = CREDIT_CARD_DATA.addr2;
+        }, CREDIT_CARD_DATA); 
+        
+        await page.evaluate((CREDIT_CARD_DATA) => {
+            let el = document.querySelector('#ssl_city');
+            el.value = CREDIT_CARD_DATA.city;
+        }, CREDIT_CARD_DATA); 
+
+        await page.evaluate((CREDIT_CARD_DATA) => {
+            let el = document.querySelector('#ssl_state');
+            el.value = CREDIT_CARD_DATA.state;
+        }, CREDIT_CARD_DATA); 
+
+        await page.evaluate((CREDIT_CARD_DATA) => {
+            let el = document.querySelector('#ssl_state');
+            el.value = CREDIT_CARD_DATA.state;
+        }, CREDIT_CARD_DATA); 
+
+        await page.evaluate((CREDIT_CARD_DATA) => {
+            let el = document.querySelector('#ssl_avs_zip');
+            el.value = CREDIT_CARD_DATA.zip;
+        }, CREDIT_CARD_DATA); 
+
+        const processBtn = await generalHelpers.getElementFromXpath(page, "/html/body/form[1]/table/tbody/tr[2]/td/table/tbody/tr[4]/td/input[2]");
+        processBtn.click();
+        await page.waitForNavigation({ waitUntil: 'networkidle0' });
+
+    }
+    catch (e) {
+        return { success: false, error: e, returnToUser: { status: 400, message: e.message } };
+    }
+
+    return { success: true };
+}
+
+exports.handleNavigationToPaymentForm = async (page) => {
+    try {
+        console.log("handleNavigationToPaymentForm()");
+
+        await page.evaluate(() => {
+            let el = document.querySelector('#payment')
+            el.click();
+        }); 
+        await page.waitForNavigation({ waitUntil: 'networkidle0' });
+
+        // const makePaymentsBtn = await generalHelpers.getElementFromXpath(page, "/html/body/div/div[3]/div[2]/div/div/div/div/div/div[2]/form/table/tbody/tr/td[2]/table/tbody/tr[1]/td/table/tbody/tr/td[4]/input");
+        // makePaymentsBtn.click();
+        // await page.waitForNavigation({ waitUntil: 'networkidle0' });
+
+        const visaBtn = await generalHelpers.getElementFromXpath(page, "/html/body/div/div[3]/div[2]/div/div/div/div/div/div[2]/form/table[2]/tbody/tr[2]/td[2]/table/tbody/tr[1]/td[1]/input");
+        visaBtn.click();
+
+        const nextBtn = await generalHelpers.getElementFromXpath(page, "/html/body/div/div[3]/div[2]/div/div/div/div/div/div[2]/form/table[3]/tbody/tr[2]/td/div/div/input[1]");
+        nextBtn.click();
+        await page.waitForNavigation({ waitUntil: 'networkidle0' });
+
+        const nextBtn2 = await generalHelpers.getElementFromXpath(page, "/html/body/div/div[3]/div[2]/div/div/div/div/div/div[2]/form[1]/table/tbody/tr[9]/td/div/div/input[1]");
+        nextBtn2.click();
+        await page.waitForNavigation({ waitUntil: 'networkidle0' });
     }
     catch (e) {
         return { success: false, error: e, returnToUser: { status: 400, message: e.message } };

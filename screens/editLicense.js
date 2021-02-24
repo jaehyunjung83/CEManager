@@ -65,7 +65,6 @@ export default function editLicense(props) {
     const licenses = useSelector(state => state.licenses);
     const dispatch = useDispatch();
 
-
     React.useEffect(() => {
         let db = firestore();
         db.collection('licenseConfig').doc('licenseTypes').get()
@@ -117,6 +116,13 @@ export default function editLicense(props) {
     const [licenseThumbnail, setLicenseThumbnail] = useState("");
     const [licensePhoto, setLicensePhoto] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+
+    const [modalHeight, setModalHeight] = useState(0);
+    let onLayout = (event) => {
+        console.log(event.nativeEvent.layout);
+        const { height } = event.nativeEvent.layout;
+        setModalHeight(height);
+    };
 
     // Used for getting position of text label of state input. This is a workaround to get the effect of KeyboardAvoidingView.
     let measure = () => {
@@ -306,6 +312,338 @@ export default function editLicense(props) {
         }
     }, [props.route.params?.thumbnailURL]);
 
+    // Used to make element sizes more consistent across screen sizes.
+    const screenWidth = Math.round(Dimensions.get('window').width);
+    const rem = (screenWidth / 380);
+
+    const styles = StyleSheet.create({
+        container: {
+            minHeight: Dimensions.get('window').height,
+            flexGrow: 1,
+            backgroundColor: 'white',
+            padding: 18 * rem,
+        },
+        addChoiceContainer: {
+            top: 0,
+            width: '100%',
+            aspectRatio: 4.8,
+            marginBottom: 24 * rem,
+        },
+        choiceButtonsContainer: {
+            bottom: 0,
+            marginTop: 18 * rem,
+            flexDirection: 'row',
+            height: 45 * rem,
+            width: '100%',
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        licenseButtonNotSelected: {
+            width: screenWidth / 2 - (12 * rem),
+            aspectRatio: 1,
+            maxHeight: 45 * rem,
+            borderTopLeftRadius: 10 * rem,
+            borderBottomLeftRadius: 10 * rem,
+            borderColor: colors.grey200,
+            borderRightColor: colors.grey500,
+            borderWidth: 2 * rem,
+            marginRight: -1 * rem,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: colors.grey200,
+        },
+        licenseButtonSelected: {
+            width: screenWidth / 2 - (12 * rem),
+            aspectRatio: 1,
+            maxHeight: 45 * rem,
+            backgroundColor: colors.blue800,
+            borderTopLeftRadius: 10 * rem,
+            borderBottomLeftRadius: 10 * rem,
+            borderWidth: 2 * rem,
+            marginRight: -1 * rem,
+            borderColor: colors.blue800,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        certButtonNotSelected: {
+            width: screenWidth / 2 - (12 * rem),
+            aspectRatio: 1,
+            maxHeight: 45 * rem,
+            borderTopRightRadius: 10 * rem,
+            borderBottomRightRadius: 10 * rem,
+            borderColor: colors.grey200,
+            borderLeftWidth: 0,
+            borderWidth: 2 * rem,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: colors.grey200,
+        },
+        certButtonSelected: {
+            width: screenWidth / 2 - (12 * rem),
+            aspectRatio: 1,
+            maxHeight: 45 * rem,
+            backgroundColor: colors.blue800,
+            borderTopRightRadius: 10 * rem,
+            borderBottomRightRadius: 10 * rem,
+            borderWidth: 2 * rem,
+            borderLeftWidth: 0,
+            borderColor: colors.blue800,
+            alignItems: 'center',
+            justifyContent: 'center',
+        },
+        choiceText: {
+            fontSize: 18 * rem,
+            fontWeight: '400',
+            color: colors.grey900,
+        },
+        choiceTextNotSelected: {
+            color: colors.grey500,
+            fontSize: 18 * rem,
+            fontWeight: '500',
+            textAlign: 'center',
+        },
+        choiceTextSelected: {
+            color: 'white',
+            fontSize: 18 * rem,
+            fontWeight: '500',
+            textAlign: 'center',
+        },
+        topContainer: {
+            flex: 5,
+            flexDirection: 'row',
+        },
+        formContainer: {
+            height: '100%',
+            width: '100%',
+            marginTop: 18 * rem,
+        },
+
+        // License Form
+        headerContainer: {
+            width: '100%',
+            height: 40 * rem,
+            marginBottom: 18 * rem,
+            zIndex: -1,
+        },
+        licenseInfoContainer: {
+            padding: 6 * rem,
+        },
+        inputLabel: {
+            fontSize: 16 * rem,
+            color: colors.grey800,
+            fontWeight: '500',
+            marginBottom: 6 * rem,
+        },
+        errorMessage: {
+            fontSize: 16 * rem,
+            color: colors.red500,
+            fontWeight: '500',
+            marginBottom: 6 * rem,
+        },
+        selectLicenseType: {
+            width: '100%',
+            height: 50 * rem,
+            backgroundColor: colors.grey200,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: 18 * rem,
+            borderRadius: 10 * rem,
+        },
+        selectLicenseTypeText: {
+            fontSize: 16 * rem,
+            color: colors.grey900,
+            textAlign: 'left',
+        },
+        modalTransparency: {
+            backgroundColor: 'rgba(0,0,0, 0.30)',
+            top: 0,
+            bottom: 0,
+            left: 0,
+            right: 0,
+            position: 'absolute',
+        },
+        modalPopupContainer: {
+            flexShrink: 1,
+            backgroundColor: 'white',
+            padding: 18 * rem,
+            borderRadius: 10 * rem,
+        },
+        modalTitle: {
+            fontSize: 20 * rem,
+            color: colors.grey900,
+            marginBottom: 24 * rem,
+        },
+        listItemContainer: {
+            paddingLeft: 6 * rem,
+            height: 50 * rem,
+            justifyContent: 'center',
+        },
+        otherLicenseType: {
+            height: 50 * rem,
+            width: '100%',
+        },
+        stateAndLicenseNumContainer: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            height: (50 + 24) * rem,
+            marginBottom: 18 * rem,
+            zIndex: 999,
+        },
+        stateContainer: {
+            height: 50 * rem,
+            minWidth: 160 * rem,
+            width: '40%',
+            zIndex: 999,
+        },
+        licenseNumContainer: {
+            height: 50 * rem,
+            width: '48%',
+        },
+        licenseNumInput: {
+            width: '100%',
+            height: '100%',
+            fontSize: 16 * rem,
+            borderRadius: 10 * rem,
+            backgroundColor: colors.grey200,
+            paddingLeft: 18 * rem,
+            paddingRight: 18 * rem,
+            color: colors.grey900,
+        },
+        flexRowContainer: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            height: (50 + 24) * rem,
+            marginBottom: 18 * rem,
+        },
+        expirationContainer: {
+            height: 50 * rem,
+            minWidth: 160 * rem,
+            width: '100%',
+        },
+        expirationInput: {
+            width: '42%',
+            height: '100%',
+            fontSize: 16 * rem,
+            borderRadius: 10 * rem,
+            backgroundColor: colors.grey200,
+            paddingLeft: 18 * rem,
+            paddingRight: 18 * rem,
+            color: colors.grey900,
+        },
+        thumbnailContainer: {
+            height: (75 + 24) * rem,
+            minWidth: 160 * rem,
+            width: '100%',
+            marginBottom: 24 * rem,
+        },
+        thumbnailButton: {
+            width: 75 * rem,
+            aspectRatio: 1,
+            borderRadius: 10 * rem,
+            backgroundColor: colors.grey200,
+            alignItems: 'center',
+            justifyContent: 'center',
+            shadowColor: "#000",
+            shadowOffset: {
+                width: 0,
+                height: 1,
+            },
+            shadowOpacity: 0.18,
+            shadowRadius: 1.00,
+
+            elevation: 1,
+        },
+        thumbnailIcon: {
+            height: 32 * rem,
+            width: 32 * rem,
+            color: colors.blue300,
+        },
+
+        ceRequirementsContainer: {
+            padding: 6 * rem,
+        },
+        ceHoursRequired: {
+            height: 50 * rem,
+            minWidth: 130 * rem,
+            width: '30%',
+        },
+        addRequirementButton: {
+            padding: 12 * rem,
+            paddingTop: 6 * rem,
+            paddingBottom: 6 * rem,
+            flexDirection: 'row',
+            borderRadius: 10 * rem,
+            borderWidth: 2 * rem,
+            borderColor: colors.blue800,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'white',
+            height: 50 * rem,
+            alignSelf: 'flex-end',
+        },
+        addRequirementText: {
+            color: colors.blue800,
+            fontSize: 16 * rem,
+            fontWeight: '500',
+        },
+        requirementsContainer: {
+            flexDirection: 'column',
+            flexGrow: 1,
+        },
+        requirementContainer: {
+            flexDirection: 'row',
+            width: '100%',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 6 * rem,
+        },
+        deleteButton: {
+            alignSelf: 'center',
+            margin: 6 * rem,
+            marginLeft: 0,
+        },
+        requirementHoursInput: {
+            width: 65 * rem,
+            marginRight: 6 * rem,
+            height: '100%',
+            fontSize: 16 * rem,
+            borderRadius: 10 * rem,
+            backgroundColor: colors.grey200,
+            paddingLeft: 18 * rem,
+            paddingRight: 18 * rem,
+            color: colors.grey900,
+        },
+        requirementInput: {
+            flex: 1,
+            height: '100%',
+            fontSize: 16 * rem,
+            borderRadius: 10 * rem,
+            backgroundColor: colors.grey200,
+            paddingLeft: 18 * rem,
+            paddingRight: 18 * rem,
+            color: colors.grey900,
+        },
+        noRequirementsText: {
+            fontSize: 16 * rem,
+            color: colors.grey500,
+        },
+        hoursOptionalText: {
+            fontSize: 16 * rem,
+            color: colors.grey500,
+            marginBottom: 12 * rem,
+        },
+        addNewLicenseButton: {
+            width: '100%',
+            height: 50 * rem,
+            borderRadius: 10 * rem,
+            backgroundColor: colors.blue800,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginTop: 24 * rem,
+        },
+    });
+
+
     return (
         <KeyboardAvoidingView
             keyboardVerticalOffset={headerHeight}
@@ -314,7 +652,8 @@ export default function editLicense(props) {
         >
             <ScrollView
                 ref={ref => this.scrollView = ref}
-                contentContainerStyle={styles.container}>
+                contentContainerStyle={styles.container}
+                keyboardShouldPersistTaps={'always'}>
                 <FadeInView style={styles.formContainer}>
                     <View style={styles.headerContainer}>
                         <Header text="License Information" />
@@ -349,24 +688,30 @@ export default function editLicense(props) {
                             animationType='fade'
                             transparent={true}
                         >
-                            <TouchableWithoutFeedback onPress={() => setIsModalVisible(false)}>
-                                <View style={styles.modalTransparency} />
-                            </TouchableWithoutFeedback>
-                            <View style={styles.modalPopupContainer}>
-                                <Text style={styles.modalTitle}>Select License Type</Text>
-                                <FlatList
-                                    data={licenseTypes}
-                                    keyExtractor={item => item}
-                                    renderItem={({ item }) => (
-                                        <TouchableHighlight
-                                            style={styles.listItemContainer}
-                                            onPress={() => { setLicenseType(item); setIsModalVisible(false) }}
-                                            underlayColor={colors.underlayColor}
-                                        >
-                                            <Text style={styles.itemText}>{item}</Text>
-                                        </TouchableHighlight>
-                                    )}
-                                />
+                            <View style={{
+                                flex: 1,
+                                justifyContent: 'center',
+                                margin: 0,
+                            }}>
+                                <TouchableWithoutFeedback onPress={() => setIsModalVisible(false)}>
+                                    <View style={styles.modalTransparency} />
+                                </TouchableWithoutFeedback>
+                                <View style={styles.modalPopupContainer}>
+                                    <Text style={styles.modalTitle}>Select License Type</Text>
+                                    <FlatList
+                                        data={licenseTypes}
+                                        keyExtractor={item => item}
+                                        renderItem={({ item }) => (
+                                            <TouchableHighlight
+                                                style={styles.listItemContainer}
+                                                onPress={() => { setLicenseType(item); setIsModalVisible(false) }}
+                                                underlayColor={colors.underlayColor}
+                                            >
+                                                <Text style={styles.itemText}>{item}</Text>
+                                            </TouchableHighlight>
+                                        )}
+                                    />
+                                </View>
                             </View>
                         </Modal>
 
@@ -540,336 +885,3 @@ export default function editLicense(props) {
         </KeyboardAvoidingView>
     )
 }
-
-// Used to make element sizes more consistent across screen sizes.
-const screenWidth = Math.round(Dimensions.get('window').width);
-const rem = (screenWidth / 380);
-
-const styles = StyleSheet.create({
-    container: {
-        minHeight: Dimensions.get('window').height,
-        flexGrow: 1,
-        backgroundColor: 'white',
-        padding: 18 * rem,
-    },
-    addChoiceContainer: {
-        top: 0,
-        width: '100%',
-        aspectRatio: 4.8,
-        marginBottom: 24 * rem,
-    },
-    choiceButtonsContainer: {
-        bottom: 0,
-        marginTop: 18 * rem,
-        flexDirection: 'row',
-        height: 45 * rem,
-        width: '100%',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    licenseButtonNotSelected: {
-        width: screenWidth / 2 - (12 * rem),
-        aspectRatio: 1,
-        maxHeight: 45 * rem,
-        borderTopLeftRadius: 10 * rem,
-        borderBottomLeftRadius: 10 * rem,
-        borderColor: colors.grey200,
-        borderRightColor: colors.grey500,
-        borderWidth: 2 * rem,
-        marginRight: -1 * rem,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colors.grey200,
-    },
-    licenseButtonSelected: {
-        width: screenWidth / 2 - (12 * rem),
-        aspectRatio: 1,
-        maxHeight: 45 * rem,
-        backgroundColor: colors.blue800,
-        borderTopLeftRadius: 10 * rem,
-        borderBottomLeftRadius: 10 * rem,
-        borderWidth: 2 * rem,
-        marginRight: -1 * rem,
-        borderColor: colors.blue800,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    certButtonNotSelected: {
-        width: screenWidth / 2 - (12 * rem),
-        aspectRatio: 1,
-        maxHeight: 45 * rem,
-        borderTopRightRadius: 10 * rem,
-        borderBottomRightRadius: 10 * rem,
-        borderColor: colors.grey200,
-        borderLeftWidth: 0,
-        borderWidth: 2 * rem,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colors.grey200,
-    },
-    certButtonSelected: {
-        width: screenWidth / 2 - (12 * rem),
-        aspectRatio: 1,
-        maxHeight: 45 * rem,
-        backgroundColor: colors.blue800,
-        borderTopRightRadius: 10 * rem,
-        borderBottomRightRadius: 10 * rem,
-        borderWidth: 2 * rem,
-        borderLeftWidth: 0,
-        borderColor: colors.blue800,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    choiceText: {
-        fontSize: 18 * rem,
-        fontWeight: '400',
-        color: colors.grey900,
-    },
-    choiceTextNotSelected: {
-        color: colors.grey500,
-        fontSize: 18 * rem,
-        fontWeight: '500',
-        textAlign: 'center',
-    },
-    choiceTextSelected: {
-        color: 'white',
-        fontSize: 18 * rem,
-        fontWeight: '500',
-        textAlign: 'center',
-    },
-    topContainer: {
-        flex: 5,
-        flexDirection: 'row',
-    },
-    formContainer: {
-        height: '100%',
-        width: '100%',
-        marginTop: 18 * rem,
-    },
-
-    // License Form
-    headerContainer: {
-        width: '100%',
-        height: 40 * rem,
-        marginBottom: 18 * rem,
-        zIndex: -1,
-    },
-    licenseInfoContainer: {
-        padding: 6 * rem,
-    },
-    inputLabel: {
-        fontSize: 16 * rem,
-        color: colors.grey800,
-        fontWeight: '500',
-        marginBottom: 6 * rem,
-    },
-    errorMessage: {
-        fontSize: 16 * rem,
-        color: colors.red500,
-        fontWeight: '500',
-        marginBottom: 6 * rem,
-    },
-    selectLicenseType: {
-        width: '100%',
-        height: 50 * rem,
-        backgroundColor: colors.grey200,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 18 * rem,
-        borderRadius: 10 * rem,
-    },
-    selectLicenseTypeText: {
-        fontSize: 16 * rem,
-        color: colors.grey900,
-        textAlign: 'left',
-    },
-    modalTransparency: {
-        backgroundColor: 'rgba(0,0,0, 0.30)',
-        height: '100%',
-        width: '100%',
-    },
-    modalPopupContainer: {
-        position: 'absolute',
-        flexGrow: 1,
-        marginTop: Dimensions.get('window').height / 2,
-        transform: [{ translateY: '-50%', }],
-        backgroundColor: 'white',
-        alignSelf: 'center',
-        padding: 18 * rem,
-        borderRadius: 10 * rem,
-    },
-    modalTitle: {
-        fontSize: 20 * rem,
-        color: colors.grey900,
-        marginBottom: 24 * rem,
-    },
-    listItemContainer: {
-        paddingLeft: 6 * rem,
-        height: 50 * rem,
-        justifyContent: 'center',
-    },
-    otherLicenseType: {
-        height: 50 * rem,
-        width: '100%',
-    },
-    stateAndLicenseNumContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        height: (50 + 24) * rem,
-        marginBottom: 18 * rem,
-        zIndex: 999,
-    },
-    stateContainer: {
-        height: 50 * rem,
-        minWidth: 160 * rem,
-        width: '40%',
-        zIndex: 999,
-    },
-    licenseNumContainer: {
-        height: 50 * rem,
-        width: '48%',
-    },
-    licenseNumInput: {
-        width: '100%',
-        height: '100%',
-        fontSize: 16 * rem,
-        borderRadius: 10 * rem,
-        backgroundColor: colors.grey200,
-        paddingLeft: 18 * rem,
-            paddingRight: 18 * rem,
-        color: colors.grey900,
-    },
-    flexRowContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        height: (50 + 24) * rem,
-        marginBottom: 18 * rem,
-    },
-    expirationContainer: {
-        height: 50 * rem,
-        minWidth: 160 * rem,
-        width: '100%',
-    },
-    expirationInput: {
-        width: '42%',
-        height: '100%',
-        fontSize: 16 * rem,
-        borderRadius: 10 * rem,
-        backgroundColor: colors.grey200,
-        paddingLeft: 18 * rem,
-            paddingRight: 18 * rem,
-        color: colors.grey900,
-    },
-    thumbnailContainer: {
-        height: (75 + 24) * rem,
-        minWidth: 160 * rem,
-        width: '100%',
-        marginBottom: 24 * rem,
-    },
-    thumbnailButton: {
-        width: 75 * rem,
-        aspectRatio: 1,
-        borderRadius: 10 * rem,
-        backgroundColor: colors.grey200,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 1,
-        },
-        shadowOpacity: 0.18,
-        shadowRadius: 1.00,
-
-        elevation: 1,
-    },
-    thumbnailIcon: {
-        height: 32 * rem,
-        width: 32 * rem,
-        color: colors.blue300,
-    },
-
-    ceRequirementsContainer: {
-        padding: 6 * rem,
-    },
-    ceHoursRequired: {
-        height: 50 * rem,
-        minWidth: 130 * rem,
-        width: '30%',
-    },
-    addRequirementButton: {
-        padding: 12 * rem,
-        paddingTop: 6 * rem,
-        paddingBottom: 6 * rem,
-        flexDirection: 'row',
-        borderRadius: 10 * rem,
-        borderWidth: 2 * rem,
-        borderColor: colors.blue800,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'white',
-        height: 50 * rem,
-        alignSelf: 'flex-end',
-    },
-    addRequirementText: {
-        color: colors.blue800,
-        fontSize: 16 * rem,
-        fontWeight: '500',
-    },
-    requirementsContainer: {
-        flexDirection: 'column',
-        flexGrow: 1,
-    },
-    requirementContainer: {
-        flexDirection: 'row',
-        width: '100%',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 6 * rem,
-    },
-    deleteButton: {
-        alignSelf: 'center',
-        margin: 6 * rem,
-        marginLeft: 0,
-    },
-    requirementHoursInput: {
-        width: 65 * rem,
-        marginRight: 6 * rem,
-        height: '100%',
-        fontSize: 16 * rem,
-        borderRadius: 10 * rem,
-        backgroundColor: colors.grey200,
-        paddingLeft: 18 * rem,
-            paddingRight: 18 * rem,
-        color: colors.grey900,
-    },
-    requirementInput: {
-        flex: 1,
-        height: '100%',
-        fontSize: 16 * rem,
-        borderRadius: 10 * rem,
-        backgroundColor: colors.grey200,
-        paddingLeft: 18 * rem,
-            paddingRight: 18 * rem,
-        color: colors.grey900,
-    },
-    noRequirementsText: {
-        fontSize: 16 * rem,
-        color: colors.grey500,
-    },
-    hoursOptionalText: {
-        fontSize: 16 * rem,
-        color: colors.grey500,
-        marginBottom: 12 * rem,
-    },
-    addNewLicenseButton: {
-        width: '100%',
-        height: 50 * rem,
-        borderRadius: 10 * rem,
-        backgroundColor: colors.blue800,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: 24 * rem,
-    },
-});
-

@@ -13,6 +13,7 @@ import { useNavigation } from '@react-navigation/native';
 
 export default function homepage(props) {
     const licenses = useSelector(state => state.licenses);
+    const allCEData = useSelector(state => state.ces);
     const dispatch = useDispatch();
     const navigation = useNavigation();
 
@@ -107,9 +108,6 @@ export default function homepage(props) {
                         newRequirement.linkedCEs = JSON.parse(JSON.stringify(licensesCopy[key].linkedCEs));
                         licensesCopy[key].linkedCEs = {};
                     }
-                    else {
-                        console.log(licensesCopy[key].linkedCEs);
-                    }
                 }
 
                 if (licensesCopy[key].requirements) {
@@ -130,7 +128,6 @@ export default function homepage(props) {
                 }
             }
             licensesCopy[key].requirements = newRequirements;
-            console.log(newRequirements);
         }
 
         if (hasUpdatedALicense) {
@@ -152,10 +149,34 @@ export default function homepage(props) {
         return licensesCopy;
     }
 
+    let checkLinkedCEsExist = async () => {
+        let changesMade = false;
+        let licensesCopy = JSON.parse(JSON.stringify(licenses));
+        let uid = auth().currentUser.uid;
+        let db = firestore();
+
+        for (const licenseID in licenses) {
+            for (const requirementIndex in licenses[licenseID].requirements) {
+                for (const linkedCE in licenses[licenseID].requirements[requirementIndex].linkedCEs) {
+                    if (!(linkedCE in allCEData)) {
+                        console.log(`${linkedCE} does not exist, removing from linkedCEs`);
+                        delete licensesCopy[licenses[licenseID].id].requirements[requirementIndex].linkedCEs[linkedCE];
+                        changesMade = true;
+                    }
+                }
+            }
+            if (changesMade) {
+                await db.collection("users").doc(uid).collection("licenses").doc("licenseData").set(licensesCopy);
+                dispatch(updateLicenses(licensesCopy));
+            }
+        }
+    }
+
     React.useEffect(() => {
         async function fetchData() {
             await getLicenseData();
             await getCEData();
+            await checkLinkedCEsExist();
             setIsLoading(false);
         };
         fetchData();
@@ -193,7 +214,7 @@ export default function homepage(props) {
                 keyExtractor={(item) => item}
                 renderItem={({ item }) => (
                     !licenses[item].complete && <LicenseCard
-                        data={licenses[item]}
+                        data={item}
                     />
                 )}
             />

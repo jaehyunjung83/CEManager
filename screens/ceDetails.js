@@ -21,7 +21,8 @@ export default function ceDetails(props) {
     const allCEData = useSelector(state => state.ces);
     const licenses = useSelector(state => state.licenses);
     const dispatch = useDispatch();
-    let ceData = allCEData[props.route?.params?.data?.id];
+    const ceID = props.route?.params?.data?.id;
+    let ceData = allCEData[ceID];
     let licenseID = props.route?.params?.id;
 
     const [isOverflowOpen, setIsOverflowOpen] = useState(false);
@@ -124,21 +125,23 @@ export default function ceDetails(props) {
 
         let licensesCopy = JSON.parse(JSON.stringify(licenses));
         for (const id in licensesCopy) {
-            for(const requirementID in licensesCopy[id]) {
-                if (licensesCopy[id][requirementID].linkedCEs && ceData?.id in licensesCopy[id][requirementID].linkedCEs) {
-                    delete licensesCopy[id][requirement].linkedCEs[ceData?.id];
+            for (const requirementIndex in licensesCopy[id].requirements) {
+                if (licensesCopy[id].requirements[requirementIndex].linkedCEs && ceData?.id in licensesCopy[id].requirements[requirementIndex].linkedCEs) {
+                    delete licensesCopy[id].requirements[requirementIndex].linkedCEs[ceData?.id];
                 }
             }
         }
+        let ceCopy = JSON.parse(JSON.stringify(allCEData));
+        delete ceCopy[ceData.id];
+        dispatch(updateLicenses(licensesCopy));
+        dispatch(updateCEs(ceCopy));
+
         db.collection('users').doc(uid).collection('CEs').doc('CEData').update(dataToBeDeleted)
             .then(() => {
                 db.collection('users').doc(uid).collection('licenses').doc('licenseData').set(licensesCopy)
                     .then(() => {
                         setIsOverflowOpen(false);
-                        let ceCopy = JSON.parse(JSON.stringify(allCEData));
-                        delete ceCopy[ceData.id];
                         navigation.pop();
-                        dispatch(updateCEs(ceCopy));
                     })
             })
             .catch((error) => {
@@ -219,8 +222,7 @@ export default function ceDetails(props) {
             width: '100%',
         },
         ImgContainer: {
-            marginTop: Dimensions.get('window').height / 2,
-            transform: [{ translateY: -screenWidth / 2, }],
+            marginTop: (Dimensions.get('window').height / 2) - (screenWidth / 2),
             width: screenWidth,
             aspectRatio: 1,
             backgroundColor: 'black',
@@ -424,7 +426,7 @@ export default function ceDetails(props) {
     });
 
     return (
-        <ScrollView style={styles.container}>
+        <ScrollView style={styles.container} keyboardShouldPersistTaps={'always'}>
             <Modal
                 visible={isModalVisible}
                 animationType='fade'
@@ -546,7 +548,7 @@ export default function ceDetails(props) {
                     />
                 </TouchableOpacity>
 
-                <ApplyTowardLicense open={applyingTowardsLicense} id={props.route?.params?.data?.id} />
+                <ApplyTowardLicense open={applyingTowardsLicense} id={ceID} />
             </View>
 
             <View style={styles.headerContainer}>

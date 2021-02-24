@@ -606,6 +606,7 @@ DEPENDENCIES:
   - RNScreens (from `../node_modules/react-native-screens`)
   - RNSVG (from `../node_modules/react-native-svg`)
   - RNVectorIcons (from `../node_modules/react-native-vector-icons`)
+  - Stripe (~> 19.4.0)
   - tipsi-stripe (from `../node_modules/tipsi-stripe`)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
@@ -795,6 +796,6 @@ SPEC CHECKSUMS:
   Toast: 91b396c56ee72a5790816f40d3a94dd357abc196
   Yoga: f2a7cd4280bfe2cca5a7aed98ba0eb3d1310f18b
 
-PODFILE CHECKSUM: 0bad49c576c57ab9870be641575ffe197146eb37
+PODFILE CHECKSUM: d25da0eb42d2fc8a82c7f21efbe3d2e3c5753632
 
 COCOAPODS: 1.10.1

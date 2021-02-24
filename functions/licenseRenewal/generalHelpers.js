@@ -178,7 +178,6 @@ exports.saveDropdownOptions = async (page, licenseType, formPage, question, sele
 // Other states may allow renewals without all requirements being met.
 exports.checkLicenseRequirementsComplete = async (licenseData) => {
     try {
-        console.log("checkLicenseRequirementsComplete()");
         const licenseType = licenseData.licenseType;
         const licenseState = licenseData.licenseState;
         let officialRequirementUpdateDate = licenseData.officialRequirementUpdateDate;

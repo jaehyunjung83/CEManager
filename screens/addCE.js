@@ -152,25 +152,30 @@ export default function addCE(props) {
         // Links CE to a special requirement.
         // Set license state.
         let licensesCopy = JSON.parse(JSON.stringify(licenses));
-
-        if (hours) {
-            let temp = linkedLicenses.concat(licenseID);
-            setLinkedLicenses(temp);
-
-            if (typeof licensesCopy[licenseID].requirements[index]["linkedCEs"] == "object") {
-                licensesCopy[licenseID].requirements[index]["linkedCEs"][ceID] = Number(hours);
-            }
-            else {
-                licensesCopy[licenseID].requirements[index]["linkedCEs"] = {};
-                licensesCopy[licenseID].requirements[index]["linkedCEs"][ceID] = Number(hours);
-            }
+        if (index == null) {
+            setTotalRequirementHours(hours, licenseID);
         }
         else {
-            delete licensesCopy[licenseID].requirements[index]["linkedCEs"][ceID];
-            let temp = linkedLicenses.filter(id => id !== licenseID || id == props?.route?.params?.id);
-            setLinkedLicenses(temp);
+
+            if (hours) {
+                let temp = linkedLicenses.concat(licenseID);
+                setLinkedLicenses(temp);
+
+                if (typeof licensesCopy[licenseID].requirements[index]["linkedCEs"] == "object") {
+                    licensesCopy[licenseID].requirements[index]["linkedCEs"][ceID] = Number(hours);
+                }
+                else {
+                    licensesCopy[licenseID].requirements[index]["linkedCEs"] = {};
+                    licensesCopy[licenseID].requirements[index]["linkedCEs"][ceID] = Number(hours);
+                }
+            }
+            else {
+                delete licensesCopy[licenseID].requirements[index]["linkedCEs"][ceID];
+                let temp = linkedLicenses.filter(id => id !== licenseID || id == props?.route?.params?.id);
+                setLinkedLicenses(temp);
+            }
+            setLocalLicensesCopy(licensesCopy);
         }
-        setLocalLicensesCopy(licensesCopy);
     }
 
     let setTotalRequirementHours = (hours, licenseID) => {
@@ -224,17 +229,17 @@ export default function addCE(props) {
         setIsLoading(true);
         if (isFormComplete()) {
             let ceData = {
-                name: name,
+                name: name.trim(),
                 hours: Number(hours),
                 completionDate: completionDate,
-                providerNum: providerNum,
+                providerName: providerName.trim(),
+                providerNum: providerNum.trim(),
                 id: ceID,
                 ceThumbnail: ceThumbnail,
                 cePhoto: cePhoto,
             }
             let ceObj = {}
             ceObj[ceID] = ceData;
-            console.log(`CEData: ${JSON.stringify(ceData)}`);
 
             let uid = auth().currentUser.uid;
             let db = firestore();
@@ -285,7 +290,8 @@ export default function addCE(props) {
         >
             <ScrollView
                 ref={ref => this.scrollView = ref}
-                contentContainerStyle={styles.container}>
+                contentContainerStyle={styles.container}
+                keyboardShouldPersistTaps={'always'}>
 
                 <View style={styles.headerContainer}>
                     <Header text="CE Information" />
@@ -337,7 +343,7 @@ export default function addCE(props) {
                             placeholderTextColor={colors.grey400}
                             style={styles.input}
                             value={hours}
-                            onChangeText={hourText => { setTotalRequirementHours(hourText, props?.route?.params?.id); setHours(hourText) }}
+                            onChangeText={hourText => { setRequirementHours(hourText, props?.route?.params?.id); setHours(hourText) }}
                             keyboardType={'numeric'}
                             maxLength={4}
                         />
@@ -371,6 +377,7 @@ export default function addCE(props) {
                             props.navigation.navigate('Scanner', {
                                 fromThisScreen: route.name,
                                 initialFilterId: 2, // Black & White
+                                ceID: ceID,
                             });
                         }}
                         style={styles.thumbnailButton}
@@ -411,7 +418,7 @@ export default function addCE(props) {
 
             </ScrollView >
 
-            <ApplyTowardLicense open={applyingTowardsLicense} id={ceID} licenseID={props.route?.params?.id} new={true} hours={hours} setTotalRequirementHours={setTotalRequirementHours} setRequirementHours={setRequirementHours} />
+            <ApplyTowardLicense open={applyingTowardsLicense} id={ceID} licenseID={props.route?.params?.id} new={true} hours={hours} setRequirementHours={setRequirementHours} />
         </KeyboardAvoidingView >
     )
 }
@@ -472,7 +479,7 @@ const styles = StyleSheet.create({
         borderRadius: 10 * rem,
         backgroundColor: colors.grey200,
         paddingLeft: 18 * rem,
-            paddingRight: 18 * rem,
+        paddingRight: 18 * rem,
         color: colors.grey900,
     },
 
@@ -498,7 +505,7 @@ const styles = StyleSheet.create({
         borderRadius: 10 * rem,
         backgroundColor: colors.grey200,
         paddingLeft: 18 * rem,
-            paddingRight: 18 * rem,
+        paddingRight: 18 * rem,
         color: colors.grey900,
     },
 
@@ -626,26 +633,6 @@ const styles = StyleSheet.create({
         fontSize: 16 * rem,
         marginBottom: 24 * rem,
         textAlign: 'center',
-    },
-
-    modalTransparency: {
-        backgroundColor: 'rgba(0,0,0, 0.30)',
-        height: '100%',
-        width: '100%',
-    },
-    modalPopupContainer: {
-        position: 'absolute',
-        top: screenHeight / 8,
-        backgroundColor: 'white',
-        alignSelf: 'center',
-        padding: 18 * rem,
-        borderRadius: 10 * rem,
-        maxHeight: screenHeight * (6 / 8),
-    },
-    modalTitle: {
-        fontSize: 20 * rem,
-        color: colors.grey900,
-        marginBottom: 24 * rem,
     },
 });
 

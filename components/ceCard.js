@@ -155,8 +155,7 @@ export default function ceCard(props) {
             width: '100%',
         },
         imgContainer: {
-            marginTop: Dimensions.get('window').height / 2,
-            transform: [{ translateY: -screenWidth / 2, }],
+            marginTop: (Dimensions.get('window').height / 2) - (screenWidth / 2),
             width: screenWidth,
             aspectRatio: 1,
             backgroundColor: 'black',

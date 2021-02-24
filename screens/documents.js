@@ -43,7 +43,7 @@ export default function documents({ navigation }) {
             <View style={styles.container}>
               <FlatList
                 contentContainerStyle={{ paddingBottom: 48 * rem }}
-                data={Object.keys(ceData).sort((a, b) => { return new Date(ceData[b].completionDate) - new Date(ceData[a].completionDate) })}
+                data={Object.keys(ceData).sort((a, b) => { return new Date(ceData[b]?.completionDate) - new Date(ceData[a]?.completionDate) })}
                 keyExtractor={(item) => item}
                 renderItem={({ item }) => (
                   <CEcard data={ceData[item]} />

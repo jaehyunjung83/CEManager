@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, TextInput, Dimensions, Image, TouchableOpacity 
 import blueGradient from '../images/blueGradient.jpg';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { colors } from '../components/colors.js';
+
+import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 
 // Used to make element sizes more consistent across screen sizes.
@@ -31,13 +33,13 @@ export default function signUp({ navigation }) {
   const signUpHandler = () => {
     setButtonText("...");
     auth()
-      .createUserWithEmailAndPassword(email, password)
+      .createUserWithEmailAndPassword(email.trim(), password)
       .then(() => {
         console.log('User account created & signed in!');
         let db = firestore();
         let uid = auth().currentUser.uid;
 
-        db.collection("users").doc(uid).set({ plan: "Free" }).then(() => {
+        db.collection("users").doc(uid).set({ plan: "Free", email: email }).then(() => {
           navigation.navigate('Home');
         })
       })

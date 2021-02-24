@@ -82,9 +82,14 @@ export default function addLicense(props) {
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [requirements, setRequirements] = useState([]);
     const [textPositionY, setTextPositionY] = useState(0);
-    const [licenseThumbnail, setLicenseThumbnail] = useState("");
-    const [licensePhoto, setLicensePhoto] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+
+    const [certificationType, setCertificationType] = useState("");
+    const [certificationExpiration, setCertificationExpiration] = useState("")
+    const [certificationHoursRequired,setCertificationHoursRequired] = useState("")
+
+    const [thumbnail, setThumbnail] = useState("");
+    const [photo, setPhoto] = useState("");
 
     React.useEffect(() => {
         let db = firestore();
@@ -98,7 +103,7 @@ export default function addLicense(props) {
     }, [licenseTypes])
 
     React.useEffect(() => {
-        if(!passedLicenseData) return;
+        if (!passedLicenseData) return;
         setIsLicenseSelected(true);
         setLicenseType(passedLicenseData.licenseType);
         setOtherLicenseType(passedLicenseData.otherLicenseType);
@@ -113,8 +118,8 @@ export default function addLicense(props) {
         if (passedLicenseData.requirements.length > 1 || passedLicenseData.requirements[0]?.name !== "Total CEs Needed") {
             setRequirements(passedLicenseData.requirements);
         }
-        setLicenseThumbnail(passedLicenseData.licenseThumbnail);
-        setLicensePhoto(passedLicenseData.licensePhoto);
+        setThumbnail(passedLicenseData.thumbnail);
+        setPhoto(passedLicenseData.photo);
     }, [JSON.stringify(licenses)]);
 
     // Used for getting position of text label of state input. This is a workaround to get the effect of KeyboardAvoidingView.
@@ -196,8 +201,8 @@ export default function addLicense(props) {
                 licenseState: licenseState,
                 licenseNum: licenseNum,
                 licenseExpiration: licenseExpiration,
-                licensePhoto: licensePhoto,
-                licenseThumbnail: licenseThumbnail,
+                photo: photo,
+                thumbnail: thumbnail,
                 requirements: requirementsCopy,
                 id: licenseId,
             }
@@ -278,46 +283,82 @@ export default function addLicense(props) {
 
     React.useEffect(() => {
         if (typeof props.route?.params?.thumbnailURL !== 'undefined') {
-            if (licenseThumbnail) {
+            if (thumbnail) {
                 // User is replacing old thumbnail. Delete old one.
                 // Firebase couldn't parse the URL for some reason.
-                // const oldThumbnailRef = storage().refFromURL(licenseThumbnail);
-                const oldThumbnailPath = licenseThumbnail.replace('https://storage.googleapis.com/cetracker-2de23.appspot.com/', '');
+                // const oldThumbnailRef = storage().refFromURL(thumbnail);
+                const oldThumbnailPath = thumbnail.replace('https://storage.googleapis.com/cetracker-2de23.appspot.com/', '');
                 const oldThumbnailRef = storage().ref().child(`${oldThumbnailPath}`);
 
                 oldThumbnailRef.delete()
                     .then(() => {
                         console.log("Deleted thumbnail successfully.");
-                        setLicenseThumbnail(props.route?.params?.thumbnailURL);
+                        setThumbnail(props.route?.params?.thumbnailURL);
                     })
                     .catch(error => {
                         console.log("Failed to delete old thumbnail. Error: " + error.toString());
                     })
             }
             else {
-                setLicenseThumbnail(props.route?.params?.thumbnailURL);
+                setThumbnail(props.route?.params?.thumbnailURL);
             }
         }
         if (typeof props.route.params?.photoURL !== 'undefined') {
-            if (licensePhoto) {
+            if (photo) {
                 // User is replacing old photo. Delete old one.
-                const firstPhotoRef = storage().refFromURL(licensePhoto).toString();
+                const firstPhotoRef = storage().refFromURL(photo).toString();
                 const oldPhotoPath = firstPhotoRef.replace('gs://cetracker-2de23', '');
                 const oldPhotoRef = storage().ref().child(`${oldPhotoPath}`);
                 oldPhotoRef.delete()
                     .then(() => {
                         console.log("Deleted photo successfully.");
-                        setLicensePhoto(props.route?.params?.photoURL);
+                        setPhoto(props.route?.params?.photoURL);
                     })
                     .catch(error => {
                         console.log("Failed to delete old photo. Error: " + error.toString());
                     })
             }
             else {
-                setLicensePhoto(props.route?.params?.photoURL);
+                setPhoto(props.route?.params?.photoURL);
             }
         }
     }, [props.route.params?.thumbnailURL]);
+
+    let addCertification = async () => {
+        setIsLoading(true);
+        if (isFormComplete()) {
+            let requirementsCopy = [...requirements];
+
+            const certificationID = uuidv4();
+            const certificationData = {
+                certificationType: certificationType,
+                certificationExpiration: certificationExpiration,
+                photo: photo,
+                thumbnail: thumbnail,
+                requirements: requirementsCopy,
+                id: certificationID,
+            }
+            const certificationObj = {
+                [certificationID]: certificationData,
+            }
+
+            let uid = auth().currentUser.uid;
+            let db = firestore();
+            db.collection('users').doc(uid).collection('certifications').doc('certificationData').set(certificationObj, { merge: true })
+                .then(() => {
+                    console.log("Document successfully written!");
+                    db.collection('users').doc(uid).collection('certifications').doc('certificationData').get()
+                        .then(response => {
+                            // dispatch(updateCertifications(response.data()));
+                        })
+                    props.navigation.navigate("Homepage");
+                })
+                .catch((error) => {
+                    console.error("Error adding document: ", error);
+                    props.navigation.navigate("Homepage");
+                });
+        }
+    }
 
     return (
         <KeyboardAvoidingView
@@ -327,7 +368,8 @@ export default function addLicense(props) {
         >
             <ScrollView
                 ref={ref => this.scrollView = ref}
-                contentContainerStyle={styles.container}>
+                contentContainerStyle={styles.container}
+                keyboardShouldPersistTaps={'always'}>
                 <View style={styles.addChoiceContainer}>
                     <Text style={styles.choiceText}>Which would you like to add?</Text>
                     <View style={styles.choiceButtonsContainer}>
@@ -379,24 +421,30 @@ export default function addLicense(props) {
                                 animationType='fade'
                                 transparent={true}
                             >
-                                <TouchableWithoutFeedback onPress={() => setIsModalVisible(false)}>
-                                    <View style={styles.modalTransparency} />
-                                </TouchableWithoutFeedback>
-                                <View style={styles.modalPopupContainer}>
-                                    <Text style={styles.modalTitle}>Select License Type</Text>
-                                    <FlatList
-                                        data={licenseTypes}
-                                        keyExtractor={item => item}
-                                        renderItem={({ item }) => (
-                                            <TouchableHighlight
-                                                style={styles.listItemContainer}
-                                                onPress={() => { setLicenseType(item); setIsModalVisible(false) }}
-                                                underlayColor={colors.underlayColor}
-                                            >
-                                                <Text style={styles.itemText}>{item}</Text>
-                                            </TouchableHighlight>
-                                        )}
-                                    />
+                                <View style={{
+                                    flex: 1,
+                                    justifyContent: 'center',
+                                    margin: 0,
+                                }}>
+                                    <TouchableWithoutFeedback onPress={() => setIsModalVisible(false)}>
+                                        <View style={styles.modalTransparency} />
+                                    </TouchableWithoutFeedback>
+                                    <View style={styles.modalPopupContainer}>
+                                        <Text style={styles.modalTitle}>Select License Type</Text>
+                                        <FlatList
+                                            data={licenseTypes}
+                                            keyExtractor={item => item}
+                                            renderItem={({ item }) => (
+                                                <TouchableHighlight
+                                                    style={styles.listItemContainer}
+                                                    onPress={() => { setLicenseType(item); setIsModalVisible(false) }}
+                                                    underlayColor={colors.underlayColor}
+                                                >
+                                                    <Text style={styles.itemText}>{item}</Text>
+                                                </TouchableHighlight>
+                                            )}
+                                        />
+                                    </View>
                                 </View>
                             </Modal>
 
@@ -462,10 +510,10 @@ export default function addLicense(props) {
                                     }}
                                     style={styles.thumbnailButton}
                                 >
-                                    {licenseThumbnail ? (<FastImage
+                                    {thumbnail ? (<FastImage
                                         style={{ width: 75 * rem, aspectRatio: 1, borderRadius: 10 * rem, backgroundColor: 'black' }}
                                         source={{
-                                            uri: licenseThumbnail,
+                                            uri: thumbnail,
                                             priority: FastImage.priority.normal,
                                         }}
                                         resizeMode={FastImage.resizeMode.contain}
@@ -570,7 +618,156 @@ export default function addLicense(props) {
                 {
                     isCertSelected ? (
                         <FadeInView style={styles.formContainer}>
-                            <LicenseCard />
+                            <View style={styles.headerContainer}>
+                                <Header text="Certification Information" />
+                            </View>
+
+                            <View style={styles.flexRowContainer}>
+                                <View style={styles.otherLicenseType}>
+                                    <Text style={styles.inputLabel}>Certification Type{otherTypeErrorMsg ? (<Text style={styles.errorMessage}> {otherTypeErrorMsg}</Text>) : (null)}</Text>
+                                    <TextInput
+                                        placeholder={'Name of certification'}
+                                        placeholderTextColor={colors.grey400}
+                                        style={styles.licenseNumInput}
+                                        onChangeText={setCertificationType}
+                                        maxLength={200}
+                                    />
+                                </View>
+                            </View>
+
+                            <View style={styles.flexRowContainer}>
+                                <View style={styles.expirationContainer}>
+                                    <Text style={styles.inputLabel}>Expiration {expirationErrorMsg ? (<Text style={styles.errorMessage}> {expirationErrorMsg}</Text>) : (null)}</Text>
+                                    <TextInputMask
+                                        style={styles.expirationInput}
+                                        keyboardType={'numeric'}
+                                        placeholder={'MM/DD/YYYY'}
+                                        placeholderTextColor={colors.grey400}
+                                        type={'datetime'}
+                                        value={certificationExpiration}
+                                        options={{
+                                            format: 'MM/DD/YYYY'
+                                        }}
+                                        onChangeText={text => {
+                                            setCertificationExpiration(text);
+                                        }}
+                                    />
+                                </View>
+                            </View>
+
+                            <View style={styles.thumbnailContainer}>
+                                <Text style={styles.inputLabel}>Certification Photo (optional)</Text>
+                                <TouchableOpacity
+                                    onPress={() => {
+                                        props.navigation.navigate('Scanner', {
+                                            fromThisScreen: route.name,
+                                            initialFilterId: 1, // Color photo
+                                        });
+                                    }}
+                                    style={styles.thumbnailButton}
+                                >
+                                    {thumbnail ? (<FastImage
+                                        style={{ width: 75 * rem, aspectRatio: 1, borderRadius: 10 * rem, backgroundColor: 'black' }}
+                                        source={{
+                                            uri: thumbnail,
+                                            priority: FastImage.priority.normal,
+                                        }}
+                                        resizeMode={FastImage.resizeMode.contain}
+                                    />
+                                    ) : (
+                                            <AntDesign name="camerao" size={32 * rem} style={styles.thumbnailIcon} />
+                                        )}
+                                </TouchableOpacity>
+                            </View>
+
+                            <View style={styles.headerContainer}>
+                                <Header text="Requirements (optional)" />
+                            </View>
+                            <View style={styles.ceRequirementsContainer}>
+                                <View style={styles.flexRowContainer}>
+                                    <View style={styles.ceHoursRequired}>
+                                        <Text style={styles.inputLabel}>Total Hours</Text>
+                                        <TextInput
+                                            placeholder={'e.g. 30'}
+                                            placeholderTextColor={colors.grey400}
+                                            style={styles.licenseNumInput}
+                                            value={ceHoursRequired}
+                                            onChangeText={setCertificationHoursRequired}
+                                            keyboardType={'numeric'}
+                                            maxLength={5}
+                                        />
+                                    </View>
+                                    <TouchableOpacity style={styles.addRequirementButton}
+                                        onPress={() => addNewRequirement()}>
+                                        <AntDesign
+                                            name='book'
+                                            size={20 * rem}
+                                            color={colors.blue800}
+                                        />
+                                        <Text style={styles.addRequirementText}> Add Requirement</Text>
+                                    </TouchableOpacity>
+                                </View>
+
+                                <Text style={styles.inputLabel}>Additional Requirements</Text>
+
+                                {requirements.length ? (
+                                    <View style={styles.requirementsContainer}>
+                                        <Text style={styles.hoursOptionalText}>Inputting hours is optional.</Text>
+                                        <FlatList
+                                            keyExtractor={item => item.key}
+                                            data={requirements}
+                                            extraData={requirements}
+                                            renderItem={({ item, index }) => (
+                                                <View style={styles.requirementContainer}>
+                                                    <TouchableOpacity
+                                                        style={styles.deleteButton}
+                                                        onPress={() => {
+                                                            let temp = [...requirements];
+                                                            temp.splice(index, 1);
+                                                            setRequirements(temp)
+                                                        }}
+                                                    >
+                                                        <AntDesign
+                                                            name='closecircle'
+                                                            size={36 * rem}
+                                                            color={colors.blue800}
+                                                        />
+                                                    </TouchableOpacity>
+                                                    <TextInput
+                                                        placeholder={'Hrs'}
+                                                        placeholderTextColor={colors.grey400}
+                                                        style={styles.requirementHoursInput}
+                                                        value={item.hours}
+                                                        onChangeText={text => { handleHours(text, index) }}
+                                                        keyboardType={'numeric'}
+                                                        maxLength={5}
+                                                    />
+                                                    <TextInput
+                                                        placeholder={'e.g. Bioterrorism'}
+                                                        placeholderTextColor={colors.grey400}
+                                                        style={styles.requirementInput}
+                                                        value={item.name}
+                                                        onChangeText={text => { handleName(text, index) }}
+                                                        maxLength={70}
+                                                    />
+                                                </View>
+                                            )}
+                                        />
+                                    </View>
+                                ) : (
+                                    <Text style={styles.noRequirementsText}>Some certifications have special requirements. Click Add Requirement to add some!</Text>
+                                    )}
+                            </View>
+
+                            <TouchableOpacity
+                            onPress={() => {
+                                addCertification();
+                            }}
+                            disabled={isLoading}
+                            style={styles.addNewLicenseButton}
+                        >
+                            <Text style={styles.choiceTextSelected}>{isLoading ? ('...') : ('Add New Certification')}</Text>
+                        </TouchableOpacity>
                         </FadeInView>
                     ) : (null)
                 }
@@ -725,14 +922,10 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0,0,0, 0.30)',
         height: '100%',
         width: '100%',
+        position: 'absolute',
     },
     modalPopupContainer: {
-        position: 'absolute',
-        display: 'flex',
-        margin: 'auto',
-        alignSelf: 'center',
-        // marginTop: Dimensions.get('window').height / 2,
-        top: 0,
+        flexShrink: 1,
         backgroundColor: 'white',
         padding: 18 * rem,
         borderRadius: 10 * rem,
@@ -775,7 +968,7 @@ const styles = StyleSheet.create({
         borderRadius: 10 * rem,
         backgroundColor: colors.grey200,
         paddingLeft: 18 * rem,
-            paddingRight: 18 * rem,
+        paddingRight: 18 * rem,
         color: colors.grey900,
     },
     flexRowContainer: {
@@ -796,7 +989,7 @@ const styles = StyleSheet.create({
         borderRadius: 10 * rem,
         backgroundColor: colors.grey200,
         paddingLeft: 18 * rem,
-            paddingRight: 18 * rem,
+        paddingRight: 18 * rem,
         color: colors.grey900,
     },
     thumbnailContainer: {
@@ -879,7 +1072,7 @@ const styles = StyleSheet.create({
         borderRadius: 10 * rem,
         backgroundColor: colors.grey200,
         paddingLeft: 18 * rem,
-            paddingRight: 18 * rem,
+        paddingRight: 18 * rem,
         color: colors.grey900,
     },
     requirementInput: {
