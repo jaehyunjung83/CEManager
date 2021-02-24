@@ -146,6 +146,7 @@ android {
     signingConfigs {
         release {
         storeFile file('android_key.keystore')
+        // storePassword System.console().readLine("\nKeystore password:")
         storePassword 'Nuggies94!'
         }
         debug {
