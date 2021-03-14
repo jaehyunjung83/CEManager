@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { updateLicenses, updateCEs } from '../actions';
-import { Modal, FlatList, TouchableWithoutFeedback, TouchableOpacity, Text, TextInput, View, StyleSheet, Dimensions, ScrollView, KeyboardAvoidingView } from 'react-native';
+import { updateLicenses, updateCertifications, updateCEs } from '../actions';
+import { Modal, FlatList, TouchableWithoutFeedback, TouchableOpacity, Text, TextInput, View, StyleSheet, Dimensions, ScrollView, KeyboardAvoidingView, Image } from 'react-native';
 import { colors } from '../components/colors.js';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import Header from '../components/header.js';
@@ -11,11 +11,13 @@ import FastImage from 'react-native-fast-image'
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 import { v4 as uuidv4 } from 'uuid';
+import ApplyTowardLicense from '../components/applyTowardLicense';
 import { useRoute } from '@react-navigation/native';
 
 
 export default function editCE(props) {
     const licenses = useSelector(state => state.licenses);
+    const certifications = useSelector(state => state.certifications);
     const allCEData = useSelector(state => state.ces);
     const dispatch = useDispatch();
     const headerHeight = useHeaderHeight();
@@ -35,15 +37,16 @@ export default function editCE(props) {
 
     const [generalErrorMsg, setGeneralErrorMsg] = useState("");
 
-    const [isModalVisible, setIsModalVisible] = useState(false);
-
     const [isLoading, setIsLoading] = useState(false);
 
     const [cePhoto, setCEPhoto] = useState(props.route.params.ceData?.cePhoto ? props.route.params.ceData?.cePhoto : "");
     const [ceThumbnail, setCEThumbnail] = useState(""); // Handled in useEffect block below.
 
-    const [linkedLicenses, setLinkedLicenses] = useState([]);
-    const [localLicensesCopy, setLocalLicensesCopy] = useState({});
+    const [linkedData, setLinkedData] = useState([]);
+    const [localLicensesCopy, setLocalLicensesCopy] = useState(JSON.parse(JSON.stringify(licenses)));
+    const [localCertificationsCopy, setLocalCertificationsCopy] = useState(JSON.parse(JSON.stringify(certifications)));
+
+    const [applyingTowardsLicense, setApplyingTowardsLicense] = useState(false);
 
     const route = useRoute();
 
@@ -63,13 +66,14 @@ export default function editCE(props) {
 
         // For tracking license ID user came from
         if (props?.route?.params?.fromLicenseID) {
-            let isArr = Object.prototype.toString.call(linkedLicenses) == '[object Array]';
+            let isArr = Object.prototype.toString.call(linkedData) == '[object Array]';
             setLicenseID(props.route.params.fromLicenseID);
-            let temp = linkedLicenses.concat(props.route.params.fromLicenseID);
-            setLinkedLicenses(temp);
+            let temp = linkedData.concat(props.route.params.fromLicenseID);
+            setLinkedData(temp);
         }
     }, [JSON.stringify(allCEData)]);
-    // Checks for license type, other license type (if Other is selected), state, and expiration of license.
+
+
     let isFormComplete = () => {
         let isComplete = true;
 
@@ -119,78 +123,38 @@ export default function editCE(props) {
         return isComplete;
     }
 
-    let setSpecialRequirementHours = (hours, licenseID, index) => {
+    let setRequirementHours = (hours, index, id = { licenseID: "", certificationID: "" }) => {
+        // Links CE to special requirement.
+        // Set license state2
+        const dataID = id.licenseID ? id.licenseID : id.certificationID;
+        let dataCopy = id.licenseID ? JSON.parse(JSON.stringify(localLicensesCopy)) : JSON.parse(JSON.stringify(localCertificationsCopy));
 
-        // Set license state.
-        let licensesCopy = JSON.parse(JSON.stringify(licenses));
-
+        if (index == null) {
+            setHours(hours);
+            return
+        }
         if (hours) {
-            if (typeof licensesCopy[licenseID].requirements[index]["linkedCEs"] == "object") {
-                licensesCopy[licenseID].requirements[index]["linkedCEs"][ceID] = Number(hours);
+            let temp = linkedData.concat(dataID);
+            setLinkedData(temp);
+
+            if (typeof dataCopy[dataID].requirements[index]["linkedCEs"] == "object") {
+                dataCopy[dataID].requirements[index]["linkedCEs"][ceID] = Number(hours);
             }
             else {
-                licensesCopy[licenseID].requirements[index]["linkedCEs"] = {};
-                licensesCopy[licenseID].requirements[index]["linkedCEs"][ceID] = Number(hours);
+                dataCopy[dataID].requirements[index]["linkedCEs"] = {};
+                dataCopy[dataID].requirements[index]["linkedCEs"][ceID] = Number(hours);
             }
         }
         else {
-            delete licensesCopy[licenseID].requirements[index]["linkedCEs"][ceID];
+            delete dataCopy[dataID].requirements[index]["linkedCEs"][ceID];
+            let temp = linkedData.filter(id => id !== dataID || id == props?.route?.params?.id);
+            setLinkedData(temp);
         }
-        setLocalLicensesCopy(licensesCopy);
-
-        // Updating linkedLicenses (to display green checkmark and bolded text for license)
-        for (requirementIndex in licensesCopy[licenseID].requirements) {
-            for (linkedCE in licensesCopy[licenseID].requirements[requirementIndex]["linkedCEs"]) {
-                if (linkedCE == ceID) {
-                    let temp = linkedLicenses.concat(licenseID);
-                    setLinkedLicenses(temp);
-                    return
-                }
-            }
-        }
-        if (licensesCopy[licenseID]["linkedCEs"]) {
-            for (linkedCE in licensesCopy[licenseID]["linkedCEs"]) {
-                if (linkedCE == ceID) {
-                    let temp = linkedLicenses.concat(licenseID);
-                    setLinkedLicenses(temp);
-                    return;
-                }
-            }
-        }
-
-        // No linked CEs match current CE => remove current license from linkedLicenses
-        let temp = linkedLicenses.filter(id => id !== licenseID || id == props?.route?.params?.id);
-        setLinkedLicenses(temp);
-    }
-
-    let setTotalRequirementHours = (hours, licenseID) => {
-        // Set license state.
-        if (!licenseID) {
-            return;
-        }
-        let localLicensesCopy = JSON.parse(JSON.stringify(licenses));
-        for (const index in localLicensesCopy[licenseId].requirements) {
-            if (localLicensesCopy[licenseId].requirements[index].name !== "Total CEs Needed") continue;
-
-            if (!hours && localLicensesCopy[licenseId].requirements[index].linkedCEs?.[ceID]) {
-                delete localLicensesCopy[licenseId].requirements[index].linkedCEs[ceID];
-            }
-            else {
-                if (localLicensesCopy[licenseId].requirements[index].linkedCEs) {
-                    localLicensesCopy[licenseId].requirements[index].linkedCEs[ceID] = hours;
-                }
-                else {
-                    localLicensesCopy[licenseId].requirements[index].linkedCEs = {};
-                    localLicensesCopy[licenseId].requirements[index].linkedCEs[ceID] = hours;
-                }
-            }
-            setLocalLicensesCopy(localLicensesCopy);
-        }
+        id.licenseID ? setLocalLicensesCopy(dataCopy) : setLocalCertificationsCopy(dataCopy);
     }
 
     let editCE = () => {
         setIsLoading(true);
-        setTotalRequirementHours(hours, licenseID);
 
         if (isFormComplete()) {
             let ceData = {
@@ -248,6 +212,16 @@ export default function editCE(props) {
         }
     }
 
+    let applyTowardsLicense = () => {
+        setApplyingTowardsLicense(!applyingTowardsLicense);
+    }
+
+    useEffect(() => {
+        if (applyingTowardsLicense) {
+            setApplyingTowardsLicense(false);
+        }
+    }, [applyingTowardsLicense])
+
     return (
         <KeyboardAvoidingView
             keyboardVerticalOffset={headerHeight}
@@ -258,14 +232,14 @@ export default function editCE(props) {
                 ref={ref => this.scrollView = ref}
                 contentContainerStyle={styles.container} keyboardShouldPersistTaps={'always'}>
 
-                <View style={styles.headerContainer}>
+                {/* <View style={styles.headerContainer}>
                     <Header text="CE Information" />
-                </View>
+                </View> */}
                 <View style={styles.ceFlexRowContainer}>
                     <View style={styles.nameContainer}>
                         <Text style={styles.inputLabel}>Name of CE {nameErrorMsg ? (<Text style={styles.errorMessage}> {nameErrorMsg}</Text>) : (null)}</Text>
                         <TextInput
-                            placeholder={'e.g. Bioterrorism'}
+                            placeholder={'e.g. Bioethics'}
                             placeholderTextColor={colors.grey400}
                             style={styles.input}
                             value={name}
@@ -308,7 +282,7 @@ export default function editCE(props) {
                             placeholderTextColor={colors.grey400}
                             style={styles.input}
                             value={hours}
-                            onChangeText={hourText => { setTotalRequirementHours(hourText, props?.route?.params?.id); setHours(hourText) }}
+                            onChangeText={hourText => { setRequirementHours(hourText, null, { licenseID: props?.route?.params?.licenseID, certificationID: props?.route?.params?.certificationID }); setHours(hourText) }}
                             keyboardType={'numeric'}
                             maxLength={4}
                         />
@@ -356,21 +330,34 @@ export default function editCE(props) {
                             resizeMode={FastImage.resizeMode.contain}
                         />
                         ) : (
-                                <AntDesign name="camerao" size={32 * rem} style={styles.thumbnailIcon} />
-                            )}
+                            <AntDesign name="camerao" size={32 * rem} style={styles.thumbnailIcon} />
+                        )}
                     </TouchableOpacity>
                 </View>
 
-                <View style={styles.headerWrapContainer}>
-                    <Header text="Link to Additional Licenses/Certifications" />
-                </View>
+                {/* <View style={styles.headerWrapContainer}>
+                    <Header text="Apply to Additional Licenses/Certifications" />
+                </View> */}
 
-                <TouchableOpacity
-                    onPress={() => { setIsModalVisible(true) }}
+                {/* <TouchableOpacity
+                    onPress={applyTowardsLicense}
                     style={styles.linkCEButton}
                 >
-                    <Text style={styles.linkCEButtonText}>{('Link CE')}</Text>
-                </TouchableOpacity>
+                    <Text style={styles.linkCEButtonText}>{('Apply CE')}</Text>
+                </TouchableOpacity> */}
+
+                <View style={styles.additionalQuestionContainer}>
+                    <Text style={styles.inputLabel}>Would you like to apply this CE to other credentials?</Text>
+
+                    <View style={styles.dateContainer}>
+                        <TouchableOpacity
+                            onPress={applyTowardsLicense}
+                            style={styles.linkCEButton}
+                        >
+                            <Text style={styles.linkCEButtonText}>{('Apply to Other Credentials')}</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
 
                 <Text style={styles.errorMessage}> {generalErrorMsg}</Text>
                 <TouchableOpacity
@@ -383,87 +370,7 @@ export default function editCE(props) {
 
             </ScrollView >
 
-            <Modal
-                visible={isModalVisible}
-                animationType='fade'
-                transparent={true}
-            >
-                <View style={{
-                    flex: 1,
-                    justifyContent: 'center',
-                    margin: 0,
-                }}>
-                    <TouchableWithoutFeedback onPress={() => setIsModalVisible(false)}>
-                        <View style={styles.modalTransparency} />
-                    </TouchableWithoutFeedback>
-                    <ScrollView style={styles.modalPopupContainer} keyboardShouldPersistTaps={'always'}>
-                        <Text style={styles.modalTitle}>Licenses</Text>
-                        {Object.keys(licenses).length ? (<FlatList
-                            data={Object.keys(licenses)}
-                            keyExtractor={item => item}
-                            renderItem={({ item }) => (
-                                <>
-                                    {/* Licenses */}
-                                    <View style={styles.flexRowContainer}>
-                                        {linkedLicenses.indexOf(item) !== -1 ?
-                                            (
-                                                <>
-                                                    <AntDesign name="checkcircleo" size={32 * rem} style={styles.linkedLicenseIcon} />
-                                                    <Text style={styles.linkedLicenseText}>{licenses[item].licenseState} {licenses[item].licenseType || licenses[item].otherLicenseType}</Text>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <AntDesign name="checkcircleo" size={32 * rem} style={styles.notLinkedLicenseIcon} />
-                                                    <Text style={styles.notLinkedLicenseText}>{licenses[item].licenseState} {licenses[item].licenseType || licenses[item].otherLicenseType}</Text>
-                                                </>
-                                            )}
-                                    </View>
-                                    {/* Special requirements */}
-                                    {licenses[item].requirements.length ?
-                                        (
-                                            <FlatList
-                                                data={licenses[item].requirements}
-                                                renderItem={({ index }) => (
-                                                    <View style={styles.requirementFlexRowContainer}>
-                                                        <View style={styles.linkHoursContainer}>
-                                                            <TextInput
-                                                                placeholder={"Hrs"}
-                                                                placeholderTextColor={colors.grey400}
-                                                                style={styles.input}
-                                                                onChangeText={(hours) => setSpecialRequirementHours(hours, item, index)}
-                                                                keyboardType={'numeric'}
-                                                                maxLength={4}
-                                                            />
-                                                        </View>
-                                                        <Text style={styles.linkedReqText}>{licenses[item].requirements[index].name}</Text>
-                                                    </View>
-                                                )}
-                                            />
-                                        ) : (null)}
-                                </>
-                            )}
-                        >
-                        </FlatList>) : (<Text style={styles.emptyText}>No licenses to link to!</Text>)}
-
-                        <Text style={styles.modalTitle}>Certifications</Text>
-
-
-                        {/* TODO: Implement certifications */}
-                        {Object.keys({}).length ? (null) : (<Text style={styles.emptyText}>No certifications to link to!</Text>)}
-
-
-                        <TouchableOpacity
-                            onPress={() => {
-                                setIsModalVisible(false);
-                            }}
-                            style={styles.linkCEButton}
-                        >
-                            <Text style={styles.linkCEButtonText}>{('Done')}</Text>
-                        </TouchableOpacity>
-                        <Text>{"\n"}</Text>
-                    </ScrollView>
-                </View>
-            </Modal>
+            <ApplyTowardLicense open={applyingTowardsLicense} id={ceID} licenseID={props.route?.params?.licenseID} certificationID={props.route?.params?.certificationID} setRequirementHours={setRequirementHours} hours={hours} />
         </KeyboardAvoidingView >
     )
 }
@@ -561,8 +468,7 @@ const styles = StyleSheet.create({
         borderWidth: 2 * rem,
         borderRadius: 10 * rem,
         borderColor: colors.blue800,
-        justifyContent: 'center',
-        alignSelf: 'center',
+        alignSelf: 'flex-start',
         padding: 12 * rem,
         paddingLeft: 24 * rem,
         paddingRight: 24 * rem,
@@ -688,7 +594,7 @@ const styles = StyleSheet.create({
     },
 
     modalTransparency: {
-        backgroundColor: 'rgba(0,0,0, 0.30)',
+        backgroundColor: 'rgba(0,0,0, 0.50)',
         height: '100%',
         width: '100%',
         position: 'absolute',
@@ -705,6 +611,12 @@ const styles = StyleSheet.create({
         fontSize: 20 * rem,
         color: colors.grey900,
         marginBottom: 24 * rem,
+    },
+
+    additionalQuestionContainer: {
+        flexDirection: 'column',
+        minHeight: (50 + 24) * rem,
+        marginBottom: 18 * rem,
     },
 });
 

@@ -7,7 +7,6 @@ import ScannerFilters from '../Filters.js';
 import { colors } from '../components/colors.js';
 
 // Filter IDs: 1. Color, 2. Black & White, 3. Greyscale, 4. No filter
-// TODO: Handle where request is from. It will change how the image is saved.
 // Current known locations include: homepage, addNew, documents, and whereever certs are.
 export default function (props) {
   additionalProps = {
@@ -19,15 +18,19 @@ export default function (props) {
   if (props.route?.params?.licenseId !== undefined) {
     additionalProps.licenseId = props.route.params.licenseId;
   }
+  if (props.route?.params?.certificationID !== undefined) {
+    additionalProps.certificationID = props.route.params.certificationID;
+  }
   if (props.route?.params?.ceID !== undefined) {
     additionalProps.ceID = props.route.params.ceID;
   }
 
-  return <DocumentScanner
-    navigation={props.navigation}
-    fromThisScreen={props.route.params.fromThisScreen}
-    additionalProps={additionalProps}
-  />;
+  return (
+    <DocumentScanner
+      navigation={props.navigation}
+      fromThisScreen={props.route.params.fromThisScreen}
+      additionalProps={additionalProps}
+    />);
   // else {
   //   return <DocumentScanner
   //     navigation={props.navigation}
@@ -478,10 +481,18 @@ class DocumentScanner extends PureComponent {
       );
     }
 
+    // Used to make element sizes more consistent across screen sizes.
+    const screenWidth = Math.round(Dimensions.get('window').width);
+    const rem = (screenWidth / 380);
     return (
       <>
         {loadingState}
         <SafeAreaView style={[styles.overlay]}>
+          <Text style={{
+            color: 'white', position: 'absolute', top: 12 * rem, width: '100%', fontSize: 14 * rem, textAlign: 'center', textShadowColor: '#000000',
+            textShadowOffset: { width: 5, height: 5 },
+            textShadowRadius: 10,
+          }}>A dark background is recommended!</Text>
           {this.renderCameraControls()}
         </SafeAreaView>
       </>

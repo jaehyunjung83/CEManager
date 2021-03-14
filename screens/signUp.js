@@ -6,6 +6,7 @@ import { colors } from '../components/colors.js';
 
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
+import { errorCodes } from 'tipsi-stripe';
 
 // Used to make element sizes more consistent across screen sizes.
 const screenWidth = Math.round(Dimensions.get('window').width);
@@ -32,6 +33,11 @@ export default function signUp({ navigation }) {
 
   const signUpHandler = () => {
     setButtonText("...");
+    if (!email || !password) {
+      setError("Email or password is empty");
+      setButtonText("Create Account");
+      return;
+    }
     auth()
       .createUserWithEmailAndPassword(email.trim(), password)
       .then(() => {
@@ -43,20 +49,20 @@ export default function signUp({ navigation }) {
           navigation.navigate('Home');
         })
       })
-      .catch(error => {
-        if (error.code === 'auth/email-already-in-use') {
+      .catch(err => {
+        if (err.code === 'auth/email-already-in-use') {
           console.log('That email address is already in use!');
           setError('That email address is already in use!');
-          setButtonText("Create Account");
         }
-        if (error.code === 'auth/invalid-email') {
+        else if (err.code === 'auth/invalid-email') {
           console.log('That email address is invalid!');
           setError('That email address is invalid!');
-          setButtonText("Create Account");
         }
-
-        console.error(error);
+        else {
+          setError(err.message);
+        }
       });
+    setButtonText("Create Account");
   }
 
   const logInHandler = () => {
@@ -74,6 +80,7 @@ export default function signUp({ navigation }) {
           placeholder={'Email'}
           placeholderTextColor={'rgba(255, 255, 255, 0.7)'}
           underlineColorAndroid='transparent'
+          autoCapitalize='none'
           onChangeText={text => setEmail(text)}
           value={email}
         />
@@ -87,6 +94,7 @@ export default function signUp({ navigation }) {
           secureTextEntry={showPass}
           placeholderTextColor={'rgba(255, 255, 255, 0.7)'}
           underlineColorAndroid='transparent'
+          autoCapitalize='none'
           onChangeText={text => setPassword(text)}
           value={password}
         />
@@ -130,9 +138,9 @@ const styles = StyleSheet.create({
   },
   bgDesignTop: {
     backgroundColor: "rgba(255, 255, 255, 0.3)",
-    width: screenWidth + (screenWidth * 1.7),
+    width: screenWidth + (screenWidth * 1.5),
     aspectRatio: 1,
-    borderRadius: screenWidth + (screenWidth * 1.7),
+    borderRadius: screenWidth + (screenWidth * 1.5),
     position: 'absolute',
     left: -(screenWidth * 1.5),
     top: -(screenWidth * 2.3),
@@ -141,7 +149,7 @@ const styles = StyleSheet.create({
   bgDesignBottom: {
     backgroundColor: "rgba(255, 255, 255, 0.3)",
     width: (screenWidth * 0.5),
-    aspectRatio: 1,
+    aspectRatio: 0.9,
     borderRadius: (screenWidth * 0.5),
     position: 'absolute',
     right: -(screenWidth * 0.25),

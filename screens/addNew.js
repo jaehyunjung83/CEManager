@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { updateLicenses } from '../actions';
-import { Animated, View, Text, StyleSheet, Dimensions, TouchableHighlight, Easing, ScrollView, Modal, FlatList, TouchableWithoutFeedback, TouchableOpacity, TextInput, KeyboardAvoidingView } from 'react-native';
+import { updateLicenses, updateCertifications } from '../actions';
+import { Animated, View, Text, StyleSheet, Dimensions, TouchableHighlight, Easing, ScrollView, Modal, FlatList, TouchableWithoutFeedback, TouchableOpacity, TextInput, KeyboardAvoidingView, Image } from 'react-native';
 import { TextInputMask } from 'react-native-masked-text';
 import LicenseCard from '../components/licenseCard.js';
 import Header from '../components/header.js';
@@ -59,11 +59,13 @@ const FadeInView = (props) => {
 // TODO: Delete pic and thumbnail if adding license is cancelled.
 export default function addLicense(props) {
     let passedLicenseData = props?.route?.params?.licenseData;
+    let passedCertificationData = props?.route?.params?.certificationData;
 
     const headerHeight = useHeaderHeight();
     const states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'];
     const route = useRoute();
     const licenses = useSelector(state => state.licenses);
+    const certifications = useSelector(state => state.certifications);
     const dispatch = useDispatch();
 
     const [licenseTypes, setLicenseTypes] = useState([]);
@@ -76,17 +78,18 @@ export default function addLicense(props) {
     const [licenseState, setLicenseState] = useState("");
     const [stateErrorMsg, setStateErrorMsg] = useState("");
     const [licenseNum, setLicenseNum] = useState("");
-    const [licenseExpiration, setLicenseExpiration] = useState("");
-    const [expirationErrorMsg, setExpirationErrorMsg] = useState("");
+    const [expiration, setLicenseExpiration] = useState("");
+    const [expirationErrorMsg, setLicenseExpirationErrorMsg] = useState("");
     const [ceHoursRequired, setCEHoursRequired] = useState('');
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [requirements, setRequirements] = useState([]);
     const [textPositionY, setTextPositionY] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
 
-    const [certificationType, setCertificationType] = useState("");
-    const [certificationExpiration, setCertificationExpiration] = useState("")
-    const [certificationHoursRequired,setCertificationHoursRequired] = useState("")
+    const [certificationName, setCertificationName] = useState("");
+    const [certNameErrorMsg, setCertNameErrorMsg] = useState("");
+    const [certExpiration, setCertExpiration] = useState("")
+    const [certExpirationErrorMsg, setCertExpirationErrorMsg] = useState("");
 
     const [thumbnail, setThumbnail] = useState("");
     const [photo, setPhoto] = useState("");
@@ -103,24 +106,40 @@ export default function addLicense(props) {
     }, [licenseTypes])
 
     React.useEffect(() => {
-        if (!passedLicenseData) return;
-        setIsLicenseSelected(true);
-        setLicenseType(passedLicenseData.licenseType);
-        setOtherLicenseType(passedLicenseData.otherLicenseType);
-        setLicenseState(passedLicenseData.licenseState);
-        setLicenseNum(passedLicenseData.licenseNum);
-        setLicenseExpiration(passedLicenseData.licenseExpiration);
-        for (const index in passedLicenseData.requirements) {
-            if (passedLicenseData.requirements[index].name == "Total CEs Needed") {
-                setCEHoursRequired(passedLicenseData.requirements[index].hours);
+        if (passedLicenseData) {
+            setIsLicenseSelected(true);
+            setLicenseType(passedLicenseData.licenseType);
+            setOtherLicenseType(passedLicenseData.otherLicenseType);
+            setLicenseState(passedLicenseData.licenseState);
+            setLicenseNum(passedLicenseData.licenseNum);
+            setLicenseExpiration(passedLicenseData.licenseExpiration);
+            for (const index in passedLicenseData.requirements) {
+                if (passedLicenseData.requirements[index].name == "Total CEs Needed") {
+                    setCEHoursRequired(passedLicenseData.requirements[index].hours);
+                }
             }
+            if (passedLicenseData.requirements.length) {
+                setRequirements(passedLicenseData.requirements.filter(requirement => requirement.name !== "Total CEs Needed"));
+            }
+            setThumbnail(passedLicenseData.licenseThumbnail);
+            setPhoto(passedLicenseData.licensePhoto);
         }
-        if (passedLicenseData.requirements.length > 1 || passedLicenseData.requirements[0]?.name !== "Total CEs Needed") {
-            setRequirements(passedLicenseData.requirements);
+        else if (passedCertificationData) {
+            setIsCertSelected(true);
+            setCertificationName(passedCertificationData.name);
+            setCertExpiration(passedCertificationData.expiration);
+            for (const index in passedCertificationData.requirements) {
+                if (passedCertificationData.requirements[index].name == "Total CEs Needed") {
+                    setCEHoursRequired(passedCertificationData.requirements[index].hours);
+                }
+            }
+            if (passedCertificationData.requirements.length) {
+                setRequirements(passedCertificationData.requirements.filter(requirement => requirement.name !== "Total CEs Needed"));
+            }
+            setThumbnail(passedCertificationData.thumbnail);
+            setPhoto(passedCertificationData.photo);
         }
-        setThumbnail(passedLicenseData.thumbnail);
-        setPhoto(passedLicenseData.photo);
-    }, [JSON.stringify(licenses)]);
+    }, [JSON.stringify(licenses), JSON.stringify(certifications)]);
 
     // Used for getting position of text label of state input. This is a workaround to get the effect of KeyboardAvoidingView.
     let measure = () => {
@@ -129,14 +148,18 @@ export default function addLicense(props) {
         })
     }
 
-    let scrollToCallBack = () => {
-        if (licenseType === "Other") {
-            this.scrollView.scrollTo({ y: textPositionY - (245 * rem) });
-        }
-        else {
-            this.scrollView.scrollTo({ y: textPositionY - (330 * rem) });
-        }
-    }
+    // let scrollToCallBack = () => {
+    //     if (licenseType === "Other") {
+    //         // this.scrollView.scrollTo({ y: textPositionY });
+
+    //         this.scrollView.scrollTo({ y: textPositionY - (50 * rem) });
+    //     }
+    //     else {
+    //         // this.scrollView.scrollTo({ y: textPositionY  });
+
+    //         this.scrollView.scrollTo({ y: textPositionY - (150 * rem) });
+    //     }
+    // }
 
     let selectLicense = () => {
         if (!isLicenseSelected) {
@@ -157,7 +180,8 @@ export default function addLicense(props) {
         let newRequirement = {
             key: key,
             hours: '',
-            name: ''
+            name: '',
+            linkedCEs: {}
         }
         if (requirements.length) {
             let temp = [...requirements];
@@ -186,7 +210,15 @@ export default function addLicense(props) {
         setIsLoading(true);
         if (isFormComplete()) {
             let requirementsCopy = [...requirements];
-            if (ceHoursRequired) {
+            let totalHoursRequirementAdded = false;
+
+            for (const index in requirementsCopy) {
+                if (requirementsCopy[index].name == "Total CEs Needed") {
+                    totalHoursRequirementAdded = true;
+                }
+            }
+
+            if (!isNaN(Number(ceHoursRequired)) && Number(ceHoursRequired) > 0 && !totalHoursRequirementAdded) {
                 requirementsCopy.push({
                     key: uuidv4(),
                     hours: ceHoursRequired,
@@ -200,9 +232,9 @@ export default function addLicense(props) {
                 otherLicenseType: otherLicenseType,
                 licenseState: licenseState,
                 licenseNum: licenseNum,
-                licenseExpiration: licenseExpiration,
-                photo: photo,
-                thumbnail: thumbnail,
+                licenseExpiration: expiration,
+                licensePhoto: photo,
+                licenseThumbnail: thumbnail,
                 requirements: requirementsCopy,
                 id: licenseId,
             }
@@ -217,6 +249,7 @@ export default function addLicense(props) {
                     console.log("Document successfully written!");
                     db.collection('users').doc(uid).collection('licenses').doc('licenseData').get()
                         .then(response => {
+                            console.log(response.data());
                             dispatch(updateLicenses(response.data()));
                         })
                     props.navigation.navigate("Homepage");
@@ -231,54 +264,87 @@ export default function addLicense(props) {
     // Checks for license type, other license type (if Other is selected), state, and expiration of license.
     let isFormComplete = () => {
         let isComplete = true;
-        if (!licenseTypes.includes(licenseType)) {
-            isComplete = false;
-            setTypeErrorMsg("Select a license type");
-            this.scrollView.scrollTo({ y: 0 });
-        }
-        else {
-            setTypeErrorMsg("");
-        }
-        if (licenseType === "Other") {
-            if (!otherLicenseType) {
+        if (isLicenseSelected) {
+            if (!licenseTypes.includes(licenseType)) {
                 isComplete = false;
-                setOtherTypeErrorMsg("Enter type of license");
+                setTypeErrorMsg("Select a license type");
                 this.scrollView.scrollTo({ y: 0 });
             }
             else {
-                setOtherTypeErrorMsg("");
+                setTypeErrorMsg("");
+            }
+            if (licenseType === "Other") {
+                if (!otherLicenseType) {
+                    isComplete = false;
+                    setOtherTypeErrorMsg("Enter type of license");
+                    this.scrollView.scrollTo({ y: 0 });
+                }
+                else {
+                    setOtherTypeErrorMsg("");
+                }
+            }
+            if (!states.includes(licenseState.trim())) {
+                isComplete = false;
+                setStateErrorMsg("Select a state");
+                this.scrollView.scrollTo({ y: 0 });
+            }
+            else {
+                setStateErrorMsg("");
+            }
+            if (expiration.length !== 10) {
+                isComplete = false;
+                setLicenseExpirationErrorMsg("Format: (MM/DD/YYYY)");
+                this.scrollView.scrollTo({ y: 0 });
+            }
+            else if (parseInt(expiration.substring(0, 2)) === 0 || parseInt(expiration.substring(0, 2)) > 12) {
+                isComplete = false;
+                setLicenseExpirationErrorMsg("Month: 1-12");
+                this.scrollView.scrollTo({ y: 0 });
+            }
+            else if (parseInt(expiration.substring(3, 5)) === 0 || parseInt(expiration.substring(3, 5)) > 31) {
+                isComplete = false;
+                setLicenseExpirationErrorMsg("Days: 1-31");
+                this.scrollView.scrollTo({ y: 0 });
+            }
+            else {
+                setLicenseExpirationErrorMsg("");
             }
         }
-        if (!states.includes(licenseState)) {
-            isComplete = false;
-            setStateErrorMsg("Select a state");
-            this.scrollView.scrollTo({ y: 0 });
-        }
-        else {
-            setStateErrorMsg("");
-        }
-        if (licenseExpiration.length !== 10) {
-            isComplete = false;
-            setExpirationErrorMsg("Format: (MM/DD/YYYY)");
-            this.scrollView.scrollTo({ y: 0 });
-        }
-        else if (parseInt(licenseExpiration.substring(0, 2)) === 0 || parseInt(licenseExpiration.substring(0, 2)) > 12) {
-            isComplete = false;
-            setExpirationErrorMsg("Month: 1-12");
-            this.scrollView.scrollTo({ y: 0 });
-        }
-        else if (parseInt(licenseExpiration.substring(3, 5)) === 0 || parseInt(licenseExpiration.substring(3, 5)) > 31) {
-            isComplete = false;
-            setExpirationErrorMsg("Days: 1-31");
-            this.scrollView.scrollTo({ y: 0 });
-        }
-        else {
-            setExpirationErrorMsg("");
+
+        if (isCertSelected) {
+            if (!certificationName) {
+                isComplete = false;
+                setCertNameErrorMsg("Enter certification name");
+                this.scrollView.scrollTo({ y: 0 });
+            }
+            else {
+                setCertNameErrorMsg("");
+            }
+
+            if (certExpiration.length !== 10) {
+                isComplete = false;
+                setCertExpirationErrorMsg("Format: (MM/DD/YYYY)");
+                this.scrollView.scrollTo({ y: 0 });
+            }
+            else if (parseInt(certExpiration.substring(0, 2)) === 0 || parseInt(certExpiration.substring(0, 2)) > 12) {
+                isComplete = false;
+                setCertExpirationErrorMsg("Month: 1-12");
+                this.scrollView.scrollTo({ y: 0 });
+            }
+            else if (parseInt(certExpiration.substring(3, 5)) === 0 || parseInt(certExpiration.substring(3, 5)) > 31) {
+                isComplete = false;
+                setCertExpirationErrorMsg("Days: 1-31");
+                this.scrollView.scrollTo({ y: 0 });
+            }
+            else {
+                setCertExpirationErrorMsg("");
+            }
         }
         if (!isComplete) {
             setIsLoading(false);
         }
         return isComplete;
+
     }
 
     React.useEffect(() => {
@@ -324,15 +390,31 @@ export default function addLicense(props) {
         }
     }, [props.route.params?.thumbnailURL]);
 
-    let addCertification = async () => {
+    let addCertification = () => {
         setIsLoading(true);
         if (isFormComplete()) {
             let requirementsCopy = [...requirements];
+            let totalHoursRequirementAdded = false;
+
+            for (const index in requirementsCopy) {
+                if (requirementsCopy[index].name == "Total CEs Needed") {
+                    totalHoursRequirementAdded = true;
+                }
+            }
+
+            if (!isNaN(Number(ceHoursRequired)) && Number(ceHoursRequired) > 0 && !totalHoursRequirementAdded) {
+                requirementsCopy.push({
+                    key: uuidv4(),
+                    hours: ceHoursRequired,
+                    name: "Total CEs Needed",
+                    linkedCEs: {},
+                })
+            }
 
             const certificationID = uuidv4();
             const certificationData = {
-                certificationType: certificationType,
-                certificationExpiration: certificationExpiration,
+                name: certificationName,
+                expiration: certExpiration,
                 photo: photo,
                 thumbnail: thumbnail,
                 requirements: requirementsCopy,
@@ -349,7 +431,7 @@ export default function addLicense(props) {
                     console.log("Document successfully written!");
                     db.collection('users').doc(uid).collection('certifications').doc('certificationData').get()
                         .then(response => {
-                            // dispatch(updateCertifications(response.data()));
+                            dispatch(updateCertifications(response.data()));
                         })
                     props.navigation.navigate("Homepage");
                 })
@@ -414,8 +496,8 @@ export default function addLicense(props) {
                                     </View>
                                 </View>
                             ) : (
-                                    null
-                                )}
+                                null
+                            )}
                             <Modal
                                 visible={isModalVisible}
                                 animationType='fade'
@@ -448,6 +530,26 @@ export default function addLicense(props) {
                                 </View>
                             </Modal>
 
+                            <View style={styles.flexRowContainer}>
+                                <View style={styles.expirationContainer}>
+                                    <Text style={styles.inputLabel}>License Expiration {expirationErrorMsg ? (<Text style={styles.errorMessage}> {expirationErrorMsg}</Text>) : (null)}</Text>
+                                    <TextInputMask
+                                        style={styles.expirationInput}
+                                        keyboardType={'numeric'}
+                                        placeholder={'MM/DD/YYYY'}
+                                        placeholderTextColor={colors.grey400}
+                                        type={'datetime'}
+                                        value={expiration}
+                                        options={{
+                                            format: 'MM/DD/YYYY'
+                                        }}
+                                        onChangeText={text => {
+                                            setLicenseExpiration(text);
+                                        }}
+                                    />
+                                </View>
+                            </View>
+
                             <View style={styles.stateAndLicenseNumContainer}>
                                 <View style={styles.stateContainer}>
                                     <Text
@@ -461,7 +563,7 @@ export default function addLicense(props) {
                                         height={50 * rem}
                                         placeholder="e.g. California"
                                         maxSuggestions={3}
-                                        scrollToCallBack={scrollToCallBack}
+                                        // scrollToCallBack={scrollToCallBack}
                                         setParentState={setLicenseState}
                                         inputVal={licenseState}
                                     />
@@ -472,29 +574,10 @@ export default function addLicense(props) {
                                         placeholder={'e.g. 589304502'}
                                         placeholderTextColor={colors.grey400}
                                         style={styles.licenseNumInput}
+                                        value={licenseNum}
                                         onChangeText={setLicenseNum}
                                         keyboardType={'numeric'}
                                         maxLength={15}
-                                    />
-                                </View>
-                            </View>
-
-                            <View style={styles.flexRowContainer}>
-                                <View style={styles.expirationContainer}>
-                                    <Text style={styles.inputLabel}>Expiration {expirationErrorMsg ? (<Text style={styles.errorMessage}> {expirationErrorMsg}</Text>) : (null)}</Text>
-                                    <TextInputMask
-                                        style={styles.expirationInput}
-                                        keyboardType={'numeric'}
-                                        placeholder={'MM/DD/YYYY'}
-                                        placeholderTextColor={colors.grey400}
-                                        type={'datetime'}
-                                        value={licenseExpiration}
-                                        options={{
-                                            format: 'MM/DD/YYYY'
-                                        }}
-                                        onChangeText={text => {
-                                            setLicenseExpiration(text);
-                                        }}
                                     />
                                 </View>
                             </View>
@@ -519,8 +602,8 @@ export default function addLicense(props) {
                                         resizeMode={FastImage.resizeMode.contain}
                                     />
                                     ) : (
-                                            <AntDesign name="camerao" size={32 * rem} style={styles.thumbnailIcon} />
-                                        )}
+                                        <AntDesign name="camerao" size={32 * rem} style={styles.thumbnailIcon} />
+                                    )}
                                 </TouchableOpacity>
                             </View>
                         </View>
@@ -531,7 +614,7 @@ export default function addLicense(props) {
                         <View style={styles.ceRequirementsContainer}>
                             <View style={styles.flexRowContainer}>
                                 <View style={styles.ceHoursRequired}>
-                                    <Text style={styles.inputLabel}>Total Hours</Text>
+                                    <Text style={styles.inputLabel}>Total Hours (optional)</Text>
                                     <TextInput
                                         placeholder={'e.g. 30'}
                                         placeholderTextColor={colors.grey400}
@@ -542,6 +625,10 @@ export default function addLicense(props) {
                                         maxLength={5}
                                     />
                                 </View>
+                            </View>
+
+                            <Text style={styles.inputLabel}>Additional Requirements</Text>
+                            <View style={styles.flexRowContainer}>
                                 <TouchableOpacity style={styles.addRequirementButton}
                                     onPress={() => addNewRequirement()}>
                                     <AntDesign
@@ -549,11 +636,9 @@ export default function addLicense(props) {
                                         size={20 * rem}
                                         color={colors.blue800}
                                     />
-                                    <Text style={styles.addRequirementText}> Add Requirement</Text>
+                                    <Text style={styles.addRequirementText}> Add Additional Requirement</Text>
                                 </TouchableOpacity>
                             </View>
-
-                            <Text style={styles.inputLabel}>Additional Requirements</Text>
 
                             {requirements.length ? (
                                 <View style={styles.requirementsContainer}>
@@ -561,8 +646,7 @@ export default function addLicense(props) {
                                     <FlatList
                                         keyExtractor={item => item.key}
                                         data={requirements}
-                                        extraData={requirements}
-                                        renderItem={({ item, index }) => (
+                                        renderItem={({ item, index }) =>
                                             <View style={styles.requirementContainer}>
                                                 <TouchableOpacity
                                                     style={styles.deleteButton}
@@ -588,7 +672,7 @@ export default function addLicense(props) {
                                                     maxLength={5}
                                                 />
                                                 <TextInput
-                                                    placeholder={'e.g. Bioterrorism'}
+                                                    placeholder={'e.g. Bioethics'}
                                                     placeholderTextColor={colors.grey400}
                                                     style={styles.requirementInput}
                                                     value={item.name}
@@ -596,12 +680,12 @@ export default function addLicense(props) {
                                                     maxLength={70}
                                                 />
                                             </View>
-                                        )}
+                                        }
                                     />
                                 </View>
                             ) : (
-                                    <Text style={styles.noRequirementsText}>Some states have special requirements for license renewal. Click Add Requirement to add some!</Text>
-                                )}
+                                <Text style={styles.noRequirementsText}>Some states have special requirements for license renewal. Click Add Requirement to add some!</Text>
+                            )}
                         </View>
                         <TouchableOpacity
                             onPress={() => {
@@ -624,12 +708,13 @@ export default function addLicense(props) {
 
                             <View style={styles.flexRowContainer}>
                                 <View style={styles.otherLicenseType}>
-                                    <Text style={styles.inputLabel}>Certification Type{otherTypeErrorMsg ? (<Text style={styles.errorMessage}> {otherTypeErrorMsg}</Text>) : (null)}</Text>
+                                    <Text style={styles.inputLabel}>Certification Name{certNameErrorMsg ? (<Text style={styles.errorMessage}> {certNameErrorMsg}</Text>) : (null)}</Text>
                                     <TextInput
                                         placeholder={'Name of certification'}
                                         placeholderTextColor={colors.grey400}
                                         style={styles.licenseNumInput}
-                                        onChangeText={setCertificationType}
+                                        onChangeText={setCertificationName}
+                                        value={certificationName}
                                         maxLength={200}
                                     />
                                 </View>
@@ -637,19 +722,19 @@ export default function addLicense(props) {
 
                             <View style={styles.flexRowContainer}>
                                 <View style={styles.expirationContainer}>
-                                    <Text style={styles.inputLabel}>Expiration {expirationErrorMsg ? (<Text style={styles.errorMessage}> {expirationErrorMsg}</Text>) : (null)}</Text>
+                                    <Text style={styles.inputLabel}>Expiration {certExpirationErrorMsg ? (<Text style={styles.errorMessage}> {certExpirationErrorMsg}</Text>) : (null)}</Text>
                                     <TextInputMask
                                         style={styles.expirationInput}
                                         keyboardType={'numeric'}
                                         placeholder={'MM/DD/YYYY'}
                                         placeholderTextColor={colors.grey400}
                                         type={'datetime'}
-                                        value={certificationExpiration}
+                                        value={certExpiration}
                                         options={{
                                             format: 'MM/DD/YYYY'
                                         }}
                                         onChangeText={text => {
-                                            setCertificationExpiration(text);
+                                            setCertExpiration(text);
                                         }}
                                     />
                                 </View>
@@ -675,8 +760,8 @@ export default function addLicense(props) {
                                         resizeMode={FastImage.resizeMode.contain}
                                     />
                                     ) : (
-                                            <AntDesign name="camerao" size={32 * rem} style={styles.thumbnailIcon} />
-                                        )}
+                                        <AntDesign name="camerao" size={32 * rem} style={styles.thumbnailIcon} />
+                                    )}
                                 </TouchableOpacity>
                             </View>
 
@@ -686,17 +771,21 @@ export default function addLicense(props) {
                             <View style={styles.ceRequirementsContainer}>
                                 <View style={styles.flexRowContainer}>
                                     <View style={styles.ceHoursRequired}>
-                                        <Text style={styles.inputLabel}>Total Hours</Text>
+                                        <Text style={styles.inputLabel}>Total Hours (optional)</Text>
                                         <TextInput
                                             placeholder={'e.g. 30'}
                                             placeholderTextColor={colors.grey400}
                                             style={styles.licenseNumInput}
                                             value={ceHoursRequired}
-                                            onChangeText={setCertificationHoursRequired}
+                                            onChangeText={setCEHoursRequired}
                                             keyboardType={'numeric'}
                                             maxLength={5}
                                         />
                                     </View>
+                                </View>
+
+                                <Text style={styles.inputLabel}>Additional Requirements</Text>
+                                <View style={styles.flexRowContainer}>
                                     <TouchableOpacity style={styles.addRequirementButton}
                                         onPress={() => addNewRequirement()}>
                                         <AntDesign
@@ -704,11 +793,9 @@ export default function addLicense(props) {
                                             size={20 * rem}
                                             color={colors.blue800}
                                         />
-                                        <Text style={styles.addRequirementText}> Add Requirement</Text>
+                                        <Text style={styles.addRequirementText}> Add Additional Requirement</Text>
                                     </TouchableOpacity>
                                 </View>
-
-                                <Text style={styles.inputLabel}>Additional Requirements</Text>
 
                                 {requirements.length ? (
                                     <View style={styles.requirementsContainer}>
@@ -716,7 +803,6 @@ export default function addLicense(props) {
                                         <FlatList
                                             keyExtractor={item => item.key}
                                             data={requirements}
-                                            extraData={requirements}
                                             renderItem={({ item, index }) => (
                                                 <View style={styles.requirementContainer}>
                                                     <TouchableOpacity
@@ -743,7 +829,7 @@ export default function addLicense(props) {
                                                         maxLength={5}
                                                     />
                                                     <TextInput
-                                                        placeholder={'e.g. Bioterrorism'}
+                                                        placeholder={'e.g. Bioethics'}
                                                         placeholderTextColor={colors.grey400}
                                                         style={styles.requirementInput}
                                                         value={item.name}
@@ -756,18 +842,18 @@ export default function addLicense(props) {
                                     </View>
                                 ) : (
                                     <Text style={styles.noRequirementsText}>Some certifications have special requirements. Click Add Requirement to add some!</Text>
-                                    )}
+                                )}
                             </View>
 
                             <TouchableOpacity
-                            onPress={() => {
-                                addCertification();
-                            }}
-                            disabled={isLoading}
-                            style={styles.addNewLicenseButton}
-                        >
-                            <Text style={styles.choiceTextSelected}>{isLoading ? ('...') : ('Add New Certification')}</Text>
-                        </TouchableOpacity>
+                                onPress={() => {
+                                    addCertification();
+                                }}
+                                disabled={isLoading}
+                                style={styles.addNewLicenseButton}
+                            >
+                                <Text style={styles.choiceTextSelected}>{isLoading ? ('...') : ('Add New Certification')}</Text>
+                            </TouchableOpacity>
                         </FadeInView>
                     ) : (null)
                 }
@@ -790,14 +876,13 @@ const styles = StyleSheet.create({
     addChoiceContainer: {
         top: 0,
         width: '100%',
-        aspectRatio: 4.8,
-        marginBottom: 24 * rem,
+        height: (50 + 42) * rem,
+        margin: 0,
     },
     choiceButtonsContainer: {
         bottom: 0,
         marginTop: 18 * rem,
         flexDirection: 'row',
-        height: 45 * rem,
         width: '100%',
         alignItems: 'center',
         justifyContent: 'center',
@@ -919,7 +1004,7 @@ const styles = StyleSheet.create({
         textAlign: 'left',
     },
     modalTransparency: {
-        backgroundColor: 'rgba(0,0,0, 0.30)',
+        backgroundColor: 'rgba(0,0,0, 0.50)',
         height: '100%',
         width: '100%',
         position: 'absolute',
@@ -947,22 +1032,20 @@ const styles = StyleSheet.create({
     stateAndLicenseNumContainer: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        height: (50 + 24) * rem,
-        marginBottom: 18 * rem,
-        zIndex: 999,
+        height: (50 + 42) * rem,
+        // marginBottom: 42 * rem,
     },
     stateContainer: {
         height: 50 * rem,
         minWidth: 160 * rem,
         width: '40%',
-        zIndex: 999,
     },
     licenseNumContainer: {
         height: 50 * rem,
         width: '48%',
     },
     licenseNumInput: {
-        width: '100%',
+        width: '70%',
         height: '100%',
         fontSize: 16 * rem,
         borderRadius: 10 * rem,
@@ -976,6 +1059,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         height: (50 + 24) * rem,
         marginBottom: 18 * rem,
+        zIndex: 1,
     },
     expirationContainer: {
         height: 50 * rem,
@@ -997,6 +1081,7 @@ const styles = StyleSheet.create({
         minWidth: 160 * rem,
         width: '100%',
         marginBottom: 24 * rem,
+        zIndex: -1,
     },
     thumbnailButton: {
         width: 75 * rem,
@@ -1019,6 +1104,7 @@ const styles = StyleSheet.create({
         height: 32 * rem,
         width: 32 * rem,
         color: colors.blue300,
+        zIndex: 1,
     },
 
     ceRequirementsContainer: {
@@ -1027,7 +1113,6 @@ const styles = StyleSheet.create({
     ceHoursRequired: {
         height: 50 * rem,
         minWidth: 130 * rem,
-        width: '30%',
     },
     addRequirementButton: {
         padding: 12 * rem,
@@ -1104,4 +1189,3 @@ const styles = StyleSheet.create({
         marginTop: 24 * rem,
     },
 });
-

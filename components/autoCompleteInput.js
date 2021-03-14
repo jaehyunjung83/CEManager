@@ -59,19 +59,22 @@ export default function autoCompleteInput(props) {
             fontSize: 16 * rem,
             borderRadius: 10 * rem,
             backgroundColor: colors.grey200,
+            padding: 0,
             paddingLeft: 18 * rem,
             paddingRight: 18 * rem,
+            margin: 0,
             color: colors.grey900,
         },
         listContainer: {
             position: 'absolute',
-            marginTop: props.height + (28 * rem),
+            marginTop: props.height + (-2 * rem),
             width: '100%',
             maxHeight: props.height * props.maxSuggestions,
             borderRadius: 10 * rem,
             borderWidth: 2 * rem,
             borderColor: colors.grey300,
             backgroundColor: 'white',
+            zIndex: 4,
         },
         listItemContainer: {
             backgroundColor: 'white',
@@ -83,6 +86,7 @@ export default function autoCompleteInput(props) {
             borderRadius: 10 * rem,
             borderWidth: 2 * rem,
             borderColor: 'rgba(0,0,0,0)',
+            zIndex: 4,
         },
         itemText: {
             fontSize: 16 * rem,
@@ -96,14 +100,13 @@ export default function autoCompleteInput(props) {
     });
 
     return (
-        <>
+        <View style={{zIndex: 4}}>
             <TextInput
                 style={styles.input}
                 placeholder={props.placeholder}
                 placeholderTextColor={colors.grey400}
                 value={textInputVal}
                 onChangeText={onTextChanged}
-                onFocus={() => props.scrollToCallBack()}
                 onBlur={() => setSuggestions([])}
             />
             {suggestions.length ? (
@@ -111,7 +114,7 @@ export default function autoCompleteInput(props) {
                     <>{suggestions}</>
                 </View>
             ) : (null)}
-        </>
+        </View>
     )
 }
 

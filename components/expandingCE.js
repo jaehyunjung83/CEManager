@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity, TouchableHighlight, Modal, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity, TouchableHighlight, Modal, TouchableWithoutFeedback, Image } from 'react-native';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import { colors } from '../components/colors.js';
 import FastImage from 'react-native-fast-image'
@@ -16,10 +16,6 @@ export default function ceCard(props) {
     const navigation = useNavigation();
     const route = useRoute();
 
-    let cardPressed = () => {
-        // TODO: Expand CE details
-    }
-
     let openImage = () => {
         setIsModalVisible(true);
     }
@@ -32,6 +28,7 @@ export default function ceCard(props) {
     const styles = StyleSheet.create({
         cardContainer: {
             flexGrow: 1,
+            alignSelf: 'center',
         },
         ceThumbnailContainer: {
             alignSelf: 'center',
@@ -80,22 +77,21 @@ export default function ceCard(props) {
         },
         ceInfoContainer: {
             maxHeight: ceHeight,
-            width: 260 * rem,
-            paddingTop: 12 * rem,
+            width: 256 * rem,
         },
         ceNameText: {
             fontSize: 18 * rem,
             color: colors.grey800,
             lineHeight: 26 * rem,
-            paddingRight: 20 * rem,
-            width: '100%',
+            paddingRight: 24 * rem,
+            width: '100%', 
+            margin: 'auto',
         },
         chevronUp: {
             position: 'absolute',
             top: 4 * rem,
             right: 0,
             width: 20 * rem,
-            paddingLeft: 4 * rem,
             color: colors.green600,
         },
         chevronDown: {
@@ -103,7 +99,6 @@ export default function ceCard(props) {
             top: 4 * rem,
             right: 0,
             width: 20 * rem,
-            paddingLeft: 4 * rem,
             color: colors.grey800,
         },
         ceDateText: {
@@ -127,14 +122,10 @@ export default function ceCard(props) {
             width: '100%',
         },
         imgContainer: {
-            marginTop: Dimensions.get('window').height / 2,
-            transform: [{ translateY: -screenWidth / 2, }],
+            marginTop: (Dimensions.get('window').height / 2) - (screenWidth / 2),
             width: screenWidth,
             aspectRatio: 1,
             backgroundColor: 'black',
-            alignItems: 'center',
-            justifyContent: 'center',
-            alignSelf: 'center',
         },
         loadingText: {
             marginTop: Dimensions.get('window').height / 2,
@@ -158,9 +149,8 @@ export default function ceCard(props) {
                         >
                             {isLoading ? (
                                 <>
-                                    <Text style={styles.loadingText}>Loading. . .</Text>
                                     <FastImage
-                                        style={{ height: 0, width: 0 }}
+                                        style={styles.imgContainer}
                                         source={{
                                             uri: props?.data?.cePhoto,
                                             priority: FastImage.priority.normal,
@@ -170,6 +160,7 @@ export default function ceCard(props) {
                                             setIsLoading(false);
                                         }}
                                     />
+                                    <Text style={styles.loadingText}>Loading. . .</Text>
                                 </>
                             ) : (
                                     <FastImage
@@ -213,23 +204,23 @@ export default function ceCard(props) {
                                     <Text style={styles.ceDateText}>{props?.data?.hours} <Text style={styles.infoLabel}>Hours</Text></Text>
                                     <Text numberOfLines={2} style={styles.ceDateText}>{props?.data?.providerNum}</Text>
                                 </View>
-                                    {props?.data?.ceThumbnail ? (
-                                        <TouchableOpacity
-                                            style={styles.ceThumbnailContainer}
-                                            onPress={() => {
-                                                openImage(props?.data?.cePhoto);
+                                {props?.data?.ceThumbnail ? (
+                                    <TouchableOpacity
+                                        style={styles.ceThumbnailContainer}
+                                        onPress={() => {
+                                            openImage(props?.data?.cePhoto);
+                                        }}
+                                    >
+                                        <FastImage
+                                            style={styles.ceThumbnailImg}
+                                            source={{
+                                                uri: props?.data?.ceThumbnail,
+                                                priority: FastImage.priority.normal,
                                             }}
-                                        >
-                                            <FastImage
-                                                style={styles.ceThumbnailImg}
-                                                source={{
-                                                    uri: props?.data?.ceThumbnail,
-                                                    priority: FastImage.priority.normal,
-                                                }}
-                                                resizeMode={FastImage.resizeMode.contain}
-                                            />
-                                        </TouchableOpacity>
-                                    ) : (null)}
+                                            resizeMode={FastImage.resizeMode.contain}
+                                        />
+                                    </TouchableOpacity>
+                                ) : (null)}
                             </View>
                         }
 

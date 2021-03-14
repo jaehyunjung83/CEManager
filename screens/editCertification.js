@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { updateLicenses } from '../actions';
+import { updateCertifications } from '../actions';
 import { Animated, View, Text, StyleSheet, Dimensions, TouchableHighlight, Easing, ScrollView, Modal, FlatList, TouchableWithoutFeedback, TouchableOpacity, TextInput, KeyboardAvoidingView, Image } from 'react-native';
 import { TextInputMask } from 'react-native-masked-text';
 import Header from '../components/header.js';
@@ -55,90 +55,41 @@ const FadeInView = (props) => {
 
 
 // TODO: Remember auto generate CE's needed and requirements for specific states.
-// TODO: Delete pic and thumbnail if adding license is cancelled.
-export default function editLicense(props) {
-    licenseID = props.route.params.licenseID;
+// TODO: Delete pic and thumbnail if adding certification is cancelled.
+export default function editCertification(props) {
+    certificationID = props.route.params.certificationID;
 
     const headerHeight = useHeaderHeight();
-    const states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'];
     const route = useRoute();
-    const licenses = useSelector(state => state.licenses);
+    const certifications = useSelector(state => state.certifications);
     const dispatch = useDispatch();
 
     React.useEffect(() => {
-        let db = firestore();
-        db.collection('licenseConfig').doc('licenseTypes').get()
-            .then(response => {
-                setLicenseTypes(response.data().licenseTypes);
-            })
-            .catch((error) => {
-                console.error("Error adding document: ", error);
-            });
-    }, [licenseTypes])
-
-    React.useEffect(() => {
-        if (!licenses[licenseID]) return;
-        setLicenseType(licenses[licenseID].licenseType);
-        setOtherLicenseType(licenses[licenseID].otherLicenseType);
-        setLicenseState(licenses[licenseID].licenseState);
-        setLicenseNum(licenses[licenseID].licenseNum);
-        setLicenseExpiration(licenses[licenseID].licenseExpiration);
-        for (const index in licenses[licenseID].requirements) {
-            if (licenses[licenseID].requirements[index].name == "Total CEs Needed") {
-                setCEHoursRequired(licenses[licenseID].requirements[index].hours);
+        if (!certifications[certificationID]) return;
+        setName(certifications[certificationID].name);
+        setExpiration(certifications[certificationID].expiration);
+        for (const index in certifications[certificationID].requirements) {
+            if (certifications[certificationID].requirements[index].name == "Total CEs Needed") {
+                setCEHoursRequired(certifications[certificationID].requirements[index].hours);
             }
         }
-        if (licenses[licenseID].requirements.length) {
-            setRequirements(licenses[licenseID].requirements.filter(requirement => requirement.name !== "Total CEs Needed"));
+        if (certifications[certificationID].requirements.length) {
+            setRequirements(certifications[certificationID].requirements.filter(requirement => requirement.name !== "Total CEs Needed"));
         }
-        setLicenseThumbnail(licenses[licenseID].licenseThumbnail);
-        setLicensePhoto(licenses[licenseID].licensePhoto);
-    }, [JSON.stringify(licenses)]);
+        setCertificationThumbnail(certifications[certificationID].thumbnail);
+        setCertificationPhoto(certifications[certificationID].photo);
+    }, [JSON.stringify(certifications)]);
 
-    const [licenseTypes, setLicenseTypes] = useState([]);
-    const [licenseType, setLicenseType] = useState("");
-    const [typeErrorMsg, setTypeErrorMsg] = useState("");
-
-    const [otherLicenseType, setOtherLicenseType] = useState("");
-    const [otherTypeErrorMsg, setOtherTypeErrorMsg] = useState("");
-
-    const [licenseState, setLicenseState] = useState("");
-    const [stateErrorMsg, setStateErrorMsg] = useState("");
-
-    const [licenseNum, setLicenseNum] = useState("");
-    const [expiration, setLicenseExpiration] = useState("");
-    const [expirationErrorMsg, setLicenseExpirationErrorMsg] = useState("");
+    const [name, setName] = useState("");
+    const [nameErrorMsg, setNameErrorMsg] = useState("");
+    const [expiration, setExpiration] = useState("");
+    const [expirationErrorMsg, setCertExpirationErrorMsg] = useState("");
 
     const [ceHoursRequired, setCEHoursRequired] = useState('');
-    const [isModalVisible, setIsModalVisible] = useState(false);
     const [requirements, setRequirements] = useState([]);
-    const [textPositionY, setTextPositionY] = useState(0);
-    const [licenseThumbnail, setLicenseThumbnail] = useState("");
-    const [licensePhoto, setLicensePhoto] = useState("");
+    const [thumbnail, setCertificationThumbnail] = useState("");
+    const [photo, setCertificationPhoto] = useState("");
     const [isLoading, setIsLoading] = useState(false);
-
-    const [modalHeight, setModalHeight] = useState(0);
-    let onLayout = (event) => {
-        console.log(event.nativeEvent.layout);
-        const { height } = event.nativeEvent.layout;
-        setModalHeight(height);
-    };
-
-    // Used for getting position of text label of state input. This is a workaround to get the effect of KeyboardAvoidingView.
-    let measure = () => {
-        this.text.measure((x, y, width, height, px, py) => {
-            setTextPositionY(py);
-        })
-    }
-
-    let scrollToCallBack = () => {
-        if (licenseType === "Other") {
-            this.scrollView.scrollTo({ y: textPositionY - (245 * rem) });
-        }
-        else {
-            this.scrollView.scrollTo({ y: textPositionY - (330 * rem) });
-        }
-    }
 
 
     let addNewRequirement = () => {
@@ -172,7 +123,7 @@ export default function editLicense(props) {
         setRequirements(temp);
     }
 
-    let editLicense = () => {
+    let editCertification = () => {
         setIsLoading(true);
         if (isFormComplete()) {
             let requirementsCopy = [...requirements];
@@ -186,12 +137,12 @@ export default function editLicense(props) {
             }
             if (!totalHoursRequirementAdded) {
                 let found = false;
-                for (const index in licenses[licenseID].requirements) {
-                    if (licenses[licenseID].requirements[index].name == "Total CEs Needed") {
+                for (const index in certifications[certificationID].requirements) {
+                    if (certifications[certificationID].requirements[index].name == "Total CEs Needed") {
                         found = true;
 
                         if (!isNaN(Number(ceHoursRequired)) && Number(ceHoursRequired) > 0) {
-                            totalHoursRequirement = licenses[licenseID].requirements[index];
+                            totalHoursRequirement = certifications[certificationID].requirements[index];
                             totalHoursRequirement.hours = ceHoursRequired;
                             requirementsCopy.push(totalHoursRequirement);
                         }
@@ -207,29 +158,26 @@ export default function editLicense(props) {
                 }
             }
 
-            licenseData = {
-                licenseType: licenseType,
-                otherLicenseType: otherLicenseType,
-                licenseState: licenseState,
-                licenseNum: licenseNum,
-                licenseExpiration: expiration,
-                licensePhoto: licensePhoto,
-                licenseThumbnail: licenseThumbnail,
+            certificationData = {
+                name: name,
+                expiration: expiration,
+                photo: photo,
+                thumbnail: thumbnail,
                 requirements: requirementsCopy,
-                id: licenseID,
+                id: certificationID,
             }
-            let licenseObj = {
-                [licenseID]: licenseData,
+            let certificationObj = {
+                [certificationID]: certificationData,
             }
 
             let uid = auth().currentUser.uid;
             let db = firestore();
-            db.collection('users').doc(uid).collection('licenses').doc('licenseData').set(licenseObj, { merge: true })
+            db.collection('users').doc(uid).collection('certifications').doc('certificationData').set(certificationObj, { merge: true })
                 .then(() => {
                     console.log("Document successfully written!");
-                    db.collection('users').doc(uid).collection('licenses').doc('licenseData').get()
+                    db.collection('users').doc(uid).collection('certifications').doc('certificationData').get()
                         .then(response => {
-                            dispatch(updateLicenses(response.data()));
+                            dispatch(updateCertifications(response.data()));
                         })
                     props.navigation.navigate("Homepage");
                 })
@@ -240,52 +188,35 @@ export default function editLicense(props) {
         }
     }
 
-    // Checks for license type, other license type (if Other is selected), state, and expiration of license.
+    // Checks for certification type, other certification type (if Other is selected), state, and expiration of certification.
     let isFormComplete = () => {
         let isComplete = true;
-        if (!licenseTypes.includes(licenseType)) {
+        if (!name) {
             isComplete = false;
-            setTypeErrorMsg("Select a license type");
+            setNameErrorMsg("Enter certification name");
             this.scrollView.scrollTo({ y: 0 });
         }
         else {
-            setTypeErrorMsg("");
+            setNameErrorMsg("");
         }
-        if (licenseType === "Other") {
-            if (!otherLicenseType) {
-                isComplete = false;
-                setOtherTypeErrorMsg("Enter type of license");
-                this.scrollView.scrollTo({ y: 0 });
-            }
-            else {
-                setOtherTypeErrorMsg("");
-            }
-        }
-        if (!states.includes(licenseState)) {
-            isComplete = false;
-            setStateErrorMsg("Select a state");
-            this.scrollView.scrollTo({ y: 0 });
-        }
-        else {
-            setStateErrorMsg("");
-        }
+
         if (expiration.length !== 10) {
             isComplete = false;
-            setLicenseExpirationErrorMsg("Format: (MM/DD/YYYY)");
+            setCertExpirationErrorMsg("Format: (MM/DD/YYYY)");
             this.scrollView.scrollTo({ y: 0 });
         }
         else if (parseInt(expiration.substring(0, 2)) === 0 || parseInt(expiration.substring(0, 2)) > 12) {
             isComplete = false;
-            setLicenseExpirationErrorMsg("Month: 1-12");
+            setCertExpirationErrorMsg("Month: 1-12");
             this.scrollView.scrollTo({ y: 0 });
         }
         else if (parseInt(expiration.substring(3, 5)) === 0 || parseInt(expiration.substring(3, 5)) > 31) {
             isComplete = false;
-            setLicenseExpirationErrorMsg("Days: 1-31");
+            setCertExpirationErrorMsg("Days: 1-31");
             this.scrollView.scrollTo({ y: 0 });
         }
         else {
-            setLicenseExpirationErrorMsg("");
+            setCertExpirationErrorMsg("");
         }
         if (!isComplete) {
             setIsLoading(false);
@@ -295,43 +226,43 @@ export default function editLicense(props) {
 
     React.useEffect(() => {
         if (typeof props.route?.params?.thumbnailURL !== 'undefined') {
-            if (licenseThumbnail) {
+            if (thumbnail) {
                 // User is replacing old thumbnail. Delete old one.
                 // Firebase couldn't parse the URL for some reason.
-                // const oldThumbnailRef = storage().refFromURL(licenseThumbnail);
-                const oldThumbnailPath = licenseThumbnail.replace('https://storage.googleapis.com/cetracker-2de23.appspot.com/', '');
+                // const oldThumbnailRef = storage().refFromURL(thumbnail);
+                const oldThumbnailPath = thumbnail.replace('https://storage.googleapis.com/cetracker-2de23.appspot.com/', '');
                 const oldThumbnailRef = storage().ref().child(`${oldThumbnailPath}`);
 
                 oldThumbnailRef.delete()
                     .then(() => {
                         console.log("Deleted thumbnail successfully.");
-                        setLicenseThumbnail(props.route?.params?.thumbnailURL);
+                        setCertificationThumbnail(props.route?.params?.thumbnailURL);
                     })
                     .catch(error => {
                         console.log("Failed to delete old thumbnail. Error: " + error.toString());
                     })
             }
             else {
-                setLicenseThumbnail(props.route?.params?.thumbnailURL);
+                setCertificationThumbnail(props.route?.params?.thumbnailURL);
             }
         }
         if (typeof props.route.params?.photoURL !== 'undefined') {
-            if (licensePhoto) {
+            if (photo) {
                 // User is replacing old photo. Delete old one.
-                const firstPhotoRef = storage().refFromURL(licensePhoto).toString();
+                const firstPhotoRef = storage().refFromURL(photo).toString();
                 const oldPhotoPath = firstPhotoRef.replace('gs://cetracker-2de23', '');
                 const oldPhotoRef = storage().ref().child(`${oldPhotoPath}`);
                 oldPhotoRef.delete()
                     .then(() => {
                         console.log("Deleted photo successfully.");
-                        setLicensePhoto(props.route?.params?.photoURL);
+                        setCertificationPhoto(props.route?.params?.photoURL);
                     })
                     .catch(error => {
                         console.log("Failed to delete old photo. Error: " + error.toString());
                     })
             }
             else {
-                setLicensePhoto(props.route?.params?.photoURL);
+                setCertificationPhoto(props.route?.params?.photoURL);
             }
         }
     }, [props.route.params?.thumbnailURL]);
@@ -362,7 +293,7 @@ export default function editLicense(props) {
             alignItems: 'center',
             justifyContent: 'center',
         },
-        licenseButtonNotSelected: {
+        certificationButtonNotSelected: {
             width: screenWidth / 2 - (12 * rem),
             aspectRatio: 1,
             maxHeight: 45 * rem,
@@ -376,7 +307,7 @@ export default function editLicense(props) {
             justifyContent: 'center',
             backgroundColor: colors.grey200,
         },
-        licenseButtonSelected: {
+        certificationButtonSelected: {
             width: screenWidth / 2 - (12 * rem),
             aspectRatio: 1,
             maxHeight: 45 * rem,
@@ -442,14 +373,14 @@ export default function editLicense(props) {
             marginTop: 18 * rem,
         },
 
-        // License Form
+        // Certification Form
         headerContainer: {
             width: '100%',
             height: 40 * rem,
             marginBottom: 18 * rem,
             zIndex: -1,
         },
-        licenseInfoContainer: {
+        certificationInfoContainer: {
             padding: 6 * rem,
         },
         inputLabel: {
@@ -464,7 +395,7 @@ export default function editLicense(props) {
             fontWeight: '500',
             marginBottom: 6 * rem,
         },
-        selectLicenseType: {
+        selectName: {
             width: '100%',
             height: 50 * rem,
             backgroundColor: colors.grey200,
@@ -473,7 +404,7 @@ export default function editLicense(props) {
             marginBottom: 18 * rem,
             borderRadius: 10 * rem,
         },
-        selectLicenseTypeText: {
+        selectNameText: {
             fontSize: 16 * rem,
             color: colors.grey900,
             textAlign: 'left',
@@ -502,11 +433,11 @@ export default function editLicense(props) {
             height: 50 * rem,
             justifyContent: 'center',
         },
-        otherLicenseType: {
+        otherName: {
             height: 50 * rem,
             width: '100%',
         },
-        stateAndLicenseNumContainer: {
+        stateAndCertificationNumContainer: {
             flexDirection: 'row',
             justifyContent: 'space-between',
             height: (50 + 24) * rem,
@@ -519,11 +450,11 @@ export default function editLicense(props) {
             width: '40%',
             zIndex: 999,
         },
-        licenseNumContainer: {
+        certificationNumContainer: {
             height: 50 * rem,
             width: '48%',
         },
-        licenseNumInput: {
+        certificationNumInput: {
             width: '100%',
             height: '100%',
             fontSize: 16 * rem,
@@ -656,7 +587,7 @@ export default function editLicense(props) {
             color: colors.grey500,
             marginBottom: 12 * rem,
         },
-        addNewLicenseButton: {
+        addNewCertificationButton: {
             width: '100%',
             height: 50 * rem,
             borderRadius: 10 * rem,
@@ -680,100 +611,26 @@ export default function editLicense(props) {
                 keyboardShouldPersistTaps={'always'}>
                 <FadeInView style={styles.formContainer}>
                     <View style={styles.headerContainer}>
-                        <Header text="License Information" />
+                        <Header text="Certification Information" />
                     </View>
-                    <View style={styles.licenseInfoContainer}>
-                        <Text style={styles.inputLabel}>License Type {typeErrorMsg ? (<Text style={styles.errorMessage}> {typeErrorMsg}</Text>) : (null)}</Text>
-                        <TouchableOpacity
-                            style={styles.selectLicenseType}
-                            onPress={() => setIsModalVisible(true)}
-                        >
-                            <Text style={styles.selectLicenseTypeText}>{licenseType ? (licenseType) : ('Select License Type')}</Text>
-                        </TouchableOpacity>
-                        {(licenseType === "Other") ? (
-                            <View style={styles.flexRowContainer}>
-                                <View style={styles.otherLicenseType}>
-                                    <Text style={styles.inputLabel}>Please specify {otherTypeErrorMsg ? (<Text style={styles.errorMessage}> {otherTypeErrorMsg}</Text>) : (null)}</Text>
-                                    <TextInput
-                                        placeholder={'e.g. Physician'}
-                                        placeholderTextColor={colors.grey400}
-                                        style={styles.licenseNumInput}
-                                        onChangeText={setOtherLicenseType}
-                                        maxLength={36}
-                                        value={otherLicenseType}
-                                    />
-                                </View>
-                            </View>
-                        ) : (
-                            null
-                        )}
-                        <Modal
-                            visible={isModalVisible}
-                            animationType='fade'
-                            transparent={true}
-                        >
-                            <View style={{
-                                flex: 1,
-                                justifyContent: 'center',
-                                margin: 0,
-                            }}>
-                                <TouchableWithoutFeedback onPress={() => setIsModalVisible(false)}>
-                                    <View style={styles.modalTransparency} />
-                                </TouchableWithoutFeedback>
-                                <View style={styles.modalPopupContainer}>
-                                    <Text style={styles.modalTitle}>Select License Type</Text>
-                                    <FlatList
-                                        data={licenseTypes}
-                                        keyExtractor={item => item}
-                                        renderItem={({ item }) => (
-                                            <TouchableHighlight
-                                                style={styles.listItemContainer}
-                                                onPress={() => { setLicenseType(item); setIsModalVisible(false) }}
-                                                underlayColor={colors.underlayColor}
-                                            >
-                                                <Text style={styles.itemText}>{item}</Text>
-                                            </TouchableHighlight>
-                                        )}
-                                    />
-                                </View>
-                            </View>
-                        </Modal>
-
-                        <View style={styles.stateAndLicenseNumContainer}>
-                            <View style={styles.stateContainer}>
-                                <Text
-                                    onLayout={() => {
-                                        measure();
-                                    }}
-                                    ref={ref => this.text = ref}
-                                    style={styles.inputLabel}>State {stateErrorMsg ? (<Text style={styles.errorMessage}> {stateErrorMsg}</Text>) : (null)}</Text>
-                                <AutoCompleteInput
-                                    data={states}
-                                    height={50 * rem}
-                                    placeholder="e.g. California"
-                                    maxSuggestions={3}
-                                    scrollToCallBack={scrollToCallBack}
-                                    setParentState={setLicenseState}
-                                    inputVal={licenses[licenseID].licenseState}
-                                />
-                            </View>
-                            <View style={styles.licenseNumContainer}>
-                                <Text style={styles.inputLabel}>License # (optional)</Text>
+                    <View style={styles.certificationInfoContainer}>
+                        <View style={styles.flexRowContainer}>
+                            <View style={styles.otherName}>
+                                <Text style={styles.inputLabel}>Certification Name {nameErrorMsg ? (<Text style={styles.errorMessage}> {nameErrorMsg}</Text>) : (null)}</Text>
                                 <TextInput
-                                    placeholder={'e.g. 589304502'}
+                                    placeholder={'e.g. Physician'}
                                     placeholderTextColor={colors.grey400}
-                                    style={styles.licenseNumInput}
-                                    onChangeText={setLicenseNum}
-                                    value={licenseNum}
-                                    keyboardType={'numeric'}
-                                    maxLength={15}
+                                    style={styles.certificationNumInput}
+                                    onChangeText={setName}
+                                    maxLength={36}
+                                    value={name}
                                 />
                             </View>
                         </View>
 
                         <View style={styles.flexRowContainer}>
                             <View style={styles.expirationContainer}>
-                                <Text style={styles.inputLabel}>License Expiration {expirationErrorMsg ? (<Text style={styles.errorMessage}> {expirationErrorMsg}</Text>) : (null)}</Text>
+                                <Text style={styles.inputLabel}>Expiration {expirationErrorMsg ? (<Text style={styles.errorMessage}> {expirationErrorMsg}</Text>) : (null)}</Text>
                                 <TextInputMask
                                     style={styles.expirationInput}
                                     keyboardType={'numeric'}
@@ -785,14 +642,14 @@ export default function editLicense(props) {
                                         format: 'MM/DD/YYYY'
                                     }}
                                     onChangeText={text => {
-                                        setLicenseExpiration(text);
+                                        setExpiration(text);
                                     }}
                                 />
                             </View>
                         </View>
 
                         <View style={styles.thumbnailContainer}>
-                            <Text style={styles.inputLabel}>License Photo (optional)</Text>
+                            <Text style={styles.inputLabel}>Certification Photo (optional)</Text>
                             <TouchableOpacity
                                 onPress={() => {
                                     props.navigation.navigate('Scanner', {
@@ -802,10 +659,10 @@ export default function editLicense(props) {
                                 }}
                                 style={styles.thumbnailButton}
                             >
-                                {licenseThumbnail ? (<FastImage
+                                {thumbnail ? (<FastImage
                                     style={{ width: 75 * rem, aspectRatio: 1, borderRadius: 10 * rem, backgroundColor: 'black' }}
                                     source={{
-                                        uri: licenseThumbnail,
+                                        uri: thumbnail,
                                         priority: FastImage.priority.normal,
                                     }}
                                     resizeMode={FastImage.resizeMode.contain}
@@ -827,7 +684,7 @@ export default function editLicense(props) {
                                 <TextInput
                                     placeholder={'e.g. 30'}
                                     placeholderTextColor={colors.grey400}
-                                    style={styles.licenseNumInput}
+                                    style={styles.certificationNumInput}
                                     value={ceHoursRequired}
                                     onChangeText={setCEHoursRequired}
                                     keyboardType={'numeric'}
@@ -855,53 +712,53 @@ export default function editLicense(props) {
                                 <FlatList
                                     keyExtractor={item => item.key}
                                     data={requirements}
-                                    renderItem={({ item, index }) =>
-                                    (<View style={styles.requirementContainer}>
-                                        <TouchableOpacity
-                                            style={styles.deleteButton}
-                                            onPress={() => {
-                                                let temp = [...requirements];
-                                                temp.splice(index, 1);
-                                                setRequirements(temp)
-                                            }}
-                                        >
-                                            <AntDesign
-                                                name='closecircle'
-                                                size={36 * rem}
-                                                color={colors.blue800}
+                                    renderItem={({ item, index }) => (
+                                        <View style={styles.requirementContainer}>
+                                            <TouchableOpacity
+                                                style={styles.deleteButton}
+                                                onPress={() => {
+                                                    let temp = [...requirements];
+                                                    temp.splice(index, 1);
+                                                    setRequirements(temp)
+                                                }}
+                                            >
+                                                <AntDesign
+                                                    name='closecircle'
+                                                    size={36 * rem}
+                                                    color={colors.blue800}
+                                                />
+                                            </TouchableOpacity>
+                                            <TextInput
+                                                placeholder={'Hrs'}
+                                                placeholderTextColor={colors.grey400}
+                                                style={styles.requirementHoursInput}
+                                                value={item.hours}
+                                                onChangeText={text => { handleHours(text, index) }}
+                                                keyboardType={'numeric'}
+                                                maxLength={5}
                                             />
-                                        </TouchableOpacity>
-                                        <TextInput
-                                            placeholder={'Hrs'}
-                                            placeholderTextColor={colors.grey400}
-                                            style={styles.requirementHoursInput}
-                                            value={item.hours}
-                                            onChangeText={text => { handleHours(text, index) }}
-                                            keyboardType={'numeric'}
-                                            maxLength={5}
-                                        />
-                                        <TextInput
-                                            placeholder={'e.g. Bioethics'}
-                                            placeholderTextColor={colors.grey400}
-                                            style={styles.requirementInput}
-                                            value={item.name}
-                                            onChangeText={text => { handleName(text, index) }}
-                                            maxLength={70}
-                                        />
-                                    </View>
+                                            <TextInput
+                                                placeholder={'e.g. Bioethics'}
+                                                placeholderTextColor={colors.grey400}
+                                                style={styles.requirementInput}
+                                                value={item.name}
+                                                onChangeText={text => { handleName(text, index) }}
+                                                maxLength={70}
+                                            />
+                                        </View>
                                     )}
                                 />
                             </View>
                         ) : (
-                            <Text style={styles.noRequirementsText}>Some states have special requirements for license renewal. Click Add Requirement to add some!</Text>
+                            <Text style={styles.noRequirementsText}>Some states have special requirements for certification renewal. Click Add Requirement to add some!</Text>
                         )}
                     </View>
                     <TouchableOpacity
                         onPress={() => {
-                            editLicense();
+                            editCertification();
                         }}
                         disabled={isLoading}
-                        style={styles.addNewLicenseButton}
+                        style={styles.addNewCertificationButton}
                     >
                         <Text style={styles.choiceTextSelected}>{isLoading ? ('...') : ('Save')}</Text>
                     </TouchableOpacity>

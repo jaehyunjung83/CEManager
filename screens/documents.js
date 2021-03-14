@@ -19,14 +19,14 @@ export default function documents({ navigation }) {
   let ceData = useSelector(state => state.ces);
   const [isEmpty, setIsEmpty] = useState(true);
 
-
   React.useEffect(() => {
     if (Object.keys(ceData).length) {
       setIsEmpty(false);
     }
+    else (setIsEmpty(true));
   }, [JSON.parse(JSON.stringify(ceData))])
 
-  let openScannerHandler = () => {
+  let addCE = () => {
     navigation.navigate("AddCE");
   }
 
@@ -54,12 +54,15 @@ export default function documents({ navigation }) {
       }
       < View style={styles.addNewButtonContainer} >
         <TouchableOpacity
-          onPress={openScannerHandler}>
-          <AntDesign
-            name='plus'
-            size={32 * rem}
-            color={'white'}
-          />
+          onPress={addCE}>
+          <Text style={styles.addNewText}>
+            <AntDesign
+              name='plus'
+              size={20 * rem}
+              color={'white'}
+            />
+            Add CE
+          </Text>
         </TouchableOpacity>
       </View >
     </ >
@@ -85,14 +88,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.grey200,
     // paddingBottom: 48 * rem,
   },
+
   addNewButtonContainer: {
     position: 'absolute',
     right: 32 * rem,
     bottom: 32 * rem,
     alignItems: 'center',
     justifyContent: 'center',
-    width: 60 * rem,
-    aspectRatio: 1,
+    height: 60 * rem,
     borderRadius: (60 * rem) / 2,
     backgroundColor: colors.blue800,
     shadowColor: "#000",
@@ -103,5 +106,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.22,
     shadowRadius: 2.22,
     elevation: 3,
+  },
+  addNewText: {
+    fontSize: 20 * rem,
+    color: 'white',
+    paddingRight: 24 * rem,
+    paddingLeft: 24 * rem,
   },
 });

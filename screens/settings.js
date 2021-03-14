@@ -23,12 +23,12 @@ const styles = StyleSheet.create({
         backgroundColor: colors.blue800,
       },
       header: {
-          fontSize: 30,
+          fontSize: 30 * rem,
           fontWeight: '500',
           color: 'white',
       },
       header2:{
-        fontSize: 30,
+        fontSize: 30 * rem,
         fontWeight: '500',
         color: 'cyan',
       },

@@ -11,17 +11,16 @@ import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 
 import { useSelector, useDispatch } from 'react-redux';
-import { updateLicenses } from '../actions';
+import { updateCertifications } from '../actions';
 
-export default function licenseCard(props) {
-    const licenses = useSelector(state => state.licenses);
+export default function certificationCard(props) {
+    const certifications = useSelector(state => state.certifications);
     const accountData = useSelector(state => state.accountData);
-    const licenseData = licenses[props.data];
+    const certificationID = props.data;
+    const certificationData = certifications[certificationID];
 
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
-
-    const [renewalReady, setRenewalReady] = useState(false);
 
     const [completedCEHours, setCompletedCEHours] = useState(0);
     const [totalCEHoursNeeded, setTotalCEHoursNeeded] = useState(0);
@@ -34,7 +33,7 @@ export default function licenseCard(props) {
     React.useEffect(() => {
         let tempCompletedHours = 0;
         let found = false;
-        for (const requirement of licenseData.requirements) {
+        for (const requirement of certificationData.requirements) {
             if (requirement.name !== "Total CEs Needed") continue;
 
             found = true;
@@ -49,76 +48,11 @@ export default function licenseCard(props) {
             setTotalCEHoursNeeded(0);
         }
         setCompletedCEHours(tempCompletedHours);
-
-        checkLicenseRequirementsComplete(licenseData);
-    }, [JSON.stringify(licenses)]);
-
-    let checkLicenseRequirementsComplete = async (licenseData) => {
-        try {
-            if (!licenseData.complete) { return }
-            let db = firestore();
-            const licenseType = licenseData.licenseType;
-            const licenseState = licenseData.licenseState;
-            let officialRequirementUpdateDate = licenseData.officialRequirementUpdateDate;
-            if (officialRequirementUpdateDate?.["_seconds"]) {
-                // Last updated turned into obj instead of Firestore Timestamp.
-                officialRequirementUpdateDate = new firestore.Timestamp(officialRequirementUpdateDate["_seconds"], 0)
-            }
-
-            let expirationDate = new Date(licenseData.licenseExpiration);
-            let threeMonthsPrior = new Date(expirationDate);
-            threeMonthsPrior.setMonth(threeMonthsPrior.getMonth() - 3);
-            let now = new Date();
-            if (now <= threeMonthsPrior || now >= expirationDate) {
-                throw new Error("License is not ready for renewal based on expiration date.");
-            }
-
-
-            const requirements = licenseData.requirements;
-
-            let response = await db.collection("requirements").doc(licenseType).get();
-            let allOfficialRequirements = response.data();
-            if (!allOfficialRequirements) {
-                throw new Error("License is not supported for renewals");
-            }
-
-            let officialRequirements = allOfficialRequirements[licenseState];
-            if (!officialRequirements) {
-                throw new Error("State is not supported for renewals");
-            }
-
-            if (officialRequirements.lastUpdated.toMillis() !== officialRequirementUpdateDate.toMillis()) {
-                console.log(`Official requirements last updated: ${officialRequirements.lastUpdated.toMillis()}`);
-                console.log(`User requirements last updated: ${officialRequirementUpdateDate.toMillis()}`);
-                throw new Error("License requirements not up to date.");
-            }
-            // License requirements up to date.
-
-            for (const requirement of requirements) {
-                if (requirement.complete) continue;
-                if (requirement.hours) {
-                    let hoursNeeded = Number(requirement.hours);
-                    let hoursDone = 0;
-                    for (const id in requirement.linkedCEs) {
-                        hoursDone += requirement.linkedCEs[id];
-                    }
-                    if (hoursDone < hoursNeeded) {
-                        throw new Error("License requirements incomplete");
-                    }
-                }
-            }
-            console.log("License up to date and meets all necessary requirements");
-            setRenewalReady(true);
-        }
-        catch (e) {
-            console.log(e);
-            setRenewalReady(false);
-        }
-    }
+    }, [JSON.stringify(certifications)]);
 
     // Some logic to determine how to fill up progress bar.
     let progressFill = 0;
-    for (const requirement of licenseData.requirements) {
+    for (const requirement of certificationData.requirements) {
         if (requirement.name !== "Total CEs Needed") continue;
         if (completedCEHours) {
             progressFill = parseInt(completedCEHours) / parseInt(requirement.hours);
@@ -128,24 +62,12 @@ export default function licenseCard(props) {
         }
     }
 
-    // Accounting for if the license type is "Other"
-    let licenseTitle = '';
-    if (licenseData['licenseType'] === 'Other') {
-        const stateAcronym = getStateAcronym(licenseData['licenseState'])
-        licenseTitle = `${licenseData['otherLicenseType']} License (${stateAcronym})`;
-    }
-    else {
-        const licenseType = getShortenedTitle(licenseData['licenseType']);
-        const stateAcronym = getStateAcronym(licenseData['licenseState'])
-        licenseTitle = licenseType + ` License (${stateAcronym})`;
-    }
-
     // Function for calculating the status and what to display.
     let getStatus = () => {
         const now = new Date().getTime();
-        const expiration = new Date(licenseData.licenseExpiration).getTime();
+        const expiration = new Date(certificationData.expiration).getTime();
         const diffInDays = (expiration - now) / (1000 * 3600 * 24);
-        if (licenseData?.complete) {
+        if(certificationData?.complete) {
             return (
                 <View style={styles.statusBlue}>
                     <Text style={styles.statusTextBlue}>Complete</Text>
@@ -176,7 +98,7 @@ export default function licenseCard(props) {
     }
 
     let addCE = () => {
-        navigation.navigate("AddCE", { licenseID: licenseData.id });
+        navigation.navigate("AddCE", { certificationID: certificationData.id });
     }
 
     let linkExistingCE = () => {
@@ -189,39 +111,19 @@ export default function licenseCard(props) {
     }, [linkingExistingCEs])
 
     let cardPressed = () => {
-        navigation.navigate("LicenseDetails", { id: licenseData.id });
+        navigation.navigate("CertificationDetails", { id: certificationData.id });
     }
 
     let openScanner = () => {
         navigation.navigate('Scanner', {
             fromThisScreen: route.name,
             initialFilterId: 1, // Color photo
-            licenseId: licenseData.id,
+            certificationId: certificationData.id,
         });
     }
 
     let openImage = () => {
         setIsModalVisible(true);
-    }
-
-    let startRenewalProcess = () => {
-        if (accountData.plan !== "Concierge") {
-            Alert.alert(
-                "Unavailable",
-                "Renewing through the app is only available on our Conceriege Plan",
-                [
-                    {
-                        text: "Cancel",
-                    },
-                    { text: "Change Plan", onPress: () => { navigation.navigate("ChangePlan") }, }
-                ],
-                { cancelable: true })
-        }
-        else {
-            navigation.navigate('Renewal', {
-                licenseID: licenseData.id
-            })
-        }
     }
 
     // Used to make element sizes more consistent across screen sizes.
@@ -444,15 +346,10 @@ export default function licenseCard(props) {
         },
         progressBarFill: {
             position: 'absolute',
-            top: -2 * rem,
             width: (screenWidth - (96 * rem)) * (progressFill),
             borderTopLeftRadius: progressBarWidth,
             borderBottomLeftRadius: progressBarWidth,
-            borderColor: colors.blue800,
-            borderRightWidth: 0,
-            borderLeftWidth: 0,
-            borderWidth: 2 * rem,
-            height: 22 * rem,
+            height: 18 * rem,
             backgroundColor: 'rgba(208,233,251,1)',
         },
         progressBarFillComplete: {
@@ -540,36 +437,6 @@ export default function licenseCard(props) {
             fontSize: 20 * rem,
             alignSelf: 'center',
         },
-
-        renewalButton: {
-            padding: 18 * rem,
-            paddingTop: 12 * rem,
-            paddingBottom: 12 * rem,
-            flexDirection: 'row',
-            borderRadius: 36 * rem,
-            borderWidth: 2 * rem,
-            borderColor: colors.green500,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: colors.green500,
-            marginTop: 6 * rem,
-            marginBottom: 6 * rem,
-
-            shadowColor: "green",
-            shadowOffset: {
-                width: 0,
-                height: 4,
-            },
-            shadowOpacity: 0.30,
-            shadowRadius: 4.65,
-
-            elevation: 8,
-        },
-        renewalButtonText: {
-            color: "white",
-            fontSize: 20 * rem,
-            fontWeight: '500',
-        },
     });
 
     return (
@@ -589,7 +456,7 @@ export default function licenseCard(props) {
                                     <FastImage
                                         style={styles.imgContainer}
                                         source={{
-                                            uri: licenseData.licensePhoto,
+                                            uri: certificationData.photo,
                                             priority: FastImage.priority.normal,
                                         }}
                                         resizeMode={FastImage.resizeMode.contain}
@@ -600,18 +467,18 @@ export default function licenseCard(props) {
                                     <Text style={styles.loadingText}>Loading. . .</Text>
                                 </>
                             ) : (
-                                <FastImage
-                                    style={styles.imgContainer}
-                                    source={{
-                                        uri: licenseData.licensePhoto,
-                                        priority: FastImage.priority.normal,
-                                    }}
-                                    resizeMode={FastImage.resizeMode.contain}
-                                    onLoadEnd={() => {
-                                        setIsLoading(false);
-                                    }}
-                                />
-                            )}
+                                    <FastImage
+                                        style={styles.imgContainer}
+                                        source={{
+                                            uri: certificationData.photo,
+                                            priority: FastImage.priority.normal,
+                                        }}
+                                        resizeMode={FastImage.resizeMode.contain}
+                                        onLoadEnd={() => {
+                                            setIsLoading(false);
+                                        }}
+                                    />
+                                )}
                         </TouchableWithoutFeedback>
                     </View>
                 </TouchableWithoutFeedback>
@@ -628,20 +495,20 @@ export default function licenseCard(props) {
                         <View style={styles.infoContainer}>
                             <View style={styles.titleContainer}>
                                 <AntDesign name="idcard" size={20 * rem} style={styles.icon} />
-                                <Text style={styles.titleText}>{licenseTitle}</Text>
+                                <Text style={styles.titleText}>{certifications[certificationID].name}</Text>
                             </View>
-                            {licenseData.licenseNum ? (
+                            {certificationData.certificationNum ? (
                                 <View style={styles.idNumContainer}>
-                                    <Text style={styles.idNum}>{`#${licenseData.licenseNum}`}</Text>
+                                    <Text style={styles.idNum}>{`#${certificationData.certificationNum}`}</Text>
                                 </View>
                             ) : (null)}
                             <View style={styles.expirationContainer}>
                                 <AntDesign name="calendar" size={20 * rem} style={styles.icon} />
-                                <Text style={styles.expirationText}>{`Exp: ${licenseData.licenseExpiration}`}</Text>
+                                <Text style={styles.expirationText}>{`Exp: ${certificationData.expiration}`}</Text>
                             </View>
                             {getStatus()}
                         </View>
-                        {licenseData.licenseThumbnail ? (
+                        {certificationData.thumbnail ? (
                             <TouchableOpacity
                                 style={styles.thumbnailContainer}
                                 onPress={() => {
@@ -651,20 +518,20 @@ export default function licenseCard(props) {
                                 <FastImage
                                     style={styles.thumbnailImgContainer}
                                     source={{
-                                        uri: licenseData.licenseThumbnail,
+                                        uri: certificationData.thumbnail,
                                         priority: FastImage.priority.normal,
                                     }}
                                     resizeMode={FastImage.resizeMode.contain}
                                 />
                             </TouchableOpacity>
                         ) : (
-                            <TouchableOpacity
-                                style={styles.thumbnailContainer}
-                                onPress={openScanner}
-                            >
-                                <AntDesign name="camerao" size={32 * rem} style={styles.thumbnailIcon} />
-                            </TouchableOpacity>
-                        )}
+                                <TouchableOpacity
+                                    style={styles.thumbnailContainer}
+                                    onPress={openScanner}
+                                >
+                                    <AntDesign name="camerao" size={32 * rem} style={styles.thumbnailIcon} />
+                                </TouchableOpacity>
+                            )}
                     </View>
                     {totalCEHoursNeeded ? (
                         <View style={styles.ceContainer}>
@@ -673,22 +540,13 @@ export default function licenseCard(props) {
                                 {completedCEHours >= totalCEHoursNeeded ? (
                                     <View style={styles.progressBarFillComplete}></View>
                                 ) : (<View style={styles.progressBarFill}></View>
-                                )}
+                                    )}
                                 {completedCEHours ? (
                                     <Text style={styles.ceText}>{`${completedCEHours}/${totalCEHoursNeeded} CE`}</Text>
                                 ) : (
-                                    <Text style={styles.ceText}>{`0/${totalCEHoursNeeded} CE`}</Text>
-                                )}
+                                        <Text style={styles.ceText}>{`0/${totalCEHoursNeeded} CE`}</Text>
+                                    )}
                             </View>
-                        </View>
-                    ) : (null)}
-
-                    {renewalReady ? (
-                        <View>
-                            <TouchableOpacity style={styles.renewalButton}
-                                onPress={startRenewalProcess}>
-                                <Text style={styles.renewalButtonText}>Start Renewal!</Text>
-                            </TouchableOpacity>
                         </View>
                     ) : (null)}
 
@@ -711,78 +569,10 @@ export default function licenseCard(props) {
                             <Text style={styles.addCEText}> Add CE</Text>
                         </TouchableOpacity>
                     </View>
-                    <LinkExistingCE open={linkingExistingCEs} licenseID={licenseData.id} />
+                    <LinkExistingCE open={linkingExistingCEs} certificationID={certificationData.id} />
                 </>
 
             </TouchableOpacity>
         </>
     );
-}
-
-let getShortenedTitle = (longTitle) => {
-    switch (longTitle) {
-        case "Licensed Vocational Nurse (LVN)":
-            return "LVN";
-        case "Registered Nurse (RN)":
-            return "RN";
-        default:
-            return "";
-    }
-}
-
-let getStateAcronym = (stateFullName) => {
-    return this.stateList[stateFullName];
-}
-
-stateList = {
-    'Arizona': 'AZ',
-    'Alabama': 'AL',
-    'Alaska': 'AK',
-    'Arkansas': 'AR',
-    'California': 'CA',
-    'Colorado': 'CO',
-    'Connecticut': 'CT',
-    'Delaware': 'DE',
-    'Florida': 'FL',
-    'Georgia': 'GA',
-    'Hawaii': 'HI',
-    'Idaho': 'ID',
-    'Illinois': 'IL',
-    'Indiana': 'IN',
-    'Iowa': 'IA',
-    'Kansas': 'KS',
-    'Kentucky': 'KY',
-    'Louisiana': 'LA',
-    'Maine': 'ME',
-    'Maryland': 'MD',
-    'Massachusetts': 'MA',
-    'Michigan': 'MI',
-    'Minnesota': 'MN',
-    'Mississippi': 'MS',
-    'Missouri': 'MO',
-    'Montana': 'MT',
-    'Nebraska': 'NE',
-    'Nevada': 'NV',
-    'New Hampshire': 'NH',
-    'New Jersey': 'NJ',
-    'New Mexico': 'NM',
-    'New York': 'NY',
-    'North Carolina': 'NC',
-    'North Dakota': 'ND',
-    'Ohio': 'OH',
-    'Oklahoma': 'OK',
-    'Oregon': 'OR',
-    'Pennsylvania': 'PA',
-    'Rhode Island': 'RI',
-    'South Carolina': 'SC',
-    'South Dakota': 'SD',
-    'Tennessee': 'TN',
-    'Texas': 'TX',
-    'Utah': 'UT',
-    'Vermont': 'VT',
-    'Virginia': 'VA',
-    'Washington': 'WA',
-    'West Virginia': 'WV',
-    'Wisconsin': 'WI',
-    'Wyoming': 'WY'
 }

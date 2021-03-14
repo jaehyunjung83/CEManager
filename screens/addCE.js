@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch, useEffect } from 'react-redux';
-import { updateLicenses, updateCEs } from '../actions';
-import { Modal, FlatList, TouchableWithoutFeedback, TouchableOpacity, Text, TextInput, View, StyleSheet, Dimensions, ScrollView, KeyboardAvoidingView } from 'react-native';
+import { updateLicenses, updateCertifications, updateCEs } from '../actions';
+import { Modal, FlatList, TouchableWithoutFeedback, TouchableOpacity, Text, TextInput, View, StyleSheet, Dimensions, ScrollView, KeyboardAvoidingView, Image } from 'react-native';
 import { colors } from '../components/colors.js';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import Header from '../components/header.js';
@@ -15,10 +15,9 @@ import { useRoute } from '@react-navigation/native';
 import ApplyTowardLicense from '../components/applyTowardLicense';
 let ceID = uuidv4();
 
-
 export default function addCE(props) {
-    // TODO: Create local state of licenses and update that instead of central state.
     const licenses = useSelector(state => state.licenses);
+    const certifications = useSelector(state => state.certifications);
     const dispatch = useDispatch();
     const headerHeight = useHeaderHeight();
 
@@ -41,9 +40,11 @@ export default function addCE(props) {
 
     const [cePhoto, setCEPhoto] = useState("");
     const [ceThumbnail, setCEThumbnail] = useState("");
+    const [filePath, setFilePath] = useState("");
 
-    const [linkedLicenses, setLinkedLicenses] = useState([]);
+    const [linkedData, setLinkedData] = useState([]);
     const [localLicensesCopy, setLocalLicensesCopy] = useState(JSON.parse(JSON.stringify(licenses)));
+    const [localCertificationsCopy, setLocalCertificationsCopy] = useState(JSON.parse(JSON.stringify(certifications)));
 
     const route = useRoute();
 
@@ -83,6 +84,7 @@ export default function addCE(props) {
                     .then(() => {
                         console.log("Deleted photo successfully.");
                         setCEPhoto(props.route?.params?.photoURL);
+                        setFilePath(props.route?.params?.filePath);
                     })
                     .catch(error => {
                         console.log("Failed to delete old photo. Error: " + error.toString());
@@ -90,12 +92,13 @@ export default function addCE(props) {
             }
             else {
                 setCEPhoto(props.route?.params?.photoURL);
+                setFilePath(props.route?.params?.filePath);
             }
         }
         // For tracking license ID user came from
         if (props?.route?.params?.id) {
-            let temp = linkedLicenses.concat(props.route.params.id);
-            setLinkedLicenses(temp);
+            let temp = linkedData.concat(props.route.params.id);
+            setLinkedData(temp);
         }
     }, [props.route.params?.thumbnailURL]);
     // Checks for license type, other license type (if Other is selected), state, and expiration of license.
@@ -148,34 +151,34 @@ export default function addCE(props) {
         return isComplete;
     }
 
-    let setRequirementHours = (hours, licenseID, index) => {
-        // Links CE to a special requirement.
-        // Set license state.
-        let licensesCopy = JSON.parse(JSON.stringify(licenses));
+    let setRequirementHours = (hours, index, id = { licenseID: "", certificationID: "" }) => {
+        // Links CE to special requirement.
+        // Set license state2
+        const dataID = id.licenseID ? id.licenseID : id.certificationID;
+        let dataCopy = id.licenseID ? JSON.parse(JSON.stringify(localLicensesCopy)) : JSON.parse(JSON.stringify(localCertificationsCopy));
+
         if (index == null) {
-            setTotalRequirementHours(hours, licenseID);
+            setHours(hours);
+            return
         }
-        else {
+        if (hours) {
+            let temp = linkedData.concat(dataID);
+            setLinkedData(temp);
 
-            if (hours) {
-                let temp = linkedLicenses.concat(licenseID);
-                setLinkedLicenses(temp);
-
-                if (typeof licensesCopy[licenseID].requirements[index]["linkedCEs"] == "object") {
-                    licensesCopy[licenseID].requirements[index]["linkedCEs"][ceID] = Number(hours);
-                }
-                else {
-                    licensesCopy[licenseID].requirements[index]["linkedCEs"] = {};
-                    licensesCopy[licenseID].requirements[index]["linkedCEs"][ceID] = Number(hours);
-                }
+            if (typeof dataCopy[dataID].requirements[index]["linkedCEs"] == "object") {
+                dataCopy[dataID].requirements[index]["linkedCEs"][ceID] = Number(hours);
             }
             else {
-                delete licensesCopy[licenseID].requirements[index]["linkedCEs"][ceID];
-                let temp = linkedLicenses.filter(id => id !== licenseID || id == props?.route?.params?.id);
-                setLinkedLicenses(temp);
+                dataCopy[dataID].requirements[index]["linkedCEs"] = {};
+                dataCopy[dataID].requirements[index]["linkedCEs"][ceID] = Number(hours);
             }
-            setLocalLicensesCopy(licensesCopy);
         }
+        else {
+            delete dataCopy[dataID].requirements[index]["linkedCEs"][ceID];
+            let temp = linkedData.filter(id => id !== dataID || id == props?.route?.params?.id);
+            setLinkedData(temp);
+        }
+        id.licenseID ? setLocalLicensesCopy(dataCopy) : setLocalCertificationsCopy(dataCopy);
     }
 
     let setTotalRequirementHours = (hours, licenseID) => {
@@ -187,42 +190,6 @@ export default function addCE(props) {
         if (!licenseID) {
             return;
         }
-        let licensesCopy = JSON.parse(JSON.stringify(licenses));
-        if (hours) {
-            if (typeof licensesCopy[licenseID]["linkedCEs"] == "object") {
-                licensesCopy[licenseID]["linkedCEs"][ceID] = Number(hours);
-            }
-            else {
-                licensesCopy[licenseID]["linkedCEs"] = {};
-                licensesCopy[licenseID]["linkedCEs"][ceID] = Number(hours);
-            }
-        }
-        else {
-            delete licensesCopy[licenseID]["linkedCEs"][ceID];
-        }
-        setLocalLicensesCopy(licensesCopy);
-
-        // Updating linkedLicenses (to display green checkmark and bolded text for license)
-        for (requirementIndex in licensesCopy[licenseID].requirements) {
-            for (linkedCE in licensesCopy[licenseID].requirements[requirementIndex]["linkedCEs"]) {
-                if (linkedCE == ceID) {
-                    let temp = linkedLicenses.concat(licenseID);
-                    setLinkedLicenses(temp);
-                    return;
-                }
-            }
-        }
-        for (linkedCE in licensesCopy[licenseID]["linkedCEs"]) {
-            if (linkedCE == ceID) {
-                let temp = linkedLicenses.concat(licenseID);
-                setLinkedLicenses(temp);
-                return;
-            }
-        }
-
-        // No linked CEs match current CE => remove current license from linkedLicenses
-        let temp = linkedLicenses.filter(id => id !== licenseID || id == props?.route?.params?.id);
-        setLinkedLicenses(temp);
     }
 
     let addCE = () => {
@@ -237,6 +204,7 @@ export default function addCE(props) {
                 id: ceID,
                 ceThumbnail: ceThumbnail,
                 cePhoto: cePhoto,
+                filePath: filePath,
             }
             let ceObj = {}
             ceObj[ceID] = ceData;
@@ -255,17 +223,28 @@ export default function addCE(props) {
                         .then(() => {
                             console.log("Document successfully written!");
                             dispatch(updateLicenses(localLicensesCopy));
-                            props.navigation.navigate("Homepage");
+                            props.navigation.navigate("Documents");
                         })
                         .catch((error) => {
                             console.error("Error adding document: ", error);
-                            props.navigation.navigate("Homepage");
+                            props.navigation.navigate("Documents");
+                        });
+
+                    db.collection('users').doc(uid).collection('certifications').doc('certificationData').set(localCertificationsCopy, { merge: true })
+                        .then(() => {
+                            console.log("Document successfully written!");
+                            dispatch(updateCertifications(localCertificationsCopy));
+                            props.navigation.navigate("Documents");
+                        })
+                        .catch((error) => {
+                            console.error("Error adding document: ", error);
+                            props.navigation.navigate("Documents");
                         });
                 })
                 .catch((error) => {
                     setGeneralErrorMsg("Failed to save CE. Please try again later.");
                     console.error("Error adding CE: ", error);
-                    props.navigation.navigate("Homepage");
+                    props.navigation.navigate("Documents");
                 });
         }
         else {
@@ -293,14 +272,14 @@ export default function addCE(props) {
                 contentContainerStyle={styles.container}
                 keyboardShouldPersistTaps={'always'}>
 
-                <View style={styles.headerContainer}>
+                {/* <View style={styles.headerContainer}>
                     <Header text="CE Information" />
-                </View>
+                </View> */}
                 <View style={styles.ceFlexRowContainer}>
                     <View style={styles.nameContainer}>
                         <Text style={styles.inputLabel}>Name of CE {nameErrorMsg ? (<Text style={styles.errorMessage}> {nameErrorMsg}</Text>) : (null)}</Text>
                         <TextInput
-                            placeholder={'e.g. Bioterrorism'}
+                            placeholder={'e.g. Bioethics'}
                             placeholderTextColor={colors.grey400}
                             style={styles.input}
                             value={name}
@@ -314,7 +293,7 @@ export default function addCE(props) {
                     <View style={styles.nameContainer}>
                         <Text style={styles.inputLabel}>Provider Name {providerNameErrorMsg ? (<Text style={styles.errorMessage}> {providerNameErrorMsg}</Text>) : (null)}</Text>
                         <TextInput
-                            placeholder={'e.g. Bioterrorism'}
+                            placeholder={'Provider Name'}
                             placeholderTextColor={colors.grey400}
                             style={styles.input}
                             value={providerName}
@@ -343,7 +322,7 @@ export default function addCE(props) {
                             placeholderTextColor={colors.grey400}
                             style={styles.input}
                             value={hours}
-                            onChangeText={hourText => { setRequirementHours(hourText, props?.route?.params?.id); setHours(hourText) }}
+                            onChangeText={hourText => { setRequirementHours(hourText, null, { licenseID: props?.route?.params?.licenseID, certificationID: props?.route?.params?.certificationID }); setHours(hourText) }}
                             keyboardType={'numeric'}
                             maxLength={4}
                         />
@@ -377,7 +356,6 @@ export default function addCE(props) {
                             props.navigation.navigate('Scanner', {
                                 fromThisScreen: route.name,
                                 initialFilterId: 2, // Black & White
-                                ceID: ceID,
                             });
                         }}
                         style={styles.thumbnailButton}
@@ -391,21 +369,27 @@ export default function addCE(props) {
                             resizeMode={FastImage.resizeMode.contain}
                         />
                         ) : (
-                                <AntDesign name="camerao" size={32 * rem} style={styles.thumbnailIcon} />
-                            )}
+                            <AntDesign name="camerao" size={32 * rem} style={styles.thumbnailIcon} />
+                        )}
                     </TouchableOpacity>
                 </View>
 
-                <View style={styles.headerWrapContainer}>
-                    <Header text="Link to Additional Licenses/Certifications" />
+                <View style={styles.additionalQuestionContainer}>
+                        <Text style={styles.inputLabel}>Would you like to apply this CE to other credentials?</Text>
+                        
+                    <View style={styles.dateContainer}>
+                        <TouchableOpacity
+                            onPress={applyTowardsLicense}
+                            style={styles.linkCEButton}
+                        >
+                            <Text style={styles.linkCEButtonText}>{('Apply to Other Credentials')}</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
+                {/* <View style={styles.headerWrapContainer}>
+                    <Header text="Would you like to apply this CE to other credentials?" />
+                </View> */}
 
-                <TouchableOpacity
-                    onPress={applyTowardsLicense}
-                    style={styles.linkCEButton}
-                >
-                    <Text style={styles.linkCEButtonText}>{('Link CE')}</Text>
-                </TouchableOpacity>
 
                 <Text style={styles.errorMessage}> {generalErrorMsg}</Text>
                 <TouchableOpacity
@@ -418,7 +402,7 @@ export default function addCE(props) {
 
             </ScrollView >
 
-            <ApplyTowardLicense open={applyingTowardsLicense} id={ceID} licenseID={props.route?.params?.id} new={true} hours={hours} setRequirementHours={setRequirementHours} />
+            <ApplyTowardLicense open={applyingTowardsLicense} id={ceID} licenseID={props.route?.params?.licenseID} certificationID={props.route?.params?.certificationID} new={true} hours={hours} setRequirementHours={setRequirementHours} />
         </KeyboardAvoidingView >
     )
 }
@@ -444,7 +428,7 @@ const styles = StyleSheet.create({
     },
     headerWrapContainer: {
         width: '100%',
-        height: 60 * rem,
+        height: 40 * rem,
         marginTop: 18 * rem,
         marginBottom: 18 * rem,
         zIndex: -1,
@@ -517,8 +501,7 @@ const styles = StyleSheet.create({
         borderWidth: 2 * rem,
         borderRadius: 10 * rem,
         borderColor: colors.blue800,
-        justifyContent: 'center',
-        alignSelf: 'center',
+        alignSelf: 'flex-start',
         padding: 12 * rem,
         paddingLeft: 24 * rem,
         paddingRight: 24 * rem,
@@ -633,6 +616,12 @@ const styles = StyleSheet.create({
         fontSize: 16 * rem,
         marginBottom: 24 * rem,
         textAlign: 'center',
+    },
+
+    additionalQuestionContainer: {
+        flexDirection: 'column',
+        minHeight: (50 + 24) * rem,
+        marginBottom: 18 * rem,
     },
 });
 

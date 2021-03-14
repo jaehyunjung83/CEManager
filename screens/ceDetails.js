@@ -5,7 +5,7 @@ import FastImage from 'react-native-fast-image'
 import ApplyTowardLicense from '../components/applyTowardLicense.js';
 import { updateLicenses, updateCEs } from '../actions';
 
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity, SectionList, FlatList, Modal, TouchableWithoutFeedback, Alert } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity, SectionList, FlatList, Modal, TouchableWithoutFeedback, Alert, Image } from 'react-native';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import { colors } from '../components/colors.js';
 import Header from '../components/header.js';
@@ -20,6 +20,7 @@ export default function ceDetails(props) {
     const route = useRoute();
     const allCEData = useSelector(state => state.ces);
     const licenses = useSelector(state => state.licenses);
+    const certifications = useSelector(state => state.certifications);
     const dispatch = useDispatch();
     const ceID = props.route?.params?.data?.id;
     let ceData = allCEData[ceID];
@@ -35,13 +36,12 @@ export default function ceDetails(props) {
     const [applyingTowardsLicense, setApplyingTowardsLicense] = useState(false);
 
     // Initializing stuff
-    React.useEffect(() => {
-        setLinkedLicenses([]);
-    }, [licenses, allCEData])
+    // React.useEffect(() => {
+    //     setLinkedLicenses([]);
+    // }, [JSON.stringify(licenses), JSON.stringify(allCEData), JSON.stringify(certifications)])
 
     React.useEffect(() => {
-        if (!linkedLicenses.length) {
-            let linkedLicensesCopy = JSON.parse(JSON.stringify(linkedLicenses));
+            let linkedLicensesCopy = JSON.parse(JSON.stringify([]));
             let foundLink = false;
 
             for (const license of Object.keys(licenses)) {
@@ -70,14 +70,40 @@ export default function ceDetails(props) {
                     linkedLicensesCopy.push(requirements);
                 }
             }
+
+            for (const certificationID of Object.keys(certifications)) {
+                let requirements = {
+                    title: `${certifications[certificationID].name}`,
+                    data: [],
+                }
+
+                if (certifications[certificationID].requirements.length) {
+                    // Checking if linked to specific requirement
+                    for (const requirement of certifications[certificationID].requirements) {
+                        for (const linkedCE of Object.keys(requirement["linkedCEs"])) {
+                            if (ceData && linkedCE == ceData.id) {
+                                let linkedRequirement = {
+                                    name: requirement.name,
+                                    hours: requirement["linkedCEs"][linkedCE],
+                                }
+                                requirements.data.push(linkedRequirement);
+                            }
+                        }
+                    }
+                }
+
+                if (requirements.data.length > 0) {
+                    foundLink = true;
+                    linkedLicensesCopy.push(requirements);
+                }
+            }
             if (foundLink) {
                 setLinkedLicenses(linkedLicensesCopy);
             }
             else {
                 setLinkedLicenses([{}])
             }
-        }
-    }, [JSON.stringify(linkedLicenses)])
+    }, [JSON.stringify(licenses), JSON.stringify(allCEData), JSON.stringify(certifications)])
 
     let addCE = () => {
         navigation.navigate("EditCE", { ceData: ceData, licenseID: licenseID });
@@ -216,19 +242,16 @@ export default function ceDetails(props) {
             fontWeight: '500',
         },
         modalTransparency: {
-            position: 'absolute',
             backgroundColor: 'rgba(0,0,0, 0.40)',
             height: '100%',
             width: '100%',
         },
-        ImgContainer: {
+        imgContainer: {
+            position: 'absolute',
             marginTop: (Dimensions.get('window').height / 2) - (screenWidth / 2),
             width: screenWidth,
             aspectRatio: 1,
             backgroundColor: 'black',
-            alignItems: 'center',
-            justifyContent: 'center',
-            alignSelf: 'center',
         },
         loadingText: {
             marginTop: Dimensions.get('window').height / 2,
@@ -439,9 +462,8 @@ export default function ceDetails(props) {
                         >
                             {isLoading ? (
                                 <>
-                                    <Text style={styles.loadingText}>Loading. . .</Text>
                                     <FastImage
-                                        style={{ height: 0, width: 0 }}
+                                        style={styles.imgContainer}
                                         source={{
                                             uri: selectedImage,
                                             priority: FastImage.priority.normal,
@@ -451,10 +473,11 @@ export default function ceDetails(props) {
                                             setIsLoading(false);
                                         }}
                                     />
+                                    <Text style={styles.loadingText}>Loading. . .</Text>
                                 </>
                             ) : (
                                     <FastImage
-                                        style={styles.ImgContainer}
+                                        style={styles.imgContainer}
                                         source={{
                                             uri: selectedImage,
                                             priority: FastImage.priority.normal,
@@ -528,7 +551,7 @@ export default function ceDetails(props) {
             <View style={styles.cardButtonsContainer}>
                 <TouchableOpacity style={styles.linkButton}
                     onPress={applyTowardsLicense}>
-                    <Text style={styles.linkButtonText}>Apply Towards Licenses</Text>
+                    <Text style={styles.linkButtonText}>Apply to Credentials</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.whiteButton}
                     onPress={addCE}>

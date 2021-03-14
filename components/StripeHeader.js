@@ -1,5 +1,5 @@
 import React from 'react'
-import { View, Text, Image, TouchableOpacity, Platform, StyleSheet } from 'react-native'
+import { View, Text, Image, TouchableOpacity, Platform, StyleSheet, Image } from 'react-native'
 import PropTypes from 'prop-types'
 import testID from '../../utils/testID'
 
@@ -11,7 +11,7 @@ export default function Header({ title, onMenuPress }) {
         onPress={onMenuPress}
         {...testID('toggleDrawerButton')}
       >
-        <Image style={styles.buttonImage} source={require('../assets/menu.png')} />
+        <FastImage style={styles.buttonImage} source={require('../assets/menu.png')} />
       </TouchableOpacity>
       <View style={styles.title}>
         <Text style={styles.titleText}>{title}</Text>

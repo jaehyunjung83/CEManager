@@ -1,0 +1,6 @@
+
+Device ID	Device Name	Device Platform
+8e41a4f8a627c0308873bd6748b680f4f70a4c03	Peter's Iphone	ios
+453eefc312e2a91774f3ce7225b58bf529fd91b9	Linda's Iphone	ios
+00008020-000E6D8E0268002E	Amy Meyer (Amanda's Mom)	ios
+00008020-00142CDC0C83002E	Brian Kavanaugh (tester)	ios

@@ -5,22 +5,32 @@ import { useSelector, useDispatch } from 'react-redux';
 import Completed from '../images/completed.svg';
 import { colors } from '../components/colors.js';
 import LicenseCard from '../components/licenseCard.js';
+import CertificationCard from '../components/certificationCard.js';
 
 
 export default function documents() {
   const licenses = useSelector(state => state.licenses);
+  const certifications = useSelector(state => state.certifications);
+  const allCEData = useSelector(state => state.ces);
 
   const [isEmpty, setIsEmpty] = useState(true);
+  const [licensesDisplayed, setLicensesDisplayed] = useState(-1);
+  const [IDList, setIDList] = useState([]);
 
   React.useEffect(() => {
-    for (const id in licenses) {
-      if (licenses[id].complete) {
-        setIsEmpty(false);
-        return;
-      }
-    }
-    setIsEmpty(true);
-  }, [JSON.stringify(licenses)])
+    if(!Object.keys({ ...licenses, ...certifications }).filter(key => licenses[key]?.complete || certifications[key]?.complete).length) {
+      setIsEmpty(true);
+  }
+  else {
+      setIsEmpty(false);
+  }
+  }, [JSON.stringify(licenses), JSON.stringify(certifications)])
+
+  React.useEffect(() => {
+    setIDList(Object.keys({ ...licenses, ...certifications }));
+    let licensesToDisplay = Object.keys({ ...licenses, ...certifications }).filter(key => licenses[key]?.complete).length;
+    setLicensesDisplayed(licensesToDisplay);
+}, [JSON.stringify(licenses), JSON.stringify(certifications), JSON.stringify(allCEData)])
 
   if (isEmpty) {
     return (
@@ -34,15 +44,35 @@ export default function documents() {
     return (
       <View style={styles.container}>
         <FlatList
-          contentContainerStyle={{ paddingBottom: 48 * rem }}
-          data={Object.keys(licenses).sort((a, b) => { return new Date(licenses[a].licenseExpiration) - new Date(licenses[b].licenseExpiration) })}
-          keyExtractor={(item) => item}
-          renderItem={({ item }) => (
-            licenses[item].complete && <LicenseCard
-              data={item}
+                contentContainerStyle={{ paddingBottom: 48 * rem }}
+                data={IDList.filter(key => licenses[key]?.complete || certifications[key]?.complete).sort((a, b) => {
+                    if ((a in licenses && b in licenses)) {
+                        return new Date(licenses[a].licenseExpiration) - new Date(licenses[b].licenseExpiration)
+                    }
+                    else if ((a in certifications && b in certifications)) {
+                        return new Date(certifications[a].expiration) - new Date(certifications[b].expiration)
+                    }
+                    else if (a in licenses) {
+                        return -1;
+                    }
+                    return 1;
+                })}
+                keyExtractor={(item) => item}
+                renderItem={({ item, index }) => (
+                    <>
+                        {item in licenses && index == 0 && <Text style={styles.header}>Licenses</Text>}
+
+                        {item in certifications && index == licensesDisplayed && <Text style={styles.header}>Certifications</Text>}
+
+                        {item in licenses && licenses[item].complete && <LicenseCard
+                            data={item}
+                        />}
+                        {item in certifications && certifications[item].complete && <CertificationCard
+                            data={item}
+                        />}
+                    </>
+                )}
             />
-          )}
-        />
       </View >
     )
   }
@@ -69,5 +99,45 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     backgroundColor: colors.grey200,
-  },
+    width: screenWidth,
+},
+header: {
+    fontSize: 22 * rem,
+    color: colors.blue800,
+    textAlign: 'left',
+    width: '100%',
+    fontWeight: '500',
+    marginLeft: 16 * rem,
+    marginTop: 12 * rem,
+},
+addNewButtonContainer: {
+    position: 'absolute',
+    right: 32 * rem,
+    bottom: 32 * rem,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 60 * rem,
+    width: 60 * rem,
+    borderRadius: (60 * rem) / 2,
+    backgroundColor: colors.blue800,
+    shadowColor: "#000",
+    shadowOffset: {
+        width: 0,
+        height: 1,
+    },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+    elevation: 3,
+},
+addNewText: {
+    fontSize: 20 * rem,
+    color: 'white',
+    paddingRight: 24 * rem,
+    paddingLeft: 24 * rem,
+},
+
+wrapper: {
+    margin: 0,
+    padding: 0,
+}
 });

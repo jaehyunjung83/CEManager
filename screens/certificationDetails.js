@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { updateLicenses } from '../actions';
+import { updateCertifications } from '../actions';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import FastImage from 'react-native-fast-image'
@@ -18,13 +18,14 @@ import { useRoute } from '@react-navigation/native';
 
 import Toast from 'react-native-simple-toast';
 
-export default function licenseDetails(props) {
-    // NOTE: licenseData is always followed by ? to not crash when deleting a license from this screen.
-    const licenseID = props.route.params.id;
+export default function certificationDetails(props) {
+    // TODO: Consider consolidating with license details screen as they are almost exactly the same.
+    // NOTE: certificationData is always followed by ? to not crash when deleting a certification from this screen.
+    const certificationID = props.route.params.id;
     const navigation = useNavigation();
     const route = useRoute();
 
-    const licenses = useSelector(state => state.licenses);
+    const certifications = useSelector(state => state.certifications);
     const ceData = useSelector(state => state.ces);
     const accountData = useSelector(state => state.accountData);
     const dispatch = useDispatch();
@@ -37,11 +38,11 @@ export default function licenseDetails(props) {
 
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [isOverflowOpen, setIsOverflowOpen] = useState(false);
-    const [overflowOptions, setOverflowOptions] = useState(["Edit License Details", "Export Documents", "Mark License as Complete", "Delete License"])
+    const [overflowOptions, setOverflowOptions] = useState(["Edit Certification Details", "Export Documents", "Mark Certification As Completed", "Delete Certification"])
 
     const [isLoading, setIsLoading] = useState(true);
-    const [licenseData, setLicenseData] = useState(licenses[licenseID]);
-    const [renewedLicenseCopy, setRenewedLicenseCopy] = useState({});
+    const [certificationData, setCertificationData] = useState(certifications[certificationID]);
+    const [renewedCertificationCopy, setRenewedCertificationCopy] = useState({});
     const [requirements, setRequirements] = useState([]);
     const [selectedImage, setSelectedImage] = useState("");
 
@@ -53,19 +54,19 @@ export default function licenseDetails(props) {
 
     // Initializing stuff
     React.useEffect(() => {
-        // Setting requirements that user assigned to license.
-        setLicenseData(licenses[licenseID]);
+        // Setting requirements that user assigned to certification.
+        setCertificationData(certifications[certificationID]);
 
-        if (licenses[licenseID]?.complete) {
-            let renewOptionIndex = overflowOptions.indexOf("Mark License as Complete");
+        if (certifications[certificationID]?.complete) {
+            let renewOptionIndex = overflowOptions.indexOf("Mark Certification As Completed");
             let optionsCopy = JSON.parse(JSON.stringify(overflowOptions));
-            optionsCopy[renewOptionIndex] = "Revert License to Incomplete";
+            optionsCopy[renewOptionIndex] = "Revert Certification to Incomplete";
             setOverflowOptions(optionsCopy);
         }
 
-        if (licenses[licenseID]?.["requirements"]?.length) {
-            let requirementsCopy = JSON.parse(JSON.stringify(licenses[licenseID]["requirements"]));
-            if (typeof licenses[licenseID]["requirements"] !== "undefined" && licenses[licenseID]["requirements"].length) {
+        if (certifications[certificationID]?.["requirements"]?.length) {
+            let requirementsCopy = JSON.parse(JSON.stringify(certifications[certificationID]["requirements"]));
+            if (typeof certifications[certificationID]["requirements"] !== "undefined" && certifications[certificationID]["requirements"].length) {
                 // Adding in custom requirements
                 for (const requirementIndex in requirementsCopy) {
                     let completedHours = 0;
@@ -84,12 +85,12 @@ export default function licenseDetails(props) {
 
         // Some logic to determine how to fill up progress bar.
         let progressFillTemp = 0;
-        if (licenses[licenseID]?.totalCEHours) {
+        if (certifications[certificationID]?.totalCEHours) {
             setShowProgressBar(true);
-            setTotalCEHours(licenses[licenseID]?.totalCEHours);
+            setTotalCEHours(certifications[certificationID]?.totalCEHours);
         }
         if (!showProgressBar) {
-            for (const requirement of licenses[licenseID]?.requirements) {
+            for (const requirement of certifications[certificationID]?.requirements) {
                 if (requirement.name == "Total CEs Needed") {
                     setShowProgressBar(true);
                     setTotalCEHours(requirement.hours);
@@ -108,33 +109,32 @@ export default function licenseDetails(props) {
             }
         }
 
-    }, [JSON.stringify(licenses[licenseID]), showProgressBar, totalCEHours, completedCEHours, JSON.stringify(ceData)])
+    }, [JSON.stringify(certifications[certificationID]), showProgressBar, totalCEHours, completedCEHours, JSON.stringify(ceData)])
 
     React.useEffect(() => {
-        checkLicenseRequirementsComplete(licenseData);
-    }, [JSON.stringify(licenses)]);
+        checkCertificationRequirementsComplete(certificationData);
+    }, [JSON.stringify(certifications)]);
 
-    let checkLicenseRequirementsComplete = async (licenseData) => {
+    let checkCertificationRequirementsComplete = async (certificationData) => {
         try {
-            console.log("checkLicenseRequirementsComplete()");
+            console.log("checkCertificationRequirementsComplete()");
             let db = firestore();
-            const licenseType = licenseData.licenseType;
-            const licenseState = licenseData.licenseState;
-            let officialRequirementUpdateDate = licenseData.officialRequirementUpdateDate;
+            const name = certificationData.name;
+            let officialRequirementUpdateDate = certificationData.officialRequirementUpdateDate;
             if (officialRequirementUpdateDate?.["_seconds"]) {
                 // Last updated turned into obj instead of Firestore Timestamp.
                 officialRequirementUpdateDate = new firestore.Timestamp(officialRequirementUpdateDate["_seconds"], 0)
             }
 
-            const requirements = licenseData.requirements;
+            const requirements = certificationData.requirements;
 
-            let response = await db.collection("requirements").doc(licenseType).get();
+            let response = await db.collection("requirements").doc(name).get();
             let allOfficialRequirements = response.data();
             if (!allOfficialRequirements) {
-                throw new Error("License is not supported for renewals");
+                throw new Error("Certification is not supported for renewals");
             }
 
-            let officialRequirements = allOfficialRequirements[licenseState];
+            let officialRequirements = allOfficialRequirements[certificationState];
             if (!officialRequirements) {
                 throw new Error("State is not supported for renewals");
             }
@@ -142,9 +142,9 @@ export default function licenseDetails(props) {
             if (officialRequirements.lastUpdated.toMillis() !== officialRequirementUpdateDate.toMillis()) {
                 console.log(`Official requirements last updated: ${officialRequirements.lastUpdated.toMillis()}`);
                 console.log(`User requirements last updated: ${officialRequirementUpdateDate.toMillis()}`);
-                throw new Error("License requirements not up to date.");
+                throw new Error("Certification requirements not up to date.");
             }
-            // License requirements up to date.
+            // Certification requirements up to date.
 
             for (const requirement of requirements) {
                 if (requirement.complete) continue;
@@ -155,11 +155,11 @@ export default function licenseDetails(props) {
                         hoursDone += requirement.linkedCEs[id];
                     }
                     if (hoursDone < hoursNeeded) {
-                        throw new Error("License requirements incomplete");
+                        throw new Error("Certification requirements incomplete");
                     }
                 }
             }
-            console.log("License up to date and meets all necessary requirements");
+            console.log("Certification up to date and meets all necessary requirements");
             setRenewalReady(true);
         }
         catch (e) {
@@ -168,27 +168,12 @@ export default function licenseDetails(props) {
         }
     }
 
-
-    // Accounting for if the license type is "Other"
-    let licenseTitle = '';
-    if (licenseData) {
-        if (licenseData['licenseType'] === 'Other') {
-            const stateAcronym = getStateAcronym(licenseData['licenseState'])
-            licenseTitle = `${licenseData['otherLicenseType']} License (${stateAcronym})`;
-        }
-        else {
-            const licenseType = getShortenedTitle(licenseData['licenseType']);
-            const stateAcronym = getStateAcronym(licenseData['licenseState'])
-            licenseTitle = licenseType + ` License (${stateAcronym})`;
-        }
-    }
-
     // Function for calculating the status and what to display.
     let getStatus = () => {
         const now = new Date().getTime();
-        const expiration = new Date(licenseData?.licenseExpiration).getTime();
+        const expiration = new Date(certificationData?.expiration).getTime();
         const diffInDays = (expiration - now) / (1000 * 3600 * 24);
-        if (licenseData?.complete) {
+        if(certificationData?.complete) {
             return (
                 <View style={styles.statusBlue}>
                     <Text style={styles.statusTextBlue}>Complete</Text>
@@ -221,7 +206,7 @@ export default function licenseDetails(props) {
 
 
     let addCE = () => {
-        navigation.navigate("AddCE", { licenseID: props.route.params.id });
+        navigation.navigate("AddCE", { certificationID: props.route.params.id });
     }
 
     let linkExistingCE = () => {
@@ -237,7 +222,7 @@ export default function licenseDetails(props) {
         props.navigation.navigate('Scanner', {
             fromThisScreen: route.name,
             initialFilterId: 1, // Color photo
-            licenseId: licenseData?.id,
+            certificationId: certificationData?.id,
         });
     }
 
@@ -279,27 +264,27 @@ export default function licenseDetails(props) {
         }
         else {
             // Requirement does not need any CE hours.
-            let licenseCopy = JSON.parse(JSON.stringify(licenseData));
+            let certificationCopy = JSON.parse(JSON.stringify(certificationData));
 
-            for (const index in licenseCopy.requirements) {
-                if (licenseCopy.requirements[index].key == requirement.key) {
+            for (const index in certificationCopy.requirements) {
+                if (certificationCopy.requirements[index].key == requirement.key) {
                     if (requirement.complete) {
-                        delete licenseCopy.requirements[index].complete;
+                        delete certificationCopy.requirements[index].complete;
                     }
                     else {
-                        licenseCopy.requirements[index].complete = true;
+                        certificationCopy.requirements[index].complete = true;
                     }
 
                     let uid = auth().currentUser.uid;
                     let db = firestore();
 
-                    let licenseObj = { [licenseData?.id]: JSON.parse(JSON.stringify(licenseCopy)) }
-                    db.collection('users').doc(uid).collection('licenses').doc('licenseData').set(licenseObj, { merge: true })
+                    let certificationObj = { [certificationData?.id]: JSON.parse(JSON.stringify(certificationCopy)) }
+                    db.collection('users').doc(uid).collection('certifications').doc('certificationData').set(certificationObj, { merge: true })
                         .then(() => {
                             Toast.showWithGravity(`Saved!`, Toast.SHORT, Toast.TOP);
-                            let licensesCopy = JSON.parse(JSON.stringify(licenses));
-                            licensesCopy[licenseData?.id] = licenseCopy;
-                            dispatch(updateLicenses(licensesCopy));
+                            let certificationsCopy = JSON.parse(JSON.stringify(certifications));
+                            certificationsCopy[certificationData?.id] = certificationCopy;
+                            dispatch(updateCertifications(certificationsCopy));
                         })
                 }
             }
@@ -308,19 +293,19 @@ export default function licenseDetails(props) {
 
     let handleOverflowOptionPressed = (option) => {
         switch (option) {
-            case "Edit License Details":
-                navigation.navigate("EditLicense", { licenseID: licenseID });
+            case "Edit Certification Details":
+                navigation.navigate("EditCertification", { certificationID: certificationID });
                 setIsOverflowOpen(false);
                 break;
             case "Export Documents":
                 break;
-            case "Mark License as Complete":
-                handleMarkLicenseRenewed();
+            case "Mark Certification As Completed":
+                handleMarkCertificationRenewed();
                 break;
-            case "Revert License to Incomplete":
-                handleMarkLicenseCurrent();
+            case "Revert Certification to Incomplete":
+                handleMarkCertificationCurrent();
                 break;
-            case "Delete License":
+            case "Delete Certification":
                 confirmDeletion();
                 break;
             default:
@@ -328,60 +313,60 @@ export default function licenseDetails(props) {
         }
     }
 
-    let handleMarkLicenseRenewed = () => {
-        let licenseCopy = JSON.parse(JSON.stringify(licenses[licenseID]));
-        licenseCopy.complete = true;
+    let handleMarkCertificationRenewed = () => {
+        let certificationCopy = JSON.parse(JSON.stringify(certifications[certificationID]));
+        certificationCopy.complete = true;
 
-        let renewedLicense = JSON.parse(JSON.stringify(licenses[licenseID]));
+        let renewedCertification = JSON.parse(JSON.stringify(certifications[certificationID]));
         const newID = uuidv4();
-        renewedLicense.complete = false;
-        renewedLicense.id = newID;
-        renewedLicense.completedCEHours = 0;
-        let twoYearsLater = new Date(renewedLicense.licenseExpiration);
+        renewedCertification.complete = false;
+        renewedCertification.id = newID;
+        renewedCertification.completedCEHours = 0;
+        let twoYearsLater = new Date(renewedCertification.expiration);
         twoYearsLater.setFullYear(twoYearsLater.getFullYear() + 2);
-        renewedLicense.licenseExpiration = `${("0" + (twoYearsLater.getMonth() + 1)).slice(-2)}/${("0" + twoYearsLater.getDate()).slice(-2)}/${twoYearsLater.getFullYear()}`
-        delete renewedLicense.linkedCEs;
-        delete renewedLicense.officialRequirementUpdateDate;
-        for (const index in renewedLicense.requirements) {
-            renewedLicense.requirements[index].linkedCEs = {};
-            renewedLicense.requirements[index].key = uuidv4();
+        renewedCertification.expiration = `${("0" + (twoYearsLater.getMonth() + 1)).slice(-2)}/${("0" + twoYearsLater.getDate()).slice(-2)}/${twoYearsLater.getFullYear()}`
+        delete renewedCertification.linkedCEs;
+        delete renewedCertification.officialRequirementUpdateDate;
+        for (const index in renewedCertification.requirements) {
+            renewedCertification.requirements[index].linkedCEs = {};
+            renewedCertification.requirements[index].key = uuidv4();
         }
-        setRenewedLicenseCopy(renewedLicense);
+        setRenewedCertificationCopy(renewedCertification);
 
         let uid = auth().currentUser.uid;
         let db = firestore();
 
-        let licenseObj = {
-            [licenseData?.id]: JSON.parse(JSON.stringify(licenseCopy))
+        let certificationObj = {
+            [certificationData?.id]: JSON.parse(JSON.stringify(certificationCopy))
         }
-
-        db.collection('users').doc(uid).collection('licenses').doc('licenseData').set(licenseObj, { merge: true })
+        
+        db.collection('users').doc(uid).collection('certifications').doc('certificationData').set(certificationObj, { merge: true })
             .then(() => {
-                Toast.showWithGravity(`License marked complete!`, Toast.SHORT, Toast.TOP);
-                let licensesCopy = JSON.parse(JSON.stringify(licenses));
-                licensesCopy[licenseData?.id] = licenseCopy;
-                dispatch(updateLicenses(licensesCopy));
+                Toast.showWithGravity(`Certification marked complete!`, Toast.SHORT, Toast.TOP);
+                let certificationsCopy = JSON.parse(JSON.stringify(certifications));
+                certificationsCopy[certificationData?.id] = certificationCopy;
+                dispatch(updateCertifications(certificationsCopy));
                 setIsOverflowOpen(false);
                 setIsRenewModalOpen(true);
             })
     }
 
-    let handleMarkLicenseCurrent = () => {
-        let licenseCopy = JSON.parse(JSON.stringify(licenses[licenseID]));
-        licenseCopy.complete = false;
+    let handleMarkCertificationCurrent = () => {
+        let certificationCopy = JSON.parse(JSON.stringify(certifications[certificationID]));
+        certificationCopy.complete = false;
 
         let uid = auth().currentUser.uid;
         let db = firestore();
 
-        let licenseObj = {
-            [licenseData?.id]: JSON.parse(JSON.stringify(licenseCopy))
+        let certificationObj = {
+            [certificationData?.id]: JSON.parse(JSON.stringify(certificationCopy))
         }
-        db.collection('users').doc(uid).collection('licenses').doc('licenseData').set(licenseObj, { merge: true })
+        db.collection('users').doc(uid).collection('certifications').doc('certificationData').set(certificationObj, { merge: true })
             .then(() => {
-                Toast.showWithGravity(`License reverted to incomplete!`, Toast.SHORT, Toast.TOP);
-                let licensesCopy = JSON.parse(JSON.stringify(licenses));
-                licensesCopy[licenseData?.id] = licenseCopy;
-                dispatch(updateLicenses(licensesCopy));
+                Toast.showWithGravity(`Certification reverted to incomplete!`, Toast.SHORT, Toast.TOP);
+                let certificationsCopy = JSON.parse(JSON.stringify(certifications));
+                certificationsCopy[certificationData?.id] = certificationCopy;
+                dispatch(updateCertifications(certificationsCopy));
                 setIsOverflowOpen(false);
                 navigation.navigate("Homepage");
             })
@@ -389,33 +374,33 @@ export default function licenseDetails(props) {
 
     let confirmDeletion = () => {
         Alert.alert(
-            "Delete License",
-            "Are you sure? This will delete the license and your progress PERMANENTLY.",
+            "Delete Certification",
+            "Are you sure? This will delete the certification and your progress PERMANENTLY.",
             [
                 {
                     text: "Cancel",
                     style: "cancel"
                 },
-                { text: "DELETE", onPress: () => handleDeleteLicense(), style: "destructive" }
+                { text: "DELETE", onPress: () => handleDeleteCertification(), style: "destructive" }
             ],
             { cancelable: true })
     }
 
-    let handleDeleteLicense = () => {
+    let handleDeleteCertification = () => {
         let uid = auth().currentUser.uid;
         let db = firestore();
         const FieldValue = firestore.FieldValue;
-        let dataToBeDeleted = { [licenseID]: FieldValue.delete() }
-        db.collection('users').doc(uid).collection('licenses').doc('licenseData').update(dataToBeDeleted)
+        let dataToBeDeleted = { [certificationID]: FieldValue.delete() }
+        db.collection('users').doc(uid).collection('certifications').doc('certificationData').update(dataToBeDeleted)
             .then(() => {
                 setIsOverflowOpen(false);
-                let licensesCopy = JSON.parse(JSON.stringify(licenses));
-                delete licensesCopy[licenseID];
-                dispatch(updateLicenses(licensesCopy));
+                let certificationsCopy = JSON.parse(JSON.stringify(certifications));
+                delete certificationsCopy[certificationID];
+                dispatch(updateCertifications(certificationsCopy));
                 navigation.navigate("Homepage");
             })
             .catch((error) => {
-                console.error("Error deleting license: ", error);
+                console.error("Error deleting certification: ", error);
             });
     }
 
@@ -434,7 +419,7 @@ export default function licenseDetails(props) {
         }
         else {
             navigation.navigate('Renewal', {
-                licenseID: licenseID
+                certificationID: certificationID
             })
         }
     }
@@ -451,7 +436,7 @@ export default function licenseDetails(props) {
             flex: 1,
             backgroundColor: 'white',
         },
-        licenseContainer: {
+        certificationContainer: {
             backgroundColor: colors.grey200,
             width: screenWidth,
             padding: 18 * rem,
@@ -736,7 +721,7 @@ export default function licenseDetails(props) {
         },
         modalTransparency: {
             position: 'absolute',
-            backgroundColor: 'rgba(0,0,0, 0.50)',
+            backgroundColor: 'rgba(0,0,0, 0.40)',
             height: '100%',
             width: '100%',
         },
@@ -894,65 +879,65 @@ export default function licenseDetails(props) {
                                     <Text style={styles.loadingText}>Loading. . .</Text>
                                 </>
                             ) : (
-                                <FastImage
-                                    style={styles.imgContainer}
-                                    source={{
-                                        uri: selectedImage,
-                                        priority: FastImage.priority.normal,
-                                    }}
-                                    resizeMode={FastImage.resizeMode.contain}
-                                    onLoadEnd={() => {
-                                        setIsLoading(false);
-                                    }}
-                                />
-                            )}
+                                    <FastImage
+                                        style={styles.imgContainer}
+                                        source={{
+                                            uri: selectedImage,
+                                            priority: FastImage.priority.normal,
+                                        }}
+                                        resizeMode={FastImage.resizeMode.contain}
+                                        onLoadEnd={() => {
+                                            setIsLoading(false);
+                                        }}
+                                    />
+                                )}
                         </TouchableWithoutFeedback>
                     </View>
                 </TouchableWithoutFeedback>
             </Modal>
-            <View style={styles.licenseContainer}>
+            <View style={styles.certificationContainer}>
                 <>
                     <View style={styles.topContainer}>
                         <View style={styles.infoContainer}>
                             <View style={styles.titleContainer}>
                                 <AntDesign name="idcard" size={20 * rem} style={styles.icon} />
-                                <Text style={styles.titleText}>{licenseTitle}</Text>
+                                <Text style={styles.titleText}>{certificationData?.name}</Text>
                             </View>
-                            {licenseData?.licenseNum ? (
+                            {certificationData?.certificationNum ? (
                                 <View style={styles.idNumContainer}>
-                                    <Text style={styles.idNum}>{`#${licenseData?.licenseNum}`}</Text>
+                                    <Text style={styles.idNum}>{`#${certificationData?.certificationNum}`}</Text>
                                 </View>
                             ) : (null)}
                             <View style={styles.expirationContainer}>
                                 <AntDesign name="calendar" size={20 * rem} style={styles.icon} />
-                                <Text style={styles.expirationText}>{`Exp: ${licenseData?.licenseExpiration}`}</Text>
+                                <Text style={styles.expirationText}>{`Exp: ${certificationData?.expiration}`}</Text>
                             </View>
                             {getStatus()}
                         </View>
-                        {licenseData?.licenseThumbnail ? (
+                        {certificationData?.thumbnail ? (
                             <TouchableOpacity
                                 style={styles.thumbnailContainer}
                                 onPress={() => {
-                                    openImage(licenseData?.licensePhoto);
+                                    openImage(certificationData?.photo);
                                 }}
                             >
                                 <FastImage
                                     style={styles.thumbnailImgContainer}
                                     source={{
-                                        uri: licenseData?.licenseThumbnail,
+                                        uri: certificationData?.thumbnail,
                                         priority: FastImage.priority.normal,
                                     }}
                                     resizeMode={FastImage.resizeMode.contain}
                                 />
                             </TouchableOpacity>
                         ) : (
-                            <TouchableOpacity
-                                style={styles.thumbnailContainer}
-                                onPress={openScanner}
-                            >
-                                <AntDesign name="camerao" size={32 * rem} style={styles.thumbnailIcon} />
-                            </TouchableOpacity>
-                        )}
+                                <TouchableOpacity
+                                    style={styles.thumbnailContainer}
+                                    onPress={openScanner}
+                                >
+                                    <AntDesign name="camerao" size={32 * rem} style={styles.thumbnailIcon} />
+                                </TouchableOpacity>
+                            )}
                     </View>
                     {showProgressBar ? (
                         <View style={styles.ceContainer}>
@@ -962,13 +947,13 @@ export default function licenseDetails(props) {
                                 {completedCEHours >= totalCEHours ? (
                                     <View style={styles.progressBarFillComplete}></View>
                                 ) : (<View style={styles.progressBarFill}></View>
-                                )}
+                                    )}
 
                                 {completedCEHours ? (
                                     <Text style={styles.ceText}>{`${completedCEHours}/${totalCEHours} CE`}</Text>
                                 ) : (
-                                    <Text style={styles.ceText}>{`0/${totalCEHours} CE`}</Text>
-                                )}
+                                        <Text style={styles.ceText}>{`0/${totalCEHours} CE`}</Text>
+                                    )}
                             </View>
                         </View>
                     ) : (null)}
@@ -1021,11 +1006,11 @@ export default function licenseDetails(props) {
                                 <TouchableOpacity
                                     onPress={() => { handleOverflowOptionPressed(item) }}
                                     style={styles.optionContainer}>
-                                    {item == "Delete License" ? (
+                                    {item == "Delete Certification" ? (
                                         <Text style={styles.deleteOptionText}>{item}</Text>
                                     ) : (
-                                        <Text style={styles.optionText}>{item}</Text>
-                                    )}
+                                            <Text style={styles.optionText}>{item}</Text>
+                                        )}
                                 </TouchableOpacity>
                             )}>
                         </FlatList>
@@ -1053,10 +1038,10 @@ export default function licenseDetails(props) {
                                                 <AntDesign name="checkcircleo" size={24 * rem} style={styles.completeIcon} />
                                             </TouchableOpacity>
                                         ) : (
-                                            <TouchableOpacity onPress={() => { checkmarkClicked(item) }}>
-                                                <AntDesign name="checkcircleo" size={24 * rem} style={styles.incompleteIcon} />
-                                            </TouchableOpacity>
-                                        )}
+                                                <TouchableOpacity onPress={() => { checkmarkClicked(item) }}>
+                                                    <AntDesign name="checkcircleo" size={24 * rem} style={styles.incompleteIcon} />
+                                                </TouchableOpacity>
+                                            )}
 
                                         {item.hours ? (
                                             <>
@@ -1084,7 +1069,7 @@ export default function licenseDetails(props) {
                                                 <>
                                                     {(typeof item["linkedCEs"] !== "undefined" && ce["item"] in item?.["linkedCEs"])
                                                         ? (
-                                                            <CEcard data={ceData?.[ce["item"]]} licenseHours={item["linkedCEs"][ce["item"]]} />
+                                                            <CEcard data={ceData?.[ce["item"]]} certificationHours={item["linkedCEs"][ce["item"]]} />
                                                         ) : (null)}
                                                 </>
                                             )
@@ -1096,12 +1081,13 @@ export default function licenseDetails(props) {
                         )}>
                     </FlatList>
                 ) : (
-                    <Text style={styles.noRequirementsText}>Edit license details to add requirements.</Text>
-                )
+                        <Text style={styles.noRequirementsText}>Edit certification details to add requirements.</Text>
+                    )
                 }
             </View >
 
-            {licenses[licenseID] && <LinkExistingCE open={linkingExistingCEs} licenseID={licenseID} />}
+            {certifications[certificationID] && <LinkExistingCE open={linkingExistingCEs} certificationID={certificationID} />}
+
             <Modal visible={isRenewModalOpen}
                 animationType='fade'
                 transparent={true}
@@ -1110,14 +1096,14 @@ export default function licenseDetails(props) {
                     <View style={styles.modalTransparency} />
                 </TouchableWithoutFeedback>
                 <View style={styles.modalPopupContainer}>
-                    <Text style={styles.questionText}>Would you like to add this license again with a new expiration date?</Text>
+                    <Text style={styles.questionText}>Would you like to add this certification again with a new expiration date?</Text>
                     <View style={styles.flexRowContainer}>
                         <TouchableOpacity style={styles.whiteButton}
                             onPress={() => { setIsRenewModalOpen(false); navigation.navigate("Homepage") }}>
                             <Text style={styles.whiteButtonText}>No</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.blueButton}
-                            onPress={() => { setIsRenewModalOpen(false); navigation.navigate("AddNew", { licenseData: JSON.parse(JSON.stringify(renewedLicenseCopy)) }) }}>
+                            onPress={() => { setIsRenewModalOpen(false); navigation.navigate("AddNew", { certificationData: JSON.parse(JSON.stringify(renewedCertificationCopy)) }) }}>
                             <Text style={styles.blueButtonText}>Yes</Text>
                         </TouchableOpacity>
                     </View>
@@ -1125,72 +1111,4 @@ export default function licenseDetails(props) {
             </Modal>
         </ScrollView >
     );
-}
-
-let getShortenedTitle = (longTitle) => {
-    switch (longTitle) {
-        case "Licensed Vocational Nurse (LVN)":
-            return "LVN";
-        case "Registered Nurse (RN)":
-            return "RN";
-        default:
-            return "";
-    }
-}
-
-let getStateAcronym = (stateFullName) => {
-    return this.stateList[stateFullName];
-}
-
-stateList = {
-    'Arizona': 'AZ',
-    'Alabama': 'AL',
-    'Alaska': 'AK',
-    'Arkansas': 'AR',
-    'California': 'CA',
-    'Colorado': 'CO',
-    'Connecticut': 'CT',
-    'Delaware': 'DE',
-    'Florida': 'FL',
-    'Georgia': 'GA',
-    'Hawaii': 'HI',
-    'Idaho': 'ID',
-    'Illinois': 'IL',
-    'Indiana': 'IN',
-    'Iowa': 'IA',
-    'Kansas': 'KS',
-    'Kentucky': 'KY',
-    'Louisiana': 'LA',
-    'Maine': 'ME',
-    'Maryland': 'MD',
-    'Massachusetts': 'MA',
-    'Michigan': 'MI',
-    'Minnesota': 'MN',
-    'Mississippi': 'MS',
-    'Missouri': 'MO',
-    'Montana': 'MT',
-    'Nebraska': 'NE',
-    'Nevada': 'NV',
-    'New Hampshire': 'NH',
-    'New Jersey': 'NJ',
-    'New Mexico': 'NM',
-    'New York': 'NY',
-    'North Carolina': 'NC',
-    'North Dakota': 'ND',
-    'Ohio': 'OH',
-    'Oklahoma': 'OK',
-    'Oregon': 'OR',
-    'Pennsylvania': 'PA',
-    'Rhode Island': 'RI',
-    'South Carolina': 'SC',
-    'South Dakota': 'SD',
-    'Tennessee': 'TN',
-    'Texas': 'TX',
-    'Utah': 'UT',
-    'Vermont': 'VT',
-    'Virginia': 'VA',
-    'Washington': 'WA',
-    'West Virginia': 'WV',
-    'Wisconsin': 'WI',
-    'Wyoming': 'WY'
 }

@@ -41,15 +41,37 @@ export default function login({ navigation, route }) {
 
   const loginHandler = () => {
     setButtonText("...");
+    if (!email || !password) {
+      setError("Email or password is empty");
+      setButtonText("Log In");
+      return;
+    }
+
     let validatedEmail = email.replace(/\s/g, '');
     auth().signInWithEmailAndPassword(validatedEmail.trim(), password)
       .then(() => {
         setButtonText("Log In");
       })
-      .catch(function (error) {
-        setError(error.message);
-        setButtonText("Log In");
-      });
+      .catch(err => {
+        if (err.code === 'auth/email-already-in-use') {
+          console.log('That email address is already in use!');
+          setError('That email address is already in use!');
+        }
+        else if (err.code === 'auth/invalid-email') {
+          console.log('That email address is invalid!');
+          setError('That email address is invalid!');
+        }
+        else if (err.code === 'auth/wrong-password') {
+          setError('Incorrect email or password');
+        }
+        else if (err.code === 'auth/user-not-found') {
+          setError("User does not exist.");
+        }
+        else {
+          setError(err.message);
+        }
+      })
+    setButtonText("Log In");
 
   }
 
@@ -68,6 +90,7 @@ export default function login({ navigation, route }) {
           placeholder={'Email'}
           placeholderTextColor={'rgba(255, 255, 255, 0.7)'}
           underlineColorAndroid='transparent'
+          autoCapitalize='none'
           onChangeText={text => setEmail(text)}
           value={email}
         />
@@ -81,6 +104,7 @@ export default function login({ navigation, route }) {
           secureTextEntry={showPass}
           placeholderTextColor={'rgba(255, 255, 255, 0.7)'}
           underlineColorAndroid='transparent'
+          autoCapitalize='none'
           onChangeText={text => setPassword(text)}
           value={password}
         />
@@ -100,7 +124,7 @@ export default function login({ navigation, route }) {
 
       <TouchableOpacity style={styles.btnGetStarted}
         onPress={signUpHandler}>
-        <Text style={styles.btnGetStartedText}>Get Started</Text>
+        <Text style={styles.btnGetStartedText}>Create Account</Text>
       </TouchableOpacity>
 
       <View style={styles.bgDesignTop}>

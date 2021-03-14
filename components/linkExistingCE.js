@@ -9,12 +9,14 @@ import FastImage from 'react-native-fast-image'
 import { useNavigation } from '@react-navigation/native';
 import { useRoute } from '@react-navigation/native';
 import ExpandingCE from "../components/expandingCE.js";
-import { updateLicenses } from '../actions';
+import { updateLicenses, updateCertifications } from '../actions';
 
 import Toast from 'react-native-simple-toast';
 
 export default function linkExistingCE(props) {
-    let licenseID = props.licenseID;
+    const licenseID = props.licenseID;
+    const certificationID = props.certificationID;
+    const dataID = licenseID ? licenseID : certificationID;
 
     const SELECTING_REQUIREMENT = 0;
     const SELECTING_CE = 1;
@@ -27,13 +29,15 @@ export default function linkExistingCE(props) {
     const NEWLY_LINKED = "NEWLY LINKED";
 
     const licenses = useSelector(state => state.licenses);
+    const certifications = useSelector(state => state.certifications);
     const allCEData = useSelector(state => state.ces);
     const dispatch = useDispatch();
 
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [selectedRequirement, setSelectedRequirement] = useState("");
-    const [licenseCopy, setLicenseCopy] = useState(JSON.parse(JSON.stringify(licenses[licenseID])));
-    const [ceDataCopy, setCEDataCopy] = useState(JSON.parse(JSON.stringify(allCEData)));
+    const [dataCopy, setDataCopy] = useState({});
+    const [requirements, setRequirements] = useState([])
+    const [ceDataCopy, setCEDataCopy] = useState();
     const [currentStep, setCurrentStep] = useState(SELECTING_REQUIREMENT);
     const [previousStep, setPreviousStep] = useState(0);
     const [ceChanges, setCEChanges] = useState([]);
@@ -54,7 +58,10 @@ export default function linkExistingCE(props) {
     let resetState = () => {
         setCurrentStep(SELECTING_REQUIREMENT);
         setSelectedRequirement("");
-        setLicenseCopy(JSON.parse(JSON.stringify(licenses[licenseID])));
+        const tempData = licenseID ? JSON.parse(JSON.stringify(licenses[licenseID])) : JSON.parse(JSON.stringify(certifications[certificationID]))
+        setDataCopy(tempData);
+        setRequirements(tempData.requirements);
+        setCEDataCopy(JSON.parse(JSON.stringify(allCEData)));
         setPreviousStep(0);
         setCEChanges([]);
         setLinkedHoursInputs([]);
@@ -68,8 +75,8 @@ export default function linkExistingCE(props) {
     }
 
     let calculateCEChanges = () => {
-        let oldLinkedCEs = licenses?.[licenseID]?.requirements?.[selectedRequirement]?.linkedCEs;
-        let newLinkedCEs = licenseCopy.requirements?.[selectedRequirement]?.linkedCEs;
+        let oldLinkedCEs = licenseID ? licenses?.[dataID]?.requirements?.[selectedRequirement]?.linkedCEs : certifications?.[dataID]?.requirements?.[selectedRequirement]?.linkedCEs;
+        let newLinkedCEs = dataCopy?.requirements?.[selectedRequirement]?.linkedCEs;
         let ceChangesArr = [];
         if (!oldLinkedCEs) {
             setCEChanges([]);
@@ -143,13 +150,16 @@ export default function linkExistingCE(props) {
         if (ceChanges.length) {
             let uid = auth().currentUser.uid;
             let db = firestore();
-            let licenseObj = { [licenseCopy.id]: JSON.parse(JSON.stringify(licenseCopy)) }
-            db.collection('users').doc(uid).collection('licenses').doc('licenseData').set(licenseObj, { merge: true })
+            let dataObj = { [dataCopy?.id]: JSON.parse(JSON.stringify(dataCopy)) }
+            const collection = licenseID ? "licenses" : "certifications";
+            const doc = licenseID ? "licenseData" : "certificationData";
+
+            db.collection('users').doc(uid).collection(collection).doc(doc).set(dataObj, { merge: true })
                 .then(() => {
                     console.log("Document successfully written!");
-                    db.collection('users').doc(uid).collection('licenses').doc('licenseData').get()
+                    db.collection('users').doc(uid).collection(collection).doc(doc).get()
                         .then(response => {
-                            dispatch(updateLicenses(response.data()));
+                            licenseID ? dispatch(updateLicenses(response.data())) : dispatch(updateCertifications(response.data()))
                             setIsModalVisible(false);
                             Toast.showWithGravity(`Saved!`, Toast.LONG, Toast.TOP);
                             resetState();
@@ -203,28 +213,28 @@ export default function linkExistingCE(props) {
         }
 
         hours = Number(hours);
-        let localLicenseCopy = JSON.parse(JSON.stringify(licenseCopy));
+        let localDataCopy = JSON.parse(JSON.stringify(dataCopy));
         if (!hours) {
-            delete localLicenseCopy.requirements[selectedRequirement].linkedCEs[ceID];
+            delete localDataCopy?.requirements[selectedRequirement].linkedCEs[ceID];
         }
         else {
-            if (localLicenseCopy.requirements[selectedRequirement].linkedCEs) {
-                localLicenseCopy.requirements[selectedRequirement].linkedCEs[ceID] = hours;
+            if (localDataCopy?.requirements[selectedRequirement].linkedCEs) {
+                localDataCopy.requirements[selectedRequirement].linkedCEs[ceID] = hours;
             }
             else {
-                localLicenseCopy.requirements[selectedRequirement].linkedCEs = {};
-                localLicenseCopy.requirements[selectedRequirement].linkedCEs[ceID] = hours;
+                localDataCopy.requirements[selectedRequirement].linkedCEs = {};
+                localDataCopy.requirements[selectedRequirement].linkedCEs[ceID] = hours;
             }
         }
-        setLicenseCopy(JSON.parse(JSON.stringify(localLicenseCopy)));
+        setDataCopy(JSON.parse(JSON.stringify(localDataCopy)));
     }
 
     let getDefaultCEHours = (ceID) => {
-        if (licenseCopy.requirements[selectedRequirement].linkedCEs && Object.keys(licenseCopy.requirements[selectedRequirement].linkedCEs).includes(ceID)) {
-            return licenseCopy.requirements[selectedRequirement].linkedCEs[ceID].toString();
+        if (dataCopy?.requirements[selectedRequirement].linkedCEs && Object.keys(dataCopy?.requirements[selectedRequirement].linkedCEs).includes(ceID)) {
+            return dataCopy?.requirements[selectedRequirement].linkedCEs[ceID].toString();
         }
-        if (licenseCopy.linkedCEs && Object.keys(licenseCopy.linkedCEs).includes(ceID)) {
-            return licenseCopy.linkedCEs[ceID].toString();
+        if (dataCopy?.linkedCEs && Object.keys(dataCopy?.linkedCEs).includes(ceID)) {
+            return dataCopy?.linkedCEs[ceID].toString();
         }
         return "0";
     }
@@ -236,7 +246,7 @@ export default function linkExistingCE(props) {
 
     const styles = StyleSheet.create({
         modalTransparency: {
-            backgroundColor: 'rgba(0,0,0, 0.30)',
+            backgroundColor: 'rgba(0,0,0, 0.50)',
             height: '100%',
             width: '100%',
             position: 'absolute',
@@ -249,6 +259,15 @@ export default function linkExistingCE(props) {
             maxHeight: screenHeight * (6 / 8),
             width: '98%',
             minHeight: screenHeight * (2 / 8),
+        },
+        fixedBottomContainer: {
+            position: 'absolute',
+            bottom: 0,
+            alignSelf: 'center',
+            marginBottom: 12 * rem,
+            width: '100%',
+            backgroundColor: 'white',
+            justifyContent: 'space-evenly',
         },
         emptyText: {
             fontSize: 16 * rem,
@@ -389,10 +408,10 @@ export default function linkExistingCE(props) {
 
                 {currentStep == SELECTING_REQUIREMENT ? (
                     <View style={styles.modalPopupContainer}>
-                        <ScrollView keyboardShouldPersistTaps={'always'}>
+                        <ScrollView style={{marginBottom: 64* rem}} keyboardShouldPersistTaps={'always'}>
                             <Text style={styles.modalTitle}>Select a requirement</Text>
-                            {licenseCopy.requirements.length ? (<FlatList
-                                data={licenseCopy.requirements}
+                            {requirements.length ? (<FlatList
+                                data={requirements}
                                 keyExtractor={item => item.key}
                                 renderItem={({ item, index }) => (
                                     <TouchableOpacity
@@ -406,20 +425,21 @@ export default function linkExistingCE(props) {
                                     </TouchableOpacity>
                                 )}
                             >
-                            </FlatList>) : (<Text style={styles.emptyText}>No requirements to apply to! Edit license to add requirements.</Text>)}
-
-                            <TouchableHighlight
+                            </FlatList>) : (<Text style={styles.emptyText}>No requirements to apply to! Edit {licenseID ? "license" : "certification"} to add requirements.</Text>)}
+                        </ScrollView>
+                        <View style={styles.fixedBottomContainer}>
+                            <TouchableOpacity
                                 onPress={() => { setIsModalVisible(false) }}
                                 style={styles.linkCEButton}
                             >
                                 <Text style={styles.linkCEButtonText}>Cancel</Text>
-                            </TouchableHighlight>
-                        </ScrollView>
+                            </TouchableOpacity>
+                        </View>
                     </View>) : (null)}
 
                 {currentStep == INPUTTING_CE_HOURS ? (
                     <View style={styles.modalPopupContainer}>
-                        <ScrollView keyboardShouldPersistTaps={'always'}>
+                        <ScrollView style={{marginBottom: 108* rem}} keyboardShouldPersistTaps={'always'}>
                             <Text style={styles.modalTitle}>Input CE Hours</Text>
                             {Object.keys(ceDataCopy).length ? (<FlatList
                                 data={Object.keys(ceDataCopy).sort((a, b) => { return new Date(ceDataCopy[b].completionDate) - new Date(ceDataCopy[a].completionDate) })}
@@ -442,25 +462,26 @@ export default function linkExistingCE(props) {
                             >
                             </FlatList>) : (<Text style={styles.emptyText}>No CEs to link!</Text>)}
                         </ScrollView>
-                        <View style={styles.flexRowContainer}>
-                            <Text>You can review your changes on the next screen</Text>
-                        </View>
-                        <View style={styles.flexRowContainer}>
-                            <TouchableHighlight
-                                onPress={() => { handleBack() }}
-                                style={styles.linkCEButton}
-                            >
-                                <Text style={styles.linkCEButtonText}>{('Back')}</Text>
-                            </TouchableHighlight>
+                        <View style={styles.fixedBottomContainer}>
+                            <View style={styles.flexRowContainer}>
+                                <Text>You can review your changes on the next screen</Text>
+                            </View>
+                            <View style={styles.flexRowContainer}>
+                                <TouchableHighlight
+                                    onPress={() => { handleBack() }}
+                                    style={styles.linkCEButton}
+                                >
+                                    <Text style={styles.linkCEButtonText}>{('Back')}</Text>
+                                </TouchableHighlight>
 
-                            <TouchableOpacity
-                                onPress={() => { handleDone() }}
-                                style={styles.linkCEButton}
-                            >
-                                <Text style={styles.linkCEButtonText}>{('Done')}</Text>
-                            </TouchableOpacity>
+                                <TouchableOpacity
+                                    onPress={() => { handleDone() }}
+                                    style={styles.linkCEButton}
+                                >
+                                    <Text style={styles.linkCEButtonText}>{('Done')}</Text>
+                                </TouchableOpacity>
+                            </View>
                         </View>
-                        <Text>{"\n"}</Text>
                     </View>) : (null)}
 
                 {currentStep == SELECTING_CE ? (
@@ -470,9 +491,9 @@ export default function linkExistingCE(props) {
 
                 {currentStep == CONFIRMATION_PAGE ? (
                     <View style={styles.modalPopupContainer}>
-                        <ScrollView keyboardShouldPersistTaps={'always'}>
+                        <ScrollView style={{marginBottom: 72* rem}} keyboardShouldPersistTaps={'always'}>
                             <Text style={styles.modalTitle}>Changes Summary</Text>
-                            <Text style={styles.requirementName}>REQUIREMENT: {licenseCopy.requirements[selectedRequirement].name}</Text>
+                            <Text style={styles.requirementName}>REQUIREMENT: {dataCopy?.requirements[selectedRequirement].name}</Text>
                             {ceChanges.length ? (<FlatList
                                 data={ceChanges}
                                 keyExtractor={item => item.ceID}
@@ -488,8 +509,13 @@ export default function linkExistingCE(props) {
                                     )
                                 }}
                             >
-                            </FlatList>) : (<Text style={styles.emptyText}>No changes made!</Text>)}
+                            </FlatList>) : (
+                                <View style={styles.flexRowContainer}>
+                                    <Text style={styles.emptyText}>No changes made!</Text>
+                                </View>)}
 
+                        </ScrollView>
+                        <View style={styles.fixedBottomContainer}>
                             <Text>{errorMsg}</Text>
                             <View style={styles.flexRowContainer}>
                                 <TouchableHighlight
@@ -506,8 +532,7 @@ export default function linkExistingCE(props) {
                                     <Text style={styles.linkCEButtonText}>{('Save')}</Text>
                                 </TouchableOpacity>
                             </View>
-                            <Text>{"\n"}</Text>
-                        </ScrollView>
+                        </View>
                     </View>
                 ) : (null)}
             </View>

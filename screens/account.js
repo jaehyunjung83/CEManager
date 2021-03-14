@@ -88,7 +88,7 @@ export default function account() {
             <Text style={styles.header}>Payment Information</Text>
             <View style={styles.card}>
                 <Text style={styles.cardText}>Card ending in: <Text style={styles.userInfo}>{last4}</Text></Text>
-                <Text style={styles.cardText}>Expiration: <Text style={styles.userInfo}>{expMonth}/{expYear}</Text></Text>
+                <Text style={styles.cardText}>LicenseExpiration: <Text style={styles.userInfo}>{expMonth}/{expYear}</Text></Text>
             </View>
             <Button text="Update Payment Info" onPress={openCardInput}>Update Payment Info</Button>
         </View>

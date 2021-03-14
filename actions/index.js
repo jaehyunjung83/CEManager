@@ -10,6 +10,12 @@ export const updateCEs = (data) => {
         payload: data,
     }
 }
+export const updateCertifications = (data) => {
+    return {
+        type: 'UPDATE_CERTIFICATIONS',
+        payload: data,
+    }
+}
 export const updateAccountData = (data) => {
     return {
         type: 'UPDATE_ACCOUNT_DATA',

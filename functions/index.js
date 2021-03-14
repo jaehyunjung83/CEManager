@@ -10,52 +10,52 @@ const nurseRenewal = require('./licenseRenewal/registeredNurse');
 const generalHelpers = require('./licenseRenewal/generalHelpers');
 
 exports.createThumbnail = functions
-.runWith({ timeoutSeconds: 540, memory: '1GB' })
-.https.onRequest(async (req, res) => {
-  console.log(req.body);
-  const bucket = storage.bucket(); // Default bucket.
-  const fileName = req.body.fileName;
-  const filePath = `userImages/${req.body.userID}/${fileName}`
-  const tempFilePath = path.join(os.tmpdir(), fileName);
-  const metadata = {
-    contentType: 'application/json',
-  };
-  bucket.file(filePath).download({
-    destination: tempFilePath
-  }).then(async () => {
-    await spawn('convert', [tempFilePath, '-thumbnail', '200x200>', tempFilePath]);
-    console.log('Thumbnail created at', tempFilePath);
-    const thumbFileName = `thumb_${fileName}`;
-    const thumbFilePath = path.join(path.dirname(filePath), thumbFileName);
-    await bucket.upload(tempFilePath, {
-      destination: thumbFilePath,
-      metadata: metadata,
-      public: true
-    })
-      .then((snapshot) => {
-        const thumbURL = snapshot.ref.getDownloadURL()
-          .then(() => {
-            console.log("Upload successful. Download URL? : " + thumbURL);
-          })
-          .catch(error => {
-            console.log("Error getting thumbnail URL. Error: " + error.toString());
-          })
+  .runWith({ timeoutSeconds: 540, memory: '1GB' })
+  .https.onRequest(async (req, res) => {
+    console.log(req.body);
+    const bucket = storage.bucket(); // Default bucket.
+    const fileName = req.body.fileName;
+    const filePath = `userImages/${req.body.userID}/${fileName}`
+    const tempFilePath = path.join(os.tmpdir(), fileName);
+    const metadata = {
+      contentType: 'application/json',
+    };
+    bucket.file(filePath).download({
+      destination: tempFilePath
+    }).then(async () => {
+      await spawn('convert', [tempFilePath, '-thumbnail', '200x200>', tempFilePath]);
+      console.log('Thumbnail created at', tempFilePath);
+      const thumbFileName = `thumb_${fileName}`;
+      const thumbFilePath = path.join(path.dirname(filePath), thumbFileName);
+      await bucket.upload(tempFilePath, {
+        destination: thumbFilePath,
+        metadata: metadata,
+        public: true
       })
-      .catch(error => {
-        console.log("Error uploading thumbnail. Error: " + error.toString());
-      });
+        .then((snapshot) => {
+          // const thumbURL = snapshot.ref.getDownloadURL()
+          //   .then(() => {
+          console.log("Upload successful.");
+          //   })
+          //   .catch(error => {
+          //     console.log("Error getting thumbnail URL. Error: " + error.toString());
+          //   })
+        })
+        .catch(error => {
+          console.log("Error uploading thumbnail. Error: " + error.toString());
+        });
 
-    fs.unlinkSync(tempFilePath);
+      fs.unlinkSync(tempFilePath);
 
-    let myObj = {
-      filePath: filePath,
-      thumbnailURL: `https://storage.googleapis.com/cetracker-2de23.appspot.com/${thumbFilePath}`,
-      bucket: `gs://cetracker-2de23.appspot.com/${thumbFilePath}`,
-    }
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(myObj));
+      let myObj = {
+        filePath: filePath,
+        thumbnailURL: `https://storage.googleapis.com/cetracker-2de23.appspot.com/${thumbFilePath}`,
+        bucket: `gs://cetracker-2de23.appspot.com/${thumbFilePath}`,
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(myObj));
+    });
   });
-});
 
 exports.renewLicense = functions
   .runWith({ timeoutSeconds: 540, memory: '1GB' })
@@ -332,9 +332,9 @@ exports.saveCardToStripe = functions.https.onRequest(async (req, res) => {
 
       const cards = await stripe.customers.listSources(
         accountData.stripeCustomerID,
-        {object: 'card'}
+        { object: 'card' }
       );
-      for(const cardObj of cards.data) {
+      for (const cardObj of cards.data) {
         await stripe.customers.deleteSource(
           accountData.stripeCustomerID,
           cardObj.id,

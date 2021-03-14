@@ -35,7 +35,7 @@ export default function homeTabs() {
                 name="Homepage"
                 component={Homepage}
                 options={{
-                    tabBarLabel: 'Home',
+                    tabBarLabel: 'Credentials',
                     // tabBarIcon: () => (
                     //     <SimpleLineIcons
                     //         name='home'

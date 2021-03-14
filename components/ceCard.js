@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity, TouchableHighlight, Modal, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity, TouchableHighlight, Modal, TouchableWithoutFeedback, Image } from 'react-native';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import { colors } from '../components/colors.js';
 import FastImage from 'react-native-fast-image'
@@ -126,7 +126,7 @@ export default function ceCard(props) {
             marginLeft: 1 * rem,
             width: 30 * rem,
             textAlign: 'center',
-            zIndex:3,
+            zIndex: 3,
         },
         ceInfoContainer: {
             position: 'absolute',
@@ -155,13 +155,11 @@ export default function ceCard(props) {
             width: '100%',
         },
         imgContainer: {
+            position: 'absolute',
             marginTop: (Dimensions.get('window').height / 2) - (screenWidth / 2),
             width: screenWidth,
             aspectRatio: 1,
             backgroundColor: 'black',
-            alignItems: 'center',
-            justifyContent: 'center',
-            alignSelf: 'center',
         },
         loadingText: {
             marginTop: Dimensions.get('window').height / 2,
@@ -185,9 +183,8 @@ export default function ceCard(props) {
                         >
                             {isLoading ? (
                                 <>
-                                    <Text style={styles.loadingText}>Loading. . .</Text>
                                     <FastImage
-                                        style={{ height: 0, width: 0 }}
+                                        style={styles.imgContainer}
                                         source={{
                                             uri: props?.data?.cePhoto,
                                             priority: FastImage.priority.normal,
@@ -197,6 +194,7 @@ export default function ceCard(props) {
                                             setIsLoading(false);
                                         }}
                                     />
+                                    <Text style={styles.loadingText}>Loading. . .</Text>
                                 </>
                             ) : (
                                     <FastImage
