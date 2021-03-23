@@ -533,7 +533,7 @@ PODS:
     - Firebase/Firestore (~> 6.13.0)
     - React
     - RNFBApp
-  - RNFBStorage (6.4.0):
+  - RNFBStorage (6.7.1):
     - Firebase/Core (~> 6.13.0)
     - Firebase/Storage (~> 6.13.0)
     - React

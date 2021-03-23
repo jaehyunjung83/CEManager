@@ -88,7 +88,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.grey200,
     // paddingBottom: 48 * rem,
   },
-
   addNewButtonContainer: {
     position: 'absolute',
     right: 32 * rem,

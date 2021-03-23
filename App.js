@@ -121,6 +121,69 @@ export default function App() {
                 },
                 gestureEnabled: false,
               }} />
+              <Stack.Screen
+              name="EditLicense"
+              component={EditLicense}
+              options={{
+                title: "Edit License",
+                headerBackTitle: "Back",
+                headerBackTitleStyle: {
+                  color: colors.blue800,
+                },
+                headerTintColor: colors.blue800,
+                headerTitleStyle: {
+                  color: colors.blue800,
+                  fontSize: 23 * rem,
+                  fontWeight: '400',
+                  textAlign: 'left',
+                },
+                headerStyle: {
+                  backgroundColor: 'white',
+                },
+                gestureEnabled: false,
+              }} />
+            <Stack.Screen
+              name="AddCE"
+              component={AddCE}
+              options={{
+                title: "Add CE",
+                headerBackTitle: "Back",
+                headerBackTitleStyle: {
+                  color: colors.blue800,
+                },
+                headerTintColor: colors.blue800,
+                headerTitleStyle: {
+                  color: colors.blue800,
+                  fontSize: 23 * rem,
+                  fontWeight: '400',
+                  textAlign: 'left',
+                },
+                headerStyle: {
+                  backgroundColor: 'white',
+                },
+                gestureEnabled: false,
+              }} />
+              <Stack.Screen
+              name="EditCE"
+              component={EditCE}
+              options={{
+                title: "Edit CE",
+                headerBackTitle: "Back",
+                headerBackTitleStyle: {
+                  color: colors.blue800,
+                },
+                headerTintColor: colors.blue800,
+                headerTitleStyle: {
+                  color: colors.blue800,
+                  fontSize: 23 * rem,
+                  fontWeight: '400',
+                  textAlign: 'left',
+                },
+                headerStyle: {
+                  backgroundColor: 'white',
+                },
+                gestureEnabled: false,
+              }} />
             <Stack.Screen
               name="EditLicense"
               component={EditLicense}

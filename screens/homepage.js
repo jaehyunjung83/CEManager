@@ -189,6 +189,24 @@ export default function homepage(props) {
                 dispatch(updateLicenses(licensesCopy));
             }
         }
+
+        if (hasUpdatedALicense) {
+            console.log("Some licenses requirements were updated. Updating firebase...");
+            let uid = auth().currentUser.uid;
+            db.collection('users').doc(uid).collection('licenses').doc('licenseData').set(licensesCopy, { merge: true })
+                .then(() => {
+                    console.log("Updated licenses with official supported state requirements.");
+                    return licensesCopy;
+                })
+                .catch((error) => {
+                    console.error("Error applying CE: ", error);
+                });
+        }
+        else {
+            console.log("All license requirements up to date with official requirements.");
+            return licensesCopy;
+        }
+        return licensesCopy;
     }
 
     React.useEffect(() => {
