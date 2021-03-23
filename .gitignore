@@ -63,3 +63,4 @@ android/app/build/generated/
 
 #java pid
 *.hprof
+android/*.hprof
