@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Dimensions, TouchableOpacity, Text } from 'react-native';
+import { Dimensions, TouchableOpacity, Text, TextInput } from 'react-native';
 import 'react-native-gesture-handler';
 // import firebase from 'firebase';
 // import { firebaseConfig } from './config';
@@ -40,9 +40,17 @@ const Stack = createStackNavigator();
 
 import stripe from 'tipsi-stripe'
 stripe.setOptions({
-    publishableKey: 'pk_test_cGkQlPvs51UzF6W4lfRdq7gu00faHg5vSC',
-    androidPayMode: 'test', // Android only
-  })
+  publishableKey: 'pk_test_cGkQlPvs51UzF6W4lfRdq7gu00faHg5vSC',
+  androidPayMode: 'test', // Android only
+})
+
+// Disable font scaling
+TextInput.defaultProps = Text.defaultProps || {}; //Disable dynamic type in IOS
+TextInput.defaultProps.allowFontScaling = false;
+
+TextInput.defaultProps = TextInput.defaultProps || {};
+TextInput.defaultProps.allowFontScaling = false;
+
 export default function App() {
   // Set an initializing state whilst Firebase connects
   const [initializing, setInitializing] = useState(true);
@@ -134,7 +142,7 @@ export default function App() {
                 },
                 gestureEnabled: false,
               }} />
-              <Stack.Screen
+            <Stack.Screen
               name="EditCertification"
               component={EditCertification}
               options={{
@@ -218,7 +226,7 @@ export default function App() {
                 },
                 gestureEnabled: false,
               }} />
-              <Stack.Screen
+            <Stack.Screen
               name="CertificationDetails"
               component={CertificationDetails}
               options={{
@@ -281,7 +289,7 @@ export default function App() {
                 },
                 gestureEnabled: false,
               }} />
-              <Stack.Screen
+            <Stack.Screen
               name="CustomCardScreen"
               component={CustomCardScreen}
               options={{
@@ -302,7 +310,7 @@ export default function App() {
                 },
                 gestureEnabled: false,
               }} />
-              <Stack.Screen
+            <Stack.Screen
               name="ChangePlan"
               component={ChangePlan}
               options={{
@@ -325,25 +333,25 @@ export default function App() {
               }} />
           </>
         ) : (
-            <>
-              <Stack.Screen
-                name="Login"
-                component={Login}
-                options={{
-                  headerShown: false,
-                }}
-                initialParams={{
-                  setParentState: (newState) => this.setState(newState)
-                }}
-              />
-              <Stack.Screen
-                name="SignUp"
-                component={SignUp}
-                options={{
-                  headerShown: false,
-                }} />
-            </>
-          )}
+          <>
+            <Stack.Screen
+              name="Login"
+              component={Login}
+              options={{
+                headerShown: false,
+              }}
+              initialParams={{
+                setParentState: (newState) => this.setState(newState)
+              }}
+            />
+            <Stack.Screen
+              name="SignUp"
+              component={SignUp}
+              options={{
+                headerShown: false,
+              }} />
+          </>
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   );

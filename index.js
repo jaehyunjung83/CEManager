@@ -10,7 +10,6 @@ import allReducer from './reducers';
 import { Provider } from 'react-redux';
 import React from 'react';
 
-
 const store = createStore(allReducer);
 const Root = () => (
     <Provider store={store}>

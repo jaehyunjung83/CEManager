@@ -151,32 +151,38 @@ export default function addCE(props) {
         return isComplete;
     }
 
-    let setRequirementHours = (hours, index, id = { licenseID: "", certificationID: "" }) => {
-        // Links CE to special requirement.
-        // Set license state2
-        const dataID = id.licenseID ? id.licenseID : id.certificationID;
+    let setRequirementHours = (hours, id = { licenseID: "", certificationID: "" }) => {
+        // TODO: Handle linking to a license/cert without Total CEs Needed requirement. Currently if clicking AddCE from a license/cert card, it can't actually link to anything.
+        let dataID = ""
+        if (id.licenseID) dataID = id.licenseID;
+        if (id.certificationID) dataID = id.certificationID;
+
         let dataCopy = id.licenseID ? JSON.parse(JSON.stringify(localLicensesCopy)) : JSON.parse(JSON.stringify(localCertificationsCopy));
 
-        if (index == null) {
-            setHours(hours);
-            return
-        }
-        if (hours) {
+        if (dataID && hours) {
             let temp = linkedData.concat(dataID);
             setLinkedData(temp);
 
-            if (typeof dataCopy[dataID].requirements[index]["linkedCEs"] == "object") {
-                dataCopy[dataID].requirements[index]["linkedCEs"][ceID] = Number(hours);
-            }
-            else {
-                dataCopy[dataID].requirements[index]["linkedCEs"] = {};
-                dataCopy[dataID].requirements[index]["linkedCEs"][ceID] = Number(hours);
+            for (const i in dataCopy[dataID].requirements) {
+                if (dataCopy[dataID].requirements[i].name !== "Total CEs Needed") continue;
+
+                if (typeof dataCopy[dataID].requirements[i]["linkedCEs"] == "object") {
+                    dataCopy[dataID].requirements[i]["linkedCEs"][ceID] = Number(hours);
+                }
+                else {
+                    dataCopy[dataID].requirements[i]["linkedCEs"] = {};
+                    dataCopy[dataID].requirements[i]["linkedCEs"][ceID] = Number(hours);
+                }
             }
         }
-        else {
-            delete dataCopy[dataID].requirements[index]["linkedCEs"][ceID];
-            let temp = linkedData.filter(id => id !== dataID || id == props?.route?.params?.id);
-            setLinkedData(temp);
+        else if (dataID && !hours) {
+            for (const i in dataCopy[dataID].requirements) {
+                if (dataCopy[dataID].requirements[i].name !== "Total CEs Needed") continue;
+
+                delete dataCopy[dataID].requirements[i]["linkedCEs"][ceID];
+                let temp = linkedData.filter(id => id !== dataID || id == props?.route?.params?.id);
+                setLinkedData(temp);
+            }
         }
         id.licenseID ? setLocalLicensesCopy(dataCopy) : setLocalCertificationsCopy(dataCopy);
     }
@@ -223,23 +229,24 @@ export default function addCE(props) {
                         .then(() => {
                             console.log("Document successfully written!");
                             dispatch(updateLicenses(localLicensesCopy));
-                            props.navigation.navigate("Documents");
+
+
+                            db.collection('users').doc(uid).collection('certifications').doc('certificationData').set(localCertificationsCopy, { merge: true })
+                                .then(() => {
+                                    console.log("Document successfully written!");
+                                    dispatch(updateCertifications(localCertificationsCopy));
+                                    props.navigation.navigate("Documents");
+                                })
+                                .catch((error) => {
+                                    console.error("Error adding document: ", error);
+                                    props.navigation.navigate("Documents");
+                                });
                         })
                         .catch((error) => {
                             console.error("Error adding document: ", error);
                             props.navigation.navigate("Documents");
                         });
 
-                    db.collection('users').doc(uid).collection('certifications').doc('certificationData').set(localCertificationsCopy, { merge: true })
-                        .then(() => {
-                            console.log("Document successfully written!");
-                            dispatch(updateCertifications(localCertificationsCopy));
-                            props.navigation.navigate("Documents");
-                        })
-                        .catch((error) => {
-                            console.error("Error adding document: ", error);
-                            props.navigation.navigate("Documents");
-                        });
                 })
                 .catch((error) => {
                     setGeneralErrorMsg("Failed to save CE. Please try again later.");
@@ -322,7 +329,7 @@ export default function addCE(props) {
                             placeholderTextColor={colors.grey400}
                             style={styles.input}
                             value={hours}
-                            onChangeText={hourText => { setRequirementHours(hourText, null, { licenseID: props?.route?.params?.licenseID, certificationID: props?.route?.params?.certificationID }); setHours(hourText) }}
+                            onChangeText={hourText => { setRequirementHours(hourText, { licenseID: props?.route?.params?.licenseID, certificationID: props?.route?.params?.certificationID }); setHours(hourText) }}
                             keyboardType={'numeric'}
                             maxLength={4}
                         />
@@ -375,8 +382,8 @@ export default function addCE(props) {
                 </View>
 
                 <View style={styles.additionalQuestionContainer}>
-                        <Text style={styles.inputLabel}>Would you like to apply this CE to other credentials?</Text>
-                        
+                    <Text style={styles.inputLabel}>Would you like to apply this CE to other credentials?</Text>
+
                     <View style={styles.dateContainer}>
                         <TouchableOpacity
                             onPress={applyTowardsLicense}

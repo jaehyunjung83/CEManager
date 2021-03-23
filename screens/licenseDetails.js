@@ -43,6 +43,7 @@ export default function licenseDetails(props) {
     const [licenseData, setLicenseData] = useState(licenses[licenseID]);
     const [renewedLicenseCopy, setRenewedLicenseCopy] = useState({});
     const [requirements, setRequirements] = useState([]);
+    const [requirementsNotMet, setRequirementsNotMet] = useState([]);
     const [selectedImage, setSelectedImage] = useState("");
 
     const [linkingExistingCEs, setLinkingExistingCEs] = useState(false);
@@ -127,22 +128,46 @@ export default function licenseDetails(props) {
             }
 
             const requirements = licenseData.requirements;
+            let tempRequirementsNotMet = [];
+
+            // Checking current date against license expiration
+            if (licenseData.licenseExpiration) {
+                // Copy date so don't affect original
+                var threeMonthsPrior = new Date(licenseData.licenseExpiration);
+                // Get the current month number
+                var m = threeMonthsPrior.getMonth();
+                // Subtract 6 months
+                threeMonthsPrior.setMonth(threeMonthsPrior.getMonth() - 3);
+                // If the new month number isn't m - 6, set to last day of previous month
+                // Allow for cases where m < 6
+                var diff = (m + 12 - threeMonthsPrior.getMonth()) % 12;
+                if (diff < 6) threeMonthsPrior.setDate(0)
+
+                let now = new Date();
+                let expirationDate = new Date(licenseData.licenseExpiration);
+                if (now < threeMonthsPrior) {
+                    tempRequirementsNotMet.push("License expiration date is too far away");
+                }
+                if (now > expirationDate) {
+                    tempRequirementsNotMet.push("License already expired")
+                }
+            }
 
             let response = await db.collection("requirements").doc(licenseType).get();
             let allOfficialRequirements = response.data();
             if (!allOfficialRequirements) {
-                throw new Error("License is not supported for renewals");
+                tempRequirementsNotMet.push("License is not supported for renewals");
             }
 
             let officialRequirements = allOfficialRequirements[licenseState];
             if (!officialRequirements) {
-                throw new Error("State is not supported for renewals");
+                tempRequirementsNotMet.push("State is not supported for renewals");
             }
 
             if (officialRequirements.lastUpdated.toMillis() !== officialRequirementUpdateDate.toMillis()) {
                 console.log(`Official requirements last updated: ${officialRequirements.lastUpdated.toMillis()}`);
                 console.log(`User requirements last updated: ${officialRequirementUpdateDate.toMillis()}`);
-                throw new Error("License requirements not up to date.");
+                tempRequirementsNotMet.push("License requirements not up to date.");
             }
             // License requirements up to date.
 
@@ -155,12 +180,17 @@ export default function licenseDetails(props) {
                         hoursDone += requirement.linkedCEs[id];
                     }
                     if (hoursDone < hoursNeeded) {
-                        throw new Error("License requirements incomplete");
+                        tempRequirementsNotMet.push("License requirements incomplete");
                     }
                 }
             }
-            console.log("License up to date and meets all necessary requirements");
-            setRenewalReady(true);
+            if (!tempRequirementsNotMet.length) {
+                console.log("License up to date and meets all necessary requirements");
+                setRenewalReady(true);
+            }
+            else {
+                setRequirementsNotMet(tempRequirementsNotMet);
+            }
         }
         catch (e) {
             console.log(e);
@@ -840,6 +870,35 @@ export default function licenseDetails(props) {
             fontSize: 20 * rem,
             fontWeight: '500',
         },
+        renewalButtonDisabled: {
+            padding: 18 * rem,
+            paddingTop: 12 * rem,
+            paddingBottom: 12 * rem,
+            flexDirection: 'row',
+            borderRadius: 36 * rem,
+            borderWidth: 2 * rem,
+            borderColor: colors.grey400,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: colors.grey400,
+            marginTop: 6 * rem,
+            marginBottom: 6 * rem,
+
+            shadowColor: "green",
+            shadowOffset: {
+                width: 0,
+                height: 4,
+            },
+            shadowOpacity: 0.30,
+            shadowRadius: 4.65,
+
+            elevation: 8,
+        },
+        renewalButtonTextDisabled: {
+            color: "white",
+            fontSize: 20 * rem,
+            fontWeight: '500',
+        },
 
         modalPopupContainer: {
             flexShrink: 1,
@@ -980,7 +1039,14 @@ export default function licenseDetails(props) {
                                 <Text style={styles.renewalButtonText}>Start Renewal!</Text>
                             </TouchableOpacity>
                         </View>
-                    ) : (null)}
+                    ) : (
+                        <View>
+                            <TouchableOpacity style={styles.renewalButtonDisabled}
+                                disabled={true}>
+                                <Text style={styles.renewalButtonText}>Start Renewal!</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
                 </>
             </View>
             <View style={styles.cardButtonsContainer}>
@@ -1032,6 +1098,23 @@ export default function licenseDetails(props) {
                     </View>
                 </Modal>
             </View>
+
+            {requirementsNotMet.length > 0 &&
+                (<>
+                    <View style={styles.headerContainer}>
+                        <Header text="Needed for Renewal" />
+                    </View>
+                    <View style={styles.requirementsContainer}>
+                        <FlatList
+                            scrollEnabled={false}
+                            data={requirementsNotMet}
+                            keyExtractor={item => item.key}
+                            renderItem={({ item, index }) => (
+                                <Text>{item}</Text>
+                            )}
+                        />
+                    </View>
+                </>)}
 
             <View style={styles.headerContainer}>
                 <Header text="Requirements" />

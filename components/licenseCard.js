@@ -45,7 +45,7 @@ export default function licenseCard(props) {
                 }
             }
         }
-        if(!found) {
+        if (!found) {
             setTotalCEHoursNeeded(0);
         }
         setCompletedCEHours(tempCompletedHours);
@@ -55,7 +55,7 @@ export default function licenseCard(props) {
 
     let checkLicenseRequirementsComplete = async (licenseData) => {
         try {
-            if (!licenseData.complete) { return }
+            if (licenseData.complete) { return }
             let db = firestore();
             const licenseType = licenseData.licenseType;
             const licenseState = licenseData.licenseState;
@@ -65,14 +65,37 @@ export default function licenseCard(props) {
                 officialRequirementUpdateDate = new firestore.Timestamp(officialRequirementUpdateDate["_seconds"], 0)
             }
 
-            let expirationDate = new Date(licenseData.licenseExpiration);
-            let threeMonthsPrior = new Date(expirationDate);
-            threeMonthsPrior.setMonth(threeMonthsPrior.getMonth() - 3);
-            let now = new Date();
-            if (now <= threeMonthsPrior || now >= expirationDate) {
-                throw new Error("License is not ready for renewal based on expiration date.");
-            }
+            // let expirationDate = new Date(licenseData.licenseExpiration);
+            // let threeMonthsPrior = new Date(expirationDate);
+            // threeMonthsPrior.setMonth(threeMonthsPrior.getMonth() - 3);
+            // let now = new Date();
+            // if (now <= threeMonthsPrior || now >= expirationDate) {
+            //     throw new Error("License is not ready for renewal based on expiration date.");
+            // }
 
+            // Checking current date against license expiration
+            if (licenseData.licenseExpiration) {
+                // Copy date so don't affect original
+                var threeMonthsPrior = new Date(licenseData.licenseExpiration);
+                // Get the current month number
+                var m = threeMonthsPrior.getMonth();
+                // Subtract 6 months
+                threeMonthsPrior.setMonth(threeMonthsPrior.getMonth() - 3);
+                // If the new month number isn't m - 6, set to last day of previous month
+                // Allow for cases where m < 6
+                var diff = (m + 12 - threeMonthsPrior.getMonth()) % 12;
+                if (diff < 6) threeMonthsPrior.setDate(0)
+
+                let now = new Date();
+                let expirationDate = new Date(licenseData.licenseExpiration);
+                if (now < threeMonthsPrior) {
+                    throw new Error("License expiration is not close enough.")
+                }
+                if (now > expirationDate) {
+                    console.log(`${now}, ${expirationDate}`)
+                    throw new Error("License already expired.")
+                }
+            }
 
             const requirements = licenseData.requirements;
 
@@ -570,6 +593,36 @@ export default function licenseCard(props) {
             fontSize: 20 * rem,
             fontWeight: '500',
         },
+
+        renewalButtonDisabled: {
+            padding: 18 * rem,
+            paddingTop: 12 * rem,
+            paddingBottom: 12 * rem,
+            flexDirection: 'row',
+            borderRadius: 36 * rem,
+            borderWidth: 2 * rem,
+            borderColor: colors.grey400,
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: colors.grey400,
+            marginTop: 6 * rem,
+            marginBottom: 6 * rem,
+
+            shadowColor: "green",
+            shadowOffset: {
+                width: 0,
+                height: 4,
+            },
+            shadowOpacity: 0.30,
+            shadowRadius: 4.65,
+
+            elevation: 8,
+        },
+        renewalButtonTextDisabled: {
+            color: "white",
+            fontSize: 20 * rem,
+            fontWeight: '500',
+        },
     });
 
     return (
@@ -690,7 +743,14 @@ export default function licenseCard(props) {
                                 <Text style={styles.renewalButtonText}>Start Renewal!</Text>
                             </TouchableOpacity>
                         </View>
-                    ) : (null)}
+                    ) : (
+                        <View>
+                            <TouchableOpacity style={styles.renewalButtonDisabled}
+                                disabled={true}>
+                                <Text style={styles.renewalButtonText}>Start Renewal!</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
 
                     <View style={styles.insetDivider}>
                         <View style={styles.leftInset} />

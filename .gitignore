@@ -62,4 +62,4 @@ buck-out/
 android/app/build/generated/
 
 #java pid
-android/java_pid76799.hprof
+*.hprof

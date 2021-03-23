@@ -10,6 +10,7 @@ import AntDesign from 'react-native-vector-icons/AntDesign';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 
+import Header from '../components/header.js';
 
 
 export default function renewal(props) {
@@ -255,8 +256,8 @@ export default function renewal(props) {
     }
 
     let nextPage = () => {
+        console.log("TEST")
         this.scrollView.scrollTo({ x: (pageIndex + 1) * screenWidth, y: 0, animated: true })
-
     }
 
     handleModalOptionInput = (item) => {
@@ -567,7 +568,15 @@ export default function renewal(props) {
             fontSize: 19 * rem,
             marginBottom: 12 * rem,
             fontWeight: "500",
-        }
+        },
+
+        headerContainer: {
+            width: '100%',
+            height: 40 * rem,
+            marginBottom: 18 * rem,
+            paddingLeft: 18 * rem,
+            paddingRight: 18 * rem,
+        },
     });
 
     return (
@@ -637,42 +646,36 @@ export default function renewal(props) {
                             placeholderTextColor={colors.grey400}
                             style={styles.textInput}
                             onChangeText={setLine1}
-
                         />
                         <TextInput
                             placeholder={'Address line 2'}
                             placeholderTextColor={colors.grey400}
                             style={styles.textInput}
                             onChangeText={setLine2}
-
                         />
                         <TextInput
                             placeholder={'Address line 3'}
                             placeholderTextColor={colors.grey400}
                             style={styles.textInput}
                             onChangeText={setLine3}
-
                         />
                         <TextInput
                             placeholder={'City'}
                             placeholderTextColor={colors.grey400}
                             style={styles.textInput}
                             onChangeText={setCity}
-
                         />
                         <TextInput
                             placeholder={'State'}
                             placeholderTextColor={colors.grey400}
                             style={styles.textInput}
                             onChangeText={setState}
-
                         />
                         <TextInput
                             placeholder={'Country'}
                             placeholderTextColor={colors.grey400}
                             style={styles.textInput}
                             onChangeText={setCountry}
-
                         />
                         <TextInput
                             placeholder={'County'}
@@ -1563,7 +1566,7 @@ export default function renewal(props) {
                                 <Text style={styles.roundButtonText}>Cancel</Text>
                             </TouchableOpacity>
                             <TouchableOpacity style={styles.roundButton}
-                                onPress={() => { nextPage }}>
+                                onPress={nextPage}>
                                 <Text style={styles.roundButtonText}>Continue</Text>
                             </TouchableOpacity>
                         </View>
@@ -1576,7 +1579,7 @@ export default function renewal(props) {
                 <Text>I declare under penalty of perjury under the laws of the State of California that the information contained in this application and, if necessary, copies of all documents submitted as part of the application are true and correct and that I have read and understand the disclosure statements provided in the instructions for this application. I hereby grant the Department of Consumer Affairs entity permission to verify any information contained in this application.</Text>
                 <View style={styles.flexRowContainer}>
                     <TouchableOpacity style={styles.roundButton}
-                        onPress={() => { nextPage }}>
+                        onPress={nextPage}>
                         <Text style={styles.roundButtonText}>Agree and Continue</Text>
                     </TouchableOpacity>
                 </View>
@@ -1585,6 +1588,11 @@ export default function renewal(props) {
             {/* Summary page */}
             <View style={styles.backgroundView}>
                 <Text style={styles.title}>Summary Page</Text>
+
+                <View style={styles.headerContainer}>
+                    <Header text="" />
+                </View>
+
                 <View style={styles.flexRowContainer}>
                     <TouchableOpacity style={styles.roundButton}
                         onPress={() => { submitRenewal() }}>
