@@ -364,3 +364,72 @@ exports.saveCardToStripe = functions.https.onRequest(async (req, res) => {
 
   return res.status(200).send({ success: true, message: 'Successfully saved card!' });
 });
+
+exports.puppeteerTest = functions
+  .runWith({ timeoutSeconds: 450, memory: '1GB' })
+  .https.onRequest(async (req, res) => {
+    let username = "mhwang127";
+    let password = "Bravery3E#";
+    const uid = "7QBkQYXbbZNzoScPS368wP27CmK2";
+    // let username = "linda58421";
+    // let password = "Kibbles&bitz2";
+
+    try {
+      let page = await generalHelpers.configureBrowser();
+      let result = await nurseRenewal.attemptLogin(page, username, password);
+      if (!result.success) { throw result; }
+
+      result = await nurseRenewal.startRenewal(page);
+      if (!result.success) { throw result; }
+
+      // PAGES TO GO THROUGH:
+      // Introduction
+      // Information Privacy Act
+      // Transaction Suitability Questions
+      // Application Questions
+      // Name and Personal/Organization Details
+      // Contact Details
+      // CE Information
+      // Questions
+      // Conviction Questions
+      // Discipline Questions
+      // Follow-Up Renewal Instructions
+      // Work Location
+      // Healing Art Survey
+      // File Attachments
+      // Application Summary
+      result = await nurseRenewal.handleIntroduction(page);
+      if (!result.success) { throw result; }
+
+      result = await nurseRenewal.handleInformationPrivacyAct(page);
+      if (!result.success) { throw result; }
+
+      result = await nurseRenewal.handleTransactionSuitabilityQuestions(page);
+      if (!result.success) { throw result; }
+
+      result = await nurseRenewal.handleApplicationQuestions(page);
+      if (!result.success) { throw result; }
+
+      result = await nurseRenewal.handleNameAndPersonalOrganizationDetails(page);
+      if (!result.success) { throw result; }
+
+      const changingAddress = true;
+      result = await nurseRenewal.handleContactDetails(page, changingAddress, uid);
+      if (!result.success) { throw result; }
+      
+
+      await page.waitForTimeout(300000000);
+      // await page.pdf({ path: 'introduction.pdf', format: 'A4' });
+      // await page.screenshot({ path: 'loginTest.png' });
+    }
+    catch (e) {
+      generalHelpers.handleExit(e);
+      if (e.returnToUser) {
+        return res.send(e.returnToUser);
+      }
+
+      return res.send({ status: 500, message: 'Something went wrong' });
+    }
+
+    return res.send({ status: 200, message: 'Successfully ran puppeteer' });
+  })
